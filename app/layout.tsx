@@ -4,6 +4,7 @@ import "./globals.css";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSideBar";
 import QueryProvider from "@/providers/query-provider";
+import { Header } from "@/components/Header";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,13 +32,19 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider>
+          <div className="flex flex-col">
           <SidebarProvider>
           <AppSidebar />
-            <main>
             <SidebarTrigger />
-            {children}
+            <div className="min-h-screen w-full">
+            <Header/>
+            <main className="min-h-screen w-full p-4">
+              {children}
             </main>
+            </div>
         </SidebarProvider>
+          </div>
+          
         </QueryProvider>
          
       </body>

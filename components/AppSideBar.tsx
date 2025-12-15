@@ -14,14 +14,9 @@ import {
 // Menu items.
 const items = [
   {
-    title: "Tiếp nhận",
+    title: "Heo & Chuồng",
     url: "#",
     icon: SquarePen,
-  },
-  {
-    title: "Chuồng trại",
-    url: "#",
-    icon: House,
   },
   {
     title: "Vắc-xin",
@@ -59,11 +54,6 @@ const items = [
     icon: Banknote,
   },
   {
-    title: "Môi trường",
-    url: "#",
-    icon: Sprout,
-  },
-  {
     title: "Phân công",
     url: "#",
     icon: Users,
@@ -72,6 +62,11 @@ const items = [
     title: "Báo cáo",
     url: "#",
     icon: Clipboard,
+  },
+  {
+    title: "Hệ thống và phân quyền",
+    url: "#",
+    icon: Settings,
   },
 ]
  

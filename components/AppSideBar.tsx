@@ -20,47 +20,52 @@ const items = [
   },
   {
     title: "Vắc-xin",
-    url: "#",
+    url: "/vaccines",
     icon: Syringe,
   },
   {
     title: "Heo bệnh",
-    url: "#",
+    url: "/health",
     icon: Pill,
   },
   {
     title: "Xuất chuồng",
-    url: "#",
+    url: "/export",
     icon: Settings,
   },
   {
     title: "Kho",
-    url: "#",
+    url: "/inventory",
     icon: Warehouse,
   },
   {
     title: "Khẩu phần",
-    url: "#",
+    url: "/feeding",
     icon: Utensils,
   },
   {
     title: "Vệ sinh",
-    url: "#",
+    url: "/sanitation",
     icon: BrushCleaning,
   },
   {
     title: "Chi phí",
-    url: "#",
+    url: "/costs",
     icon: Banknote,
   },
   {
+    title: "Môi trường",
+    url: "/environment",
+    icon: Sprout,
+  },
+  {
     title: "Phân công",
-    url: "#",
+    url: "/tasks",
     icon: Users,
   },
   {
     title: "Báo cáo",
-    url: "#",
+    url: "/reports",
     icon: Clipboard,
   },
   {

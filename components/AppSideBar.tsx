@@ -1,4 +1,4 @@
-import { Banknote, BrushCleaning, Calendar, Clipboard, Home, House, Inbox, Pill, Search, Settings, Sprout, SquarePen, Syringe, Users, Utensils, Warehouse } from "lucide-react"
+import { Banknote, BrushCleaning, Calendar, Clipboard, Home, House, Inbox, LogOut, LogOutIcon, Pill, Search, Settings, Sprout, SquarePen, Syringe, Users, Utensils, Warehouse } from "lucide-react"
  
 import {
   Sidebar,
@@ -14,14 +14,9 @@ import {
 // Menu items.
 const items = [
   {
-    title: "Tiếp nhận",
-    url: "/import",
+    title: "Heo & Chuồng",
+    url: "#",
     icon: SquarePen,
-  },
-  {
-    title: "Chuồng trại",
-    url: "/barns",
-    icon: House,
   },
   {
     title: "Vắc-xin",
@@ -72,6 +67,16 @@ const items = [
     title: "Báo cáo",
     url: "/reports",
     icon: Clipboard,
+  },
+  {
+    title: "Hệ thống và phân quyền",
+    url: "#",
+    icon: Settings,
+  },
+  {
+    title: "Đăng xuất",
+    url: "#",
+    icon: LogOutIcon,
   },
 ]
  

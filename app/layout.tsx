@@ -33,9 +33,9 @@ export default function RootLayout({
         <QueryProvider>
           <SidebarProvider>
           <AppSidebar />
-            <main>
-            <SidebarTrigger />
-            {children}
+            <main className="flex-1 overflow-y-auto"> 
+              <SidebarTrigger />
+              {children}
             </main>
         </SidebarProvider>
         </QueryProvider>

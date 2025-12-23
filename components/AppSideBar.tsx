@@ -30,7 +30,7 @@ const items = [
   },
   {
     title: "Xuất chuồng",
-    url: "#",
+    url: "/export",
     icon: Settings,
   },
   {

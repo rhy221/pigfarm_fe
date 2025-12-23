@@ -1,46 +1,35 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import CageTable from "./CageTable";
-import AddNewCageModal from "./AddNewCageModal";
+import React, { useState } from "react";
+import MaterialTypeTable from "./MaterialTypeTable";
+import AddNewMaterialTypeModal from "./AddNewMaterialTypeModal";
 
-export interface Cage {
+export interface MaterialType {
   stt: number;
-  chuong: string;
-  loaiChuong: string;
-  trangThai: string;
+  name: string;
 }
 
-interface CageContentProps {
+interface MaterialTypeContentProps {
   isAdding?: boolean;
   setIsAdding?: (status: boolean) => void;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const CageContent: React.FC<CageContentProps> = ({
+const MaterialTypeContent: React.FC<MaterialTypeContentProps> = ({
   isAdding = false,
   setIsAdding,
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [cages, setCages] = useState<Cage[]>([
-    { stt: 1, chuong: "A001", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 2, chuong: "A002", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 3, chuong: "A003", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
+  const [materials, setMaterials] = useState<MaterialType[]>([
+    { stt: 1, name: "Vật tư A" },
+    { stt: 2, name: "Vật tư B" },
+    { stt: 3, name: "Vật tư C" },
   ]);
 
-  const [editedCages, setEditedCages] = useState<Cage[]>([...cages]);
-
-  useEffect(() => {
-    setEditedCages([...cages]);
-  }, [cages]);
-
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(cages.map(() => true));
-
-  useEffect(() => {
-    setCheckedRows(cages.map(() => true));
-  }, [cages]);
+  const [editedMaterials, setEditedMaterials] = useState<MaterialType[]>([...materials]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>(materials.map(() => true));
 
   const allChecked = checkedRows.every(Boolean);
   const toggleAll = () => setCheckedRows(checkedRows.map(() => !allChecked));
@@ -50,23 +39,23 @@ const CageContent: React.FC<CageContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addCage = (chuong: string, loaiChuong: string) => {
-    setCages([...cages, { stt: cages.length + 1, chuong, loaiChuong, trangThai: "Chưa có heo" }]);
+  const addMaterial = (name: string) => {
+    setMaterials([...materials, { stt: materials.length + 1, name }]);
   };
 
   const deleteSelected = () => {
-    const newCages = cages.filter((_, index) => !checkedRows[index]);
-    setCages(newCages.map((cage, idx) => ({ ...cage, stt: idx + 1 })));
+    const newMaterials = materials.filter((_, index) => !checkedRows[index]);
+    setMaterials(newMaterials.map((m, idx) => ({ ...m, stt: idx + 1 })));
     setShowDeleteConfirm(false);
   };
 
   return (
     <div className="flex gap-6 items-start relative">
       <div className="flex-1 min-w-0">
-        <CageTable
-          cages={cages}
-          editedCages={editedCages}
-          setEditedCages={setEditedCages}
+        <MaterialTypeTable
+          materials={materials}
+          editedMaterials={editedMaterials}
+          setEditedMaterials={setEditedMaterials}
           checkedRows={checkedRows}
           toggleRow={toggleRow}
           toggleAll={toggleAll}
@@ -76,7 +65,7 @@ const CageContent: React.FC<CageContentProps> = ({
 
       {isAdding && setIsAdding && (
         <div className="w-80 flex-shrink-0">
-          <AddNewCageModal onClose={() => setIsAdding(false)} onSave={addCage} />
+          <AddNewMaterialTypeModal onClose={() => setIsAdding(false)} onSave={addMaterial} />
         </div>
       )}
 
@@ -84,7 +73,7 @@ const CageContent: React.FC<CageContentProps> = ({
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-96">
             <h3 className="text-lg font-bold mb-4">Xác nhận xoá</h3>
-            <p className="mb-6">Bạn có chắc muốn xoá các chuồng được chọn không?</p>
+            <p className="mb-6">Bạn có chắc muốn xoá các loại vật tư được chọn không?</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -106,4 +95,4 @@ const CageContent: React.FC<CageContentProps> = ({
   );
 };
 
-export default CageContent;
+export default MaterialTypeContent;

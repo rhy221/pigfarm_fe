@@ -1,46 +1,38 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import CageTable from "./CageTable";
-import AddNewCageModal from "./AddNewCageModal";
+import CageTypeTable from "./CageTypeTable";
+import AddNewCageTypeModal from "./AddNewCageTypeModal";
 
-export interface Cage {
+export interface CageType {
   stt: number;
-  chuong: string;
   loaiChuong: string;
-  trangThai: string;
+  moTa: string;
 }
 
-interface CageContentProps {
+interface CageTypeContentProps {
   isAdding?: boolean;
   setIsAdding?: (status: boolean) => void;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const CageContent: React.FC<CageContentProps> = ({
+const CageTypeContent: React.FC<CageTypeContentProps> = ({
   isAdding = false,
   setIsAdding,
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [cages, setCages] = useState<Cage[]>([
-    { stt: 1, chuong: "A001", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 2, chuong: "A002", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 3, chuong: "A003", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
+  const [cageTypes, setCageTypes] = useState<CageType[]>([
+    { stt: 1, loaiChuong: "Chuồng thịt", moTa: "Dùng để nuôi heo thịt" },
+    { stt: 2, loaiChuong: "Chuồng cách ly", moTa: "Dùng cho heo mới hoặc bệnh" },
   ]);
 
-  const [editedCages, setEditedCages] = useState<Cage[]>([...cages]);
+  const [editedCageTypes, setEditedCageTypes] = useState<CageType[]>([...cageTypes]);
+  useEffect(() => setEditedCageTypes([...cageTypes]), [cageTypes]);
 
-  useEffect(() => {
-    setEditedCages([...cages]);
-  }, [cages]);
-
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(cages.map(() => true));
-
-  useEffect(() => {
-    setCheckedRows(cages.map(() => true));
-  }, [cages]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>(cageTypes.map(() => true));
+  useEffect(() => setCheckedRows(cageTypes.map(() => true)), [cageTypes]);
 
   const allChecked = checkedRows.every(Boolean);
   const toggleAll = () => setCheckedRows(checkedRows.map(() => !allChecked));
@@ -50,23 +42,26 @@ const CageContent: React.FC<CageContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addCage = (chuong: string, loaiChuong: string) => {
-    setCages([...cages, { stt: cages.length + 1, chuong, loaiChuong, trangThai: "Chưa có heo" }]);
+  const addCageType = (loaiChuong: string, moTa: string) => {
+    setCageTypes([
+      ...cageTypes,
+      { stt: cageTypes.length + 1, loaiChuong, moTa },
+    ]);
   };
 
   const deleteSelected = () => {
-    const newCages = cages.filter((_, index) => !checkedRows[index]);
-    setCages(newCages.map((cage, idx) => ({ ...cage, stt: idx + 1 })));
+    const newTypes = cageTypes.filter((_, index) => !checkedRows[index]);
+    setCageTypes(newTypes.map((ct, idx) => ({ ...ct, stt: idx + 1 })));
     setShowDeleteConfirm(false);
   };
 
   return (
     <div className="flex gap-6 items-start relative">
       <div className="flex-1 min-w-0">
-        <CageTable
-          cages={cages}
-          editedCages={editedCages}
-          setEditedCages={setEditedCages}
+        <CageTypeTable
+          cageTypes={cageTypes}
+          editedCageTypes={editedCageTypes}
+          setEditedCageTypes={setEditedCageTypes}
           checkedRows={checkedRows}
           toggleRow={toggleRow}
           toggleAll={toggleAll}
@@ -76,7 +71,7 @@ const CageContent: React.FC<CageContentProps> = ({
 
       {isAdding && setIsAdding && (
         <div className="w-80 flex-shrink-0">
-          <AddNewCageModal onClose={() => setIsAdding(false)} onSave={addCage} />
+          <AddNewCageTypeModal onClose={() => setIsAdding(false)} onSave={addCageType} />
         </div>
       )}
 
@@ -84,7 +79,7 @@ const CageContent: React.FC<CageContentProps> = ({
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-96">
             <h3 className="text-lg font-bold mb-4">Xác nhận xoá</h3>
-            <p className="mb-6">Bạn có chắc muốn xoá các chuồng được chọn không?</p>
+            <p className="mb-6">Bạn có chắc muốn xoá các loại chuồng được chọn không?</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -106,4 +101,4 @@ const CageContent: React.FC<CageContentProps> = ({
   );
 };
 
-export default CageContent;
+export default CageTypeContent;

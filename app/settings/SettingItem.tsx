@@ -4,6 +4,18 @@ import React, { useState } from "react";
 import { ChevronDown, LucideIcon } from "lucide-react";
 import ExpandableContent from "./ExpandableContent";
 import CageContent from "./barn/CageContent";
+import CageTypeContent from "./barn_type/CageType"; 
+import PigBreedContent from "./pig_breed/PigBreedContent";
+import VaccineContent from "./vaccine/VaccineContent";
+import DiseaseContent from "./disease/DiseaseContent";  
+import AddNewDiseaseModal from "./disease/AddNewDiseaseModal";
+import { ca } from "zod/v4/locales";
+import MaterialTypeContent from "./material_type/MaterialTypeContent";
+import ChemicalTypeContent from "./chemical_type/ChemicalTypeContent";
+import SanitationMethodContent from "./sanitation_method/SanitationMethodContent";
+import WorkShiftContent from "./work/WorkShiftContent";
+import UserGroupContent from "./user_group/UserGroupContent";
+import UserListContent from "./users/UserListContent";
 
 interface SettingItemProps {
   IconComponent: LucideIcon;
@@ -38,8 +50,99 @@ const SettingItem: React.FC<SettingItemProps> = ({
             setShowDeleteConfirm={setShowDeleteConfirm}
           />
         );
+      case "LOAI_CHUONG":
+        return (
+          <CageTypeContent
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );
+      case "GIONG_HEO":
+        return (
+          <PigBreedContent
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );
+      case "VAC_XIN":
+        return (
+          <VaccineContent 
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm} 
+            setShowDeleteConfirm={setShowDeleteConfirm}         
+          />  
+        );
+      case "LOAI_BENH":
+        return (  
+          <DiseaseContent
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );  
+      case "VAT_TU":
+        return (
+          <MaterialTypeContent
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );
+      case "LOAI_HOA_CHAT":
+        return (
+          <ChemicalTypeContent
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );
+      case "HINH_THUC_VE_SINH":
+        return (
+          <SanitationMethodContent
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );
+      case "CA_LAM":
+        return (
+          <WorkShiftContent
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );   
+      case "NHOM_NGUOI_DUNG":
+        return (
+          <UserGroupContent
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm} 
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );
+      case "NGUOI_DUNG":
+        return (
+          <UserListContent
+            userGroups={["Admin", "User", "Guest"]} 
+            isAdding={isAdding} 
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );  
       default:
-        return <div>Nội dung chưa được định nghĩa cho {title}.</div>;
+        return <div>Chưa có thông tin về {title}.</div>;
     }
   };
 

@@ -2,43 +2,27 @@
 
 import React, { useState } from "react";
 
-interface AddNewCageModalProps {
+interface AddNewCageTypeModalProps {
   onClose: () => void;
-  onSave: (chuong: string, loaiChuong: string) => void;
+  onSave: (loaiChuong: string, moTa: string) => void;
 }
 
-const AddNewCageModal: React.FC<AddNewCageModalProps> = ({ onClose, onSave }) => {
-  const [chuong, setChuong] = useState("A004");
+const AddNewCageTypeModal: React.FC<AddNewCageTypeModalProps> = ({ onClose, onSave }) => {
   const [loaiChuong, setLoaiChuong] = useState("Chuồng thịt");
-
-  const cageTypes = ["Chuồng thịt", "Chuồng cách ly"];
+  const [moTa, setMoTa] = useState("Dùng để nuôi heo thịt");
 
   return (
     <div className="p-6 bg-white rounded-xl shadow-md border border-gray-200 w-full max-w-sm">
-      <h3 className="text-xl font-bold mb-5 text-[#53A88B]">Thêm chuồng trại</h3>
+      <h3 className="text-xl font-bold mb-5 text-[#53A88B]">Thêm loại chuồng</h3>
       <div className="grid grid-cols-1 gap-4 mb-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Chuồng</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Loại chuồng</label>
           <input
             type="text"
-            value={chuong}
-            onChange={(e) => setChuong(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Loại chuồng</label>
-          <select
             value={loaiChuong}
             onChange={(e) => setLoaiChuong(e.target.value)}
             className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
-            {cageTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+          />
         </div>
       </div>
       <div className="flex justify-end gap-3">
@@ -50,7 +34,7 @@ const AddNewCageModal: React.FC<AddNewCageModalProps> = ({ onClose, onSave }) =>
         </button>
         <button
           onClick={() => {
-            onSave(chuong, loaiChuong);
+            onSave(loaiChuong, moTa);
             onClose();
           }}
           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
@@ -62,4 +46,4 @@ const AddNewCageModal: React.FC<AddNewCageModalProps> = ({ onClose, onSave }) =>
   );
 };
 
-export default AddNewCageModal;
+export default AddNewCageTypeModal;

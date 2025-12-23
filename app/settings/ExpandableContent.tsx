@@ -8,6 +8,10 @@ interface ExpandableChildProps {
   setIsAdding: React.Dispatch<React.SetStateAction<boolean>>;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: React.Dispatch<React.SetStateAction<boolean>>;
+  cages: any[];
+  setCages: React.Dispatch<React.SetStateAction<any[]>>;
+  editedCages: any[];
+  setEditedCages: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 interface ExpandableContentProps {
@@ -20,9 +24,21 @@ const ExpandableContent: React.FC<ExpandableContentProps> = ({ contentType, chil
   const [isAdding, setIsAdding] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const [cages, setCages] = useState<any[]>([]);
+  const [editedCages, setEditedCages] = useState<any[]>([]);
+
   const renderChild = () => {
     if (isValidElement(children)) {
-      return cloneElement(children, { isAdding, setIsAdding, showDeleteConfirm, setShowDeleteConfirm });
+      return cloneElement(children, {
+        isAdding,
+        setIsAdding,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        cages,
+        setCages,
+        editedCages,
+        setEditedCages,
+      });
     }
     return null;
   };
@@ -32,7 +48,10 @@ const ExpandableContent: React.FC<ExpandableContentProps> = ({ contentType, chil
       <div className="flex justify-between items-center mb-5">
         <h2 className="text-xl font-semibold text-gray-900">{contentType}</h2>
         <div className="flex space-x-2">
-          <button className="flex items-center gap-1 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+          <button
+            onClick={() => setCages(editedCages)}
+            className="flex items-center gap-1 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          >
             <Save size={16} />
             <span>Lưu</span>
           </button>

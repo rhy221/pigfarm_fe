@@ -1,48 +1,40 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import CageTable from "./CageTable";
-import AddNewCageModal from "./AddNewCageModal";
+import React, { useState } from "react";
+import WorkShiftTable from "./WorkShiftTable";
+import AddNewWorkShiftModal from "./AddNewWorkShiftModal";
 
-export interface Cage {
+export interface WorkShift {
   stt: number;
-  chuong: string;
-  loaiChuong: string;
-  trangThai: string;
+  name: string;
+  startTime: string;
+  endTime: string;
 }
 
-interface CageContentProps {
+interface WorkShiftContentProps {
   isAdding?: boolean;
   setIsAdding?: (status: boolean) => void;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const CageContent: React.FC<CageContentProps> = ({
+const WorkShiftContent: React.FC<WorkShiftContentProps> = ({
   isAdding = false,
   setIsAdding,
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [cages, setCages] = useState<Cage[]>([
-    { stt: 1, chuong: "A001", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 2, chuong: "A002", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 3, chuong: "A003", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
+  const [shifts, setShifts] = useState<WorkShift[]>([
+    { stt: 1, name: "Ca sáng", startTime: "06:00", endTime: "14:00" },
+    { stt: 2, name: "Ca chiều", startTime: "14:00", endTime: "22:00" },
+    { stt: 3, name: "Ca đêm", startTime: "22:00", endTime: "06:00" },
   ]);
 
-  const [editedCages, setEditedCages] = useState<Cage[]>([...cages]);
-
-  useEffect(() => {
-    setEditedCages([...cages]);
-  }, [cages]);
-
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(cages.map(() => true));
-
-  useEffect(() => {
-    setCheckedRows(cages.map(() => true));
-  }, [cages]);
+  const [editedShifts, setEditedShifts] = useState<WorkShift[]>([...shifts]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>(shifts.map(() => true));
 
   const allChecked = checkedRows.every(Boolean);
+
   const toggleAll = () => setCheckedRows(checkedRows.map(() => !allChecked));
   const toggleRow = (index: number) => {
     const newChecked = [...checkedRows];
@@ -50,23 +42,23 @@ const CageContent: React.FC<CageContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addCage = (chuong: string, loaiChuong: string) => {
-    setCages([...cages, { stt: cages.length + 1, chuong, loaiChuong, trangThai: "Chưa có heo" }]);
+  const addShift = (name: string, startTime: string, endTime: string) => {
+    setShifts([...shifts, { stt: shifts.length + 1, name, startTime, endTime }]);
   };
 
   const deleteSelected = () => {
-    const newCages = cages.filter((_, index) => !checkedRows[index]);
-    setCages(newCages.map((cage, idx) => ({ ...cage, stt: idx + 1 })));
+    const newShifts = shifts.filter((_, index) => !checkedRows[index]);
+    setShifts(newShifts.map((s, idx) => ({ ...s, stt: idx + 1 })));
     setShowDeleteConfirm(false);
   };
 
   return (
     <div className="flex gap-6 items-start relative">
       <div className="flex-1 min-w-0">
-        <CageTable
-          cages={cages}
-          editedCages={editedCages}
-          setEditedCages={setEditedCages}
+        <WorkShiftTable
+          shifts={shifts}
+          editedShifts={editedShifts}
+          setEditedShifts={setEditedShifts}
           checkedRows={checkedRows}
           toggleRow={toggleRow}
           toggleAll={toggleAll}
@@ -75,8 +67,8 @@ const CageContent: React.FC<CageContentProps> = ({
       </div>
 
       {isAdding && setIsAdding && (
-        <div className="w-80 flex-shrink-0">
-          <AddNewCageModal onClose={() => setIsAdding(false)} onSave={addCage} />
+        <div className="w-96 flex-shrink-0">
+          <AddNewWorkShiftModal onClose={() => setIsAdding(false)} onSave={addShift} />
         </div>
       )}
 
@@ -84,7 +76,7 @@ const CageContent: React.FC<CageContentProps> = ({
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-96">
             <h3 className="text-lg font-bold mb-4">Xác nhận xoá</h3>
-            <p className="mb-6">Bạn có chắc muốn xoá các chuồng được chọn không?</p>
+            <p className="mb-6">Bạn có chắc muốn xoá các ca làm được chọn không?</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -106,4 +98,4 @@ const CageContent: React.FC<CageContentProps> = ({
   );
 };
 
-export default CageContent;
+export default WorkShiftContent;

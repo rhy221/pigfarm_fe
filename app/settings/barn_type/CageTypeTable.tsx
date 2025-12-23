@@ -1,22 +1,22 @@
 "use client";
 
 import React from "react";
-import { Cage } from "./CageContent";
+import { CageType } from "./CageType";
 
-interface CageTableProps {
-  cages: Cage[];
-  editedCages: Cage[];
-  setEditedCages: React.Dispatch<React.SetStateAction<Cage[]>>;
+interface CageTypeTableProps {
+  cageTypes: CageType[];
+  editedCageTypes: CageType[];
+  setEditedCageTypes: React.Dispatch<React.SetStateAction<CageType[]>>;
   checkedRows: boolean[];
   toggleRow: (index: number) => void;
   toggleAll: () => void;
   allChecked: boolean;
 }
 
-const CageTable: React.FC<CageTableProps> = ({
-  cages,
-  editedCages,
-  setEditedCages,
+const CageTypeTable: React.FC<CageTypeTableProps> = ({
+  cageTypes,
+  editedCageTypes,
+  setEditedCageTypes,
   checkedRows,
   toggleRow,
   toggleAll,
@@ -26,10 +26,8 @@ const CageTable: React.FC<CageTableProps> = ({
     <table className="min-w-full divide-y divide-gray-200 table-fixed">
       <thead className="bg-gray-50">
         <tr>
-          <th className="w-12 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">STT</th>
-          <th className="w-24 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Chuồng</th>
-          <th className="w-40 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Loại chuồng</th>
-          <th className="w-32 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Trạng thái</th>
+          <th className="w-12 px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">STT</th>
+          <th className="w-40 px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Loại chuồng</th>
           <th className="w-12 text-center">
             <div className="flex items-center justify-center">
               <input
@@ -40,30 +38,25 @@ const CageTable: React.FC<CageTableProps> = ({
               />
             </div>
           </th>
-
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-200">
-        {cages.map((row, index) => (
+        {cageTypes.map((row, index) => (
           <tr key={row.stt} className="hover:bg-gray-50 transition">
-            <td className="w-12 px-4 py-3 text-sm font-medium text-gray-900">{row.stt}</td>
-            <td className="w-24 px-4 py-3 text-sm text-gray-700">{row.chuong}</td>
-            <td className="w-40 px-4 py-3 text-sm text-gray-700">
-              <select
-                value={editedCages[index]?.loaiChuong || row.loaiChuong}
+            <td className="w-12 px-4 py-3 text-center text-sm font-medium text-gray-900">{row.stt}</td>
+            <td className="w-40 px-4 py-3 text-center text-sm text-gray-700">
+              <input
+                type="text"
+                value={editedCageTypes[index]?.loaiChuong || row.loaiChuong}
                 onChange={(e) => {
-                  const newEdited = [...editedCages];
+                  const newEdited = [...editedCageTypes];
                   if (!newEdited[index]) newEdited[index] = { ...row };
                   newEdited[index].loaiChuong = e.target.value;
-                  setEditedCages(newEdited);
+                  setEditedCageTypes(newEdited);
                 }}
-                className="w-full border border-gray-300 rounded-lg p-1 text-sm"
-              >
-                <option value="Chuồng thịt">Chuồng thịt</option>
-                <option value="Chuồng cách ly">Chuồng cách ly</option>
-              </select>
+                className="w-full border border-gray-300 rounded-lg p-1 text-sm text-center"
+              />
             </td>
-            <td className="w-32 px-4 py-3 text-sm text-gray-700">{row.trangThai}</td>
             <td className="w-12 text-center">
               <div className="flex items-center justify-center">
                 <input
@@ -81,4 +74,4 @@ const CageTable: React.FC<CageTableProps> = ({
   </div>
 );
 
-export default CageTable;
+export default CageTypeTable;

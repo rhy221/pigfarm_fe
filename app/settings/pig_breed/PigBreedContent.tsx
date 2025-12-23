@@ -1,48 +1,38 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import CageTable from "./CageTable";
-import AddNewCageModal from "./AddNewCageModal";
+import React, { useState } from "react";
+import PigBreedTable from "./PigBreedTable";
+import AddNewPigBreedModal from "./AddNewPigBreedModal";
 
-export interface Cage {
+export interface PigBreed {
   stt: number;
-  chuong: string;
-  loaiChuong: string;
-  trangThai: string;
+  name: string;
 }
 
-interface CageContentProps {
+interface PigBreedContentProps {
   isAdding?: boolean;
   setIsAdding?: (status: boolean) => void;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const CageContent: React.FC<CageContentProps> = ({
+const PigBreedContent: React.FC<PigBreedContentProps> = ({
   isAdding = false,
   setIsAdding,
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [cages, setCages] = useState<Cage[]>([
-    { stt: 1, chuong: "A001", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 2, chuong: "A002", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 3, chuong: "A003", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
+  const [pigBreeds, setPigBreeds] = useState<PigBreed[]>([
+    { stt: 1, name: "Landrace" },
+    { stt: 2, name: "Yorkshire" },
+    { stt: 3, name: "Duroc" },
   ]);
 
-  const [editedCages, setEditedCages] = useState<Cage[]>([...cages]);
-
-  useEffect(() => {
-    setEditedCages([...cages]);
-  }, [cages]);
-
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(cages.map(() => true));
-
-  useEffect(() => {
-    setCheckedRows(cages.map(() => true));
-  }, [cages]);
+  const [editedPigBreeds, setEditedPigBreeds] = useState<PigBreed[]>([...pigBreeds]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>(pigBreeds.map(() => true));
 
   const allChecked = checkedRows.every(Boolean);
+
   const toggleAll = () => setCheckedRows(checkedRows.map(() => !allChecked));
   const toggleRow = (index: number) => {
     const newChecked = [...checkedRows];
@@ -50,23 +40,23 @@ const CageContent: React.FC<CageContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addCage = (chuong: string, loaiChuong: string) => {
-    setCages([...cages, { stt: cages.length + 1, chuong, loaiChuong, trangThai: "Chưa có heo" }]);
+  const addPigBreed = (name: string) => {
+    setPigBreeds([...pigBreeds, { stt: pigBreeds.length + 1, name }]);
   };
 
   const deleteSelected = () => {
-    const newCages = cages.filter((_, index) => !checkedRows[index]);
-    setCages(newCages.map((cage, idx) => ({ ...cage, stt: idx + 1 })));
+    const newBreeds = pigBreeds.filter((_, index) => !checkedRows[index]);
+    setPigBreeds(newBreeds.map((b, idx) => ({ ...b, stt: idx + 1 })));
     setShowDeleteConfirm(false);
   };
 
   return (
     <div className="flex gap-6 items-start relative">
       <div className="flex-1 min-w-0">
-        <CageTable
-          cages={cages}
-          editedCages={editedCages}
-          setEditedCages={setEditedCages}
+        <PigBreedTable
+          pigBreeds={pigBreeds}
+          editedPigBreeds={editedPigBreeds}
+          setEditedPigBreeds={setEditedPigBreeds}
           checkedRows={checkedRows}
           toggleRow={toggleRow}
           toggleAll={toggleAll}
@@ -76,7 +66,7 @@ const CageContent: React.FC<CageContentProps> = ({
 
       {isAdding && setIsAdding && (
         <div className="w-80 flex-shrink-0">
-          <AddNewCageModal onClose={() => setIsAdding(false)} onSave={addCage} />
+          <AddNewPigBreedModal onClose={() => setIsAdding(false)} onSave={addPigBreed} />
         </div>
       )}
 
@@ -84,7 +74,7 @@ const CageContent: React.FC<CageContentProps> = ({
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-96">
             <h3 className="text-lg font-bold mb-4">Xác nhận xoá</h3>
-            <p className="mb-6">Bạn có chắc muốn xoá các chuồng được chọn không?</p>
+            <p className="mb-6">Bạn có chắc muốn xoá các giống heo được chọn không?</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -106,4 +96,4 @@ const CageContent: React.FC<CageContentProps> = ({
   );
 };
 
-export default CageContent;
+export default PigBreedContent;

@@ -35,7 +35,7 @@ const systemItems: SystemItem[] = [
   { title: 'Loại hóa chất', icon: FlaskConical, isExpandable: true, contentTypeKey: 'LOAI_HOA_CHAT' },
   { title: 'Hình thức vệ sinh', icon: SprayCan, isExpandable: true, contentTypeKey: 'HINH_THUC_VE_SINH' },
   { title: 'Ca làm', icon: Clock, isExpandable: true, contentTypeKey: 'CA_LAM' },
-  { title: 'Phân quyền người dùng', icon: UserCog, isExpandable: true, contentTypeKey: 'PHAN_QUYEN' },
+  { title: 'Nhóm người dùng', icon: UserCog, isExpandable: true, contentTypeKey: 'NHOM_NGUOI_DUNG' },
   { title: 'Người dùng', icon: Users, isExpandable: true, contentTypeKey: 'NGUOI_DUNG' },
 ];
 

@@ -1,46 +1,35 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import CageTable from "./CageTable";
-import AddNewCageModal from "./AddNewCageModal";
+import React, { useState } from "react";
+import DiseaseTable from "./DiseaseTable";
+import AddNewDiseaseModal from "./AddNewDiseaseModal";
 
-export interface Cage {
+export interface Disease {
   stt: number;
-  chuong: string;
-  loaiChuong: string;
-  trangThai: string;
+  name: string;
 }
 
-interface CageContentProps {
+interface DiseaseContentProps {
   isAdding?: boolean;
   setIsAdding?: (status: boolean) => void;
   showDeleteConfirm: boolean;
   setShowDeleteConfirm: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const CageContent: React.FC<CageContentProps> = ({
+const DiseaseContent: React.FC<DiseaseContentProps> = ({
   isAdding = false,
   setIsAdding,
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [cages, setCages] = useState<Cage[]>([
-    { stt: 1, chuong: "A001", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 2, chuong: "A002", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
-    { stt: 3, chuong: "A003", loaiChuong: "Chuồng thịt", trangThai: "Có heo" },
+  const [diseases, setDiseases] = useState<Disease[]>([
+    { stt: 1, name: "Bệnh A" },
+    { stt: 2, name: "Bệnh B" },
+    { stt: 3, name: "Bệnh C" },
   ]);
 
-  const [editedCages, setEditedCages] = useState<Cage[]>([...cages]);
-
-  useEffect(() => {
-    setEditedCages([...cages]);
-  }, [cages]);
-
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(cages.map(() => true));
-
-  useEffect(() => {
-    setCheckedRows(cages.map(() => true));
-  }, [cages]);
+  const [editedDiseases, setEditedDiseases] = useState<Disease[]>([...diseases]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>(diseases.map(() => true));
 
   const allChecked = checkedRows.every(Boolean);
   const toggleAll = () => setCheckedRows(checkedRows.map(() => !allChecked));
@@ -50,23 +39,23 @@ const CageContent: React.FC<CageContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addCage = (chuong: string, loaiChuong: string) => {
-    setCages([...cages, { stt: cages.length + 1, chuong, loaiChuong, trangThai: "Chưa có heo" }]);
+  const addDisease = (name: string) => {
+    setDiseases([...diseases, { stt: diseases.length + 1, name }]);
   };
 
   const deleteSelected = () => {
-    const newCages = cages.filter((_, index) => !checkedRows[index]);
-    setCages(newCages.map((cage, idx) => ({ ...cage, stt: idx + 1 })));
+    const newDiseases = diseases.filter((_, index) => !checkedRows[index]);
+    setDiseases(newDiseases.map((d, idx) => ({ ...d, stt: idx + 1 })));
     setShowDeleteConfirm(false);
   };
 
   return (
     <div className="flex gap-6 items-start relative">
       <div className="flex-1 min-w-0">
-        <CageTable
-          cages={cages}
-          editedCages={editedCages}
-          setEditedCages={setEditedCages}
+        <DiseaseTable
+          diseases={diseases}
+          editedDiseases={editedDiseases}
+          setEditedDiseases={setEditedDiseases}
           checkedRows={checkedRows}
           toggleRow={toggleRow}
           toggleAll={toggleAll}
@@ -76,7 +65,7 @@ const CageContent: React.FC<CageContentProps> = ({
 
       {isAdding && setIsAdding && (
         <div className="w-80 flex-shrink-0">
-          <AddNewCageModal onClose={() => setIsAdding(false)} onSave={addCage} />
+          <AddNewDiseaseModal onClose={() => setIsAdding(false)} onSave={addDisease} />
         </div>
       )}
 
@@ -84,7 +73,7 @@ const CageContent: React.FC<CageContentProps> = ({
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-96">
             <h3 className="text-lg font-bold mb-4">Xác nhận xoá</h3>
-            <p className="mb-6">Bạn có chắc muốn xoá các chuồng được chọn không?</p>
+            <p className="mb-6">Bạn có chắc muốn xoá các loại bệnh được chọn không?</p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
@@ -106,4 +95,4 @@ const CageContent: React.FC<CageContentProps> = ({
   );
 };
 
-export default CageContent;
+export default DiseaseContent;

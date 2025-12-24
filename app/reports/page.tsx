@@ -1,5 +1,11 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Warehouse, Syringe, Banknote, TrendingUp, PiggyBank } from "lucide-react";
+import {
+  Warehouse,
+  Syringe,
+  Banknote,
+  TrendingUp,
+  PiggyBank,
+} from "lucide-react";
 import Link from "next/link";
 
 const reports = [
@@ -60,7 +66,9 @@ export default function ReportsPage() {
                   </div>
                   <div className="text-center space-y-1">
                     <h3 className="font-semibold text-lg">{report.title}</h3>
-                    <p className="text-sm text-gray-500">{report.description}</p>
+                    <p className="text-sm text-gray-500">
+                      {report.description}
+                    </p>
                   </div>
                 </CardContent>
               </Card>

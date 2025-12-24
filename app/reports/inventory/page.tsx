@@ -23,7 +23,14 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
 
 // Mock data for chart
 const chartData = [
@@ -91,7 +98,11 @@ export default function InventoryReportPage() {
 
   // Filter logic
   const filteredData = mockTableData.filter((item) => {
-    if (selectedType !== "all" && !item.vatTu.toLowerCase().includes(selectedType)) return false;
+    if (
+      selectedType !== "all" &&
+      !item.vatTu.toLowerCase().includes(selectedType)
+    )
+      return false;
     return true;
   });
 
@@ -103,7 +114,10 @@ export default function InventoryReportPage() {
           <h1 className="text-2xl font-bold text-[#53A88B]">Báo cáo Tồn kho</h1>
           <p className="text-gray-600 mt-1">Thống kê vật tư và nguyên liệu</p>
         </div>
-        <Button onClick={handleExportPDF} className="gap-2 bg-[#53A88B] hover:bg-[#458F79]">
+        <Button
+          onClick={handleExportPDF}
+          className="gap-2 bg-[#53A88B] hover:bg-[#458F79]"
+        >
           <FileDown className="w-4 h-4" />
           Xuất PDF
         </Button>
@@ -142,15 +156,14 @@ export default function InventoryReportPage() {
 
       {/* Chart */}
       <div className="rounded-lg border bg-white p-6">
-        <h3 className="text-lg font-semibold mb-4">Biến động tồn kho 6 tháng</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          Biến động tồn kho 6 tháng
+        </h3>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="month" 
-                fontSize={12}
-              />
+              <XAxis dataKey="month" fontSize={12} />
               <YAxis fontSize={12} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Line
@@ -171,7 +184,9 @@ export default function InventoryReportPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead className="font-semibold">Vật tư / Nguyên liệu</TableHead>
+              <TableHead className="font-semibold">
+                Vật tư / Nguyên liệu
+              </TableHead>
               <TableHead className="font-semibold">Tồn đầu</TableHead>
               <TableHead className="font-semibold">Phát sinh</TableHead>
               <TableHead className="font-semibold">Tồn cuối</TableHead>

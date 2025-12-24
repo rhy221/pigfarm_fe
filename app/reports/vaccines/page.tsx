@@ -85,7 +85,10 @@ export default function VaccinesReportPage() {
 
   const totalCost = filteredData.reduce((sum, item) => sum + item.chiPhi, 0);
   const totalPigs = filteredData.reduce((sum, item) => sum + item.soHeoTiem, 0);
-  const totalSick = filteredData.reduce((sum, item) => sum + item.soHeoMacBenh, 0);
+  const totalSick = filteredData.reduce(
+    (sum, item) => sum + item.soHeoMacBenh,
+    0
+  );
   const avgEffectiveness =
     filteredData.reduce((sum, item) => sum + item.tiLeKhoi, 0) /
     filteredData.length;
@@ -228,9 +231,11 @@ export default function VaccinesReportPage() {
           <p>
             • Vắc-xin có hiệu quả cao nhất:{" "}
             <span className="font-semibold">
-              {filteredData.reduce((max, item) =>
-                item.tiLeKhoi > max.tiLeKhoi ? item : max
-              ).tenVaccine}{" "}
+              {
+                filteredData.reduce((max, item) =>
+                  item.tiLeKhoi > max.tiLeKhoi ? item : max
+                ).tenVaccine
+              }{" "}
               (
               {filteredData
                 .reduce((max, item) =>

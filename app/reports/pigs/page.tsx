@@ -45,23 +45,127 @@ const chartData = [
 
 // Mock data for herd table (Đàn heo)
 const herdTableData = [
-  { id: 1, stt: 1, chuong: "A001", soHeoKhoe: 50, soHeoBinh: 50, soHeoChết: 50, soHeoXuatChuong: 50 },
-  { id: 2, stt: 2, chuong: "A002", soHeoKhoe: 45, soHeoBinh: 30, soHeoChết: 10, soHeoXuatChuong: 25 },
-  { id: 3, stt: 3, chuong: "B001", soHeoKhoe: 60, soHeoBinh: 20, soHeoChết: 5, soHeoXuatChuong: 35 },
-  { id: 4, stt: 4, chuong: "B002", soHeoKhoe: 55, soHeoBinh: 25, soHeoChết: 8, soHeoXuatChuong: 40 },
-  { id: 5, stt: 5, chuong: "C001", soHeoKhoe: 48, soHeoBinh: 35, soHeoChết: 12, soHeoXuatChuong: 30 },
+  {
+    id: 1,
+    stt: 1,
+    chuong: "A001",
+    soHeoKhoe: 50,
+    soHeoBinh: 50,
+    soHeoChết: 50,
+    soHeoXuatChuong: 50,
+  },
+  {
+    id: 2,
+    stt: 2,
+    chuong: "A002",
+    soHeoKhoe: 45,
+    soHeoBinh: 30,
+    soHeoChết: 10,
+    soHeoXuatChuong: 25,
+  },
+  {
+    id: 3,
+    stt: 3,
+    chuong: "B001",
+    soHeoKhoe: 60,
+    soHeoBinh: 20,
+    soHeoChết: 5,
+    soHeoXuatChuong: 35,
+  },
+  {
+    id: 4,
+    stt: 4,
+    chuong: "B002",
+    soHeoKhoe: 55,
+    soHeoBinh: 25,
+    soHeoChết: 8,
+    soHeoXuatChuong: 40,
+  },
+  {
+    id: 5,
+    stt: 5,
+    chuong: "C001",
+    soHeoKhoe: 48,
+    soHeoBinh: 35,
+    soHeoChết: 12,
+    soHeoXuatChuong: 30,
+  },
 ];
 
 // Mock data for pigs in pens table (Heo tại chuồng)
 const pigsInPensData = [
-  { id: 1, stt: 1, chuong: "A1", lua: "L001", maSo: "H001", trongLuong: 85.5, trangThai: "Khỏe mạnh" },
-  { id: 2, stt: 2, chuong: "A1", lua: "L001", maSo: "H002", trongLuong: 82.3, trangThai: "Khỏe mạnh" },
-  { id: 3, stt: 3, chuong: "A2", lua: "L002", maSo: "H003", trongLuong: 78.9, trangThai: "Cần theo dõi" },
-  { id: 4, stt: 4, chuong: "A2", lua: "L002", maSo: "H004", trongLuong: 90.2, trangThai: "Khỏe mạnh" },
-  { id: 5, stt: 5, chuong: "B1", lua: "L003", maSo: "H005", trongLuong: 88.7, trangThai: "Khỏe mạnh" },
-  { id: 6, stt: 6, chuong: "B1", lua: "L003", maSo: "H006", trongLuong: 75.5, trangThai: "Cần theo dõi" },
-  { id: 7, stt: 7, chuong: "B2", lua: "L004", maSo: "H007", trongLuong: 92.1, trangThai: "Khỏe mạnh" },
-  { id: 8, stt: 8, chuong: "B2", lua: "L004", maSo: "H008", trongLuong: 86.4, trangThai: "Khỏe mạnh" },
+  {
+    id: 1,
+    stt: 1,
+    chuong: "A1",
+    lua: "L001",
+    maSo: "H001",
+    trongLuong: 85.5,
+    trangThai: "Khỏe mạnh",
+  },
+  {
+    id: 2,
+    stt: 2,
+    chuong: "A1",
+    lua: "L001",
+    maSo: "H002",
+    trongLuong: 82.3,
+    trangThai: "Khỏe mạnh",
+  },
+  {
+    id: 3,
+    stt: 3,
+    chuong: "A2",
+    lua: "L002",
+    maSo: "H003",
+    trongLuong: 78.9,
+    trangThai: "Cần theo dõi",
+  },
+  {
+    id: 4,
+    stt: 4,
+    chuong: "A2",
+    lua: "L002",
+    maSo: "H004",
+    trongLuong: 90.2,
+    trangThai: "Khỏe mạnh",
+  },
+  {
+    id: 5,
+    stt: 5,
+    chuong: "B1",
+    lua: "L003",
+    maSo: "H005",
+    trongLuong: 88.7,
+    trangThai: "Khỏe mạnh",
+  },
+  {
+    id: 6,
+    stt: 6,
+    chuong: "B1",
+    lua: "L003",
+    maSo: "H006",
+    trongLuong: 75.5,
+    trangThai: "Cần theo dõi",
+  },
+  {
+    id: 7,
+    stt: 7,
+    chuong: "B2",
+    lua: "L004",
+    maSo: "H007",
+    trongLuong: 92.1,
+    trangThai: "Khỏe mạnh",
+  },
+  {
+    id: 8,
+    stt: 8,
+    chuong: "B2",
+    lua: "L004",
+    maSo: "H008",
+    trongLuong: 86.4,
+    trangThai: "Khỏe mạnh",
+  },
 ];
 
 const chartConfig = {
@@ -71,7 +175,9 @@ const chartConfig = {
 };
 
 export default function PigReportsPage() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    new Date()
+  );
   const [selectedPen, setSelectedPen] = useState("all");
   const [selectedBatch, setSelectedBatch] = useState("all");
   const [activeTab, setActiveTab] = useState("herd");
@@ -94,14 +200,15 @@ export default function PigReportsPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#53A88B]">
-            Báo cáo Heo
-          </h1>
+          <h1 className="text-2xl font-bold text-[#53A88B]">Báo cáo Heo</h1>
           <p className="text-gray-600 mt-1">
             Thống kê tổng quan và chi tiết về đàn heo
           </p>
         </div>
-        <Button onClick={handleExportPDF} className="gap-2 bg-[#53A88B] hover:bg-[#458F79]">
+        <Button
+          onClick={handleExportPDF}
+          className="gap-2 bg-[#53A88B] hover:bg-[#458F79]"
+        >
           <FileDown className="w-4 h-4" />
           Xuất PDF
         </Button>
@@ -136,10 +243,14 @@ export default function PigReportsPage() {
             />
           </PopoverContent>
         </Popover>
-        <Button 
+        <Button
           onClick={() => {
             if (selectedDate) {
-              alert(`Xem báo cáo ngày: ${format(selectedDate, "dd/MM/yyyy", { locale: vi })}`);
+              alert(
+                `Xem báo cáo ngày: ${format(selectedDate, "dd/MM/yyyy", {
+                  locale: vi,
+                })}`
+              );
               // TODO: Gọi API hoặc filter dữ liệu theo ngày đã chọn
             }
           }}
@@ -153,10 +264,16 @@ export default function PigReportsPage() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="herd" className="data-[state=active]:bg-[#53A88B] data-[state=active]:text-white">
+          <TabsTrigger
+            value="herd"
+            className="data-[state=active]:bg-[#53A88B] data-[state=active]:text-white"
+          >
             Đàn heo
           </TabsTrigger>
-          <TabsTrigger value="pens" className="data-[state=active]:bg-[#53A88B] data-[state=active]:text-white">
+          <TabsTrigger
+            value="pens"
+            className="data-[state=active]:bg-[#53A88B] data-[state=active]:text-white"
+          >
             Heo tại chuồng
           </TabsTrigger>
         </TabsList>
@@ -165,10 +282,15 @@ export default function PigReportsPage() {
         <TabsContent value="herd" className="space-y-6 mt-6">
           {/* Chart Section */}
           <div className="rounded-lg border bg-white p-6">
-            <h3 className="text-lg font-semibold mb-4">Phân bố tình trạng đàn heo</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              Phân bố tình trạng đàn heo
+            </h3>
             <div className="flex flex-col lg:flex-row items-center gap-8">
               <div className="w-full lg:w-1/2">
-                <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <ChartContainer
+                  config={chartConfig}
+                  className="h-[250px] w-full"
+                >
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -220,12 +342,24 @@ export default function PigReportsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <TableHead className="font-bold text-[#53A88B]">STT</TableHead>
-                  <TableHead className="font-bold text-[#53A88B]">Chuồng</TableHead>
-                  <TableHead className="font-bold text-[#53A88B]">Số heo khỏe</TableHead>
-                  <TableHead className="font-bold text-[#53A88B]">Số heo bệnh</TableHead>
-                  <TableHead className="font-bold text-[#53A88B]">Số heo chết</TableHead>
-                  <TableHead className="font-bold text-[#53A88B]">Số heo đã xuất chuồng</TableHead>
+                  <TableHead className="font-bold text-[#53A88B]">
+                    STT
+                  </TableHead>
+                  <TableHead className="font-bold text-[#53A88B]">
+                    Chuồng
+                  </TableHead>
+                  <TableHead className="font-bold text-[#53A88B]">
+                    Số heo khỏe
+                  </TableHead>
+                  <TableHead className="font-bold text-[#53A88B]">
+                    Số heo bệnh
+                  </TableHead>
+                  <TableHead className="font-bold text-[#53A88B]">
+                    Số heo chết
+                  </TableHead>
+                  <TableHead className="font-bold text-[#53A88B]">
+                    Số heo đã xuất chuồng
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -234,16 +368,24 @@ export default function PigReportsPage() {
                     <TableCell>{row.stt}</TableCell>
                     <TableCell className="font-medium">{row.chuong}</TableCell>
                     <TableCell>
-                      <span className="text-green-600 font-semibold">{row.soHeoKhoe}</span>
+                      <span className="text-green-600 font-semibold">
+                        {row.soHeoKhoe}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-yellow-600 font-semibold">{row.soHeoBinh}</span>
+                      <span className="text-yellow-600 font-semibold">
+                        {row.soHeoBinh}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-red-600 font-semibold">{row.soHeoChết}</span>
+                      <span className="text-red-600 font-semibold">
+                        {row.soHeoChết}
+                      </span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-blue-600 font-semibold">{row.soHeoXuatChuong}</span>
+                      <span className="text-blue-600 font-semibold">
+                        {row.soHeoXuatChuong}
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -277,7 +419,10 @@ export default function PigReportsPage() {
             <div className="p-6 bg-blue-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Đã xuất chuồng</p>
               <p className="text-3xl font-bold">
-                {herdTableData.reduce((sum, item) => sum + item.soHeoXuatChuong, 0)}
+                {herdTableData.reduce(
+                  (sum, item) => sum + item.soHeoXuatChuong,
+                  0
+                )}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
@@ -324,7 +469,9 @@ export default function PigReportsPage() {
                   <TableHead className="font-semibold">Chuồng</TableHead>
                   <TableHead className="font-semibold">Lứa</TableHead>
                   <TableHead className="font-semibold">Mã số</TableHead>
-                  <TableHead className="font-semibold">Trọng lượng (kg)</TableHead>
+                  <TableHead className="font-semibold">
+                    Trọng lượng (kg)
+                  </TableHead>
                   <TableHead className="font-semibold">Trạng thái</TableHead>
                 </TableRow>
               </TableHeader>
@@ -338,7 +485,11 @@ export default function PigReportsPage() {
                     <TableCell>{row.trongLuong}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={row.trangThai === "Khỏe mạnh" ? "default" : "secondary"}
+                        variant={
+                          row.trangThai === "Khỏe mạnh"
+                            ? "default"
+                            : "secondary"
+                        }
                         className={
                           row.trangThai === "Khỏe mạnh"
                             ? "bg-green-100 text-green-800 hover:bg-green-200"
@@ -358,24 +509,40 @@ export default function PigReportsPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="text-sm text-gray-600">Tổng số heo</p>
-              <p className="text-2xl font-bold text-[#53A88B]">{filteredPigsData.length}</p>
+              <p className="text-2xl font-bold text-[#53A88B]">
+                {filteredPigsData.length}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Trọng lượng trung bình</p>
               <p className="text-2xl font-bold text-[#53A88B]">
-                {(filteredPigsData.reduce((sum, item) => sum + item.trongLuong, 0) / filteredPigsData.length).toFixed(1)} kg
+                {(
+                  filteredPigsData.reduce(
+                    (sum, item) => sum + item.trongLuong,
+                    0
+                  ) / filteredPigsData.length
+                ).toFixed(1)}{" "}
+                kg
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Khỏe mạnh</p>
               <p className="text-2xl font-bold text-green-600">
-                {filteredPigsData.filter((item) => item.trangThai === "Khỏe mạnh").length}
+                {
+                  filteredPigsData.filter(
+                    (item) => item.trangThai === "Khỏe mạnh"
+                  ).length
+                }
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Cần theo dõi</p>
               <p className="text-2xl font-bold text-yellow-600">
-                {filteredPigsData.filter((item) => item.trangThai === "Cần theo dõi").length}
+                {
+                  filteredPigsData.filter(
+                    (item) => item.trangThai === "Cần theo dõi"
+                  ).length
+                }
               </p>
             </div>
           </div>

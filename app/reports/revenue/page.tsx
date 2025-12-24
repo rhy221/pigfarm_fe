@@ -28,7 +28,12 @@ const mockData = {
   ],
   expenses: [
     { id: 4, item: "Chi phí thức ăn", amount: 280000000, type: "expense" },
-    { id: 5, item: "Chi phí thuốc, vắc-xin", amount: 45000000, type: "expense" },
+    {
+      id: 5,
+      item: "Chi phí thuốc, vắc-xin",
+      amount: 45000000,
+      type: "expense",
+    },
     { id: 6, item: "Chi phí nhân công", amount: 120000000, type: "expense" },
     { id: 7, item: "Chi phí điện nước", amount: 30000000, type: "expense" },
     { id: 8, item: "Chi phí bảo trì", amount: 20000000, type: "expense" },
@@ -63,9 +68,7 @@ export default function RevenueReportPage() {
           <h1 className="text-2xl font-bold text-[#53A88B]">
             Báo cáo Doanh thu
           </h1>
-          <p className="text-gray-600 mt-1">
-            Tổng hợp thu chi và lợi nhuận
-          </p>
+          <p className="text-gray-600 mt-1">Tổng hợp thu chi và lợi nhuận</p>
         </div>
         <Button
           onClick={handleExportPDF}
@@ -118,9 +121,7 @@ export default function RevenueReportPage() {
             <p className="text-sm opacity-90">Tổng doanh thu</p>
             <TrendingUp className="w-5 h-5" />
           </div>
-          <p className="text-3xl font-bold">
-            {totalRevenue.toLocaleString()}
-          </p>
+          <p className="text-3xl font-bold">{totalRevenue.toLocaleString()}</p>
           <p className="text-xs opacity-75 mt-1">VNĐ</p>
         </div>
 
@@ -129,9 +130,7 @@ export default function RevenueReportPage() {
             <p className="text-sm opacity-90">Tổng chi phí</p>
             <TrendingDown className="w-5 h-5" />
           </div>
-          <p className="text-3xl font-bold">
-            {totalExpense.toLocaleString()}
-          </p>
+          <p className="text-3xl font-bold">{totalExpense.toLocaleString()}</p>
           <p className="text-xs opacity-75 mt-1">VNĐ</p>
         </div>
 
@@ -243,9 +242,7 @@ export default function RevenueReportPage() {
             <h3 className="text-2xl font-bold text-[#53A88B] mb-2">
               LỢI NHUẬN RÒNG
             </h3>
-            <p className="text-gray-600">
-              Doanh thu - Chi phí = Lợi nhuận
-            </p>
+            <p className="text-gray-600">Doanh thu - Chi phí = Lợi nhuận</p>
           </div>
           <div className="text-right">
             <p className="text-4xl font-bold text-[#53A88B]">
@@ -259,15 +256,19 @@ export default function RevenueReportPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
             <div>
               <span className="font-medium">Chi phí lớn nhất:</span>{" "}
-              {mockData.expenses.reduce((max, item) =>
-                item.amount > max.amount ? item : max
-              ).item}
+              {
+                mockData.expenses.reduce((max, item) =>
+                  item.amount > max.amount ? item : max
+                ).item
+              }
             </div>
             <div>
               <span className="font-medium">Nguồn thu chính:</span>{" "}
-              {mockData.revenues.reduce((max, item) =>
-                item.amount > max.amount ? item : max
-              ).item}
+              {
+                mockData.revenues.reduce((max, item) =>
+                  item.amount > max.amount ? item : max
+                ).item
+              }
             </div>
             <div>
               <span className="font-medium">ROI:</span>{" "}

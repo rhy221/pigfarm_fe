@@ -36,24 +36,23 @@ const CageTable: React.FC<CageTableProps> = ({
   };
 
   return (
-    <div className="overflow-x-auto border border-[var(--color-border)] rounded-lg bg-[var(--color-card)] shadow-sm">
-      <table className="min-w-full divide-y divide-[var(--color-border)] table-fixed">
-        {/* HEADER */}
-        <thead className="bg-[var(--color-muted)] text-[var(--color-secondary-foreground)]">
-          <tr>
-            <th className="w-12 px-4 py-3 text-left text-xs font-semibold uppercase">
+    <div className="overflow-x-auto border border-[var(--color-border)] rounded-lg bg-[var(--color-card)] shadow-sm max-w-4xl mx-auto">
+      <table className="w-full table-fixed text-sm"> 
+        <thead className="bg-[var(--color-muted)]">
+          <tr className="divide-x divide-[var(--color-border)]/50">
+            <th className="w-[80px] px-4 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)] uppercase">
               STT
             </th>
-            <th className="w-24 px-4 py-3 text-left text-xs font-semibold uppercase">
+            <th className="w-[150px] px-4 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
               Chuồng
             </th>
-            <th className="w-40 px-4 py-3 text-left text-xs font-semibold uppercase">
+            <th className="w-[150px] px-4 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
               Loại chuồng
             </th>
-            <th className="w-32 px-4 py-3 text-left text-xs font-semibold uppercase">
+            <th className="w-[150px] px-4 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
               Trạng thái
             </th>
-            <th className="w-12 text-center">
+            <th className="w-[80px] text-center">
               <input
                 type="checkbox"
                 checked={allChecked}
@@ -64,7 +63,6 @@ const CageTable: React.FC<CageTableProps> = ({
           </tr>
         </thead>
 
-        {/* BODY */}
         <tbody className="divide-y divide-[var(--color-border)]">
           {cages.map((row, index) => {
             const current = editedCages[index] || row;
@@ -77,16 +75,16 @@ const CageTable: React.FC<CageTableProps> = ({
                 key={row.stt}
                 className="hover:bg-[var(--color-muted)] transition-colors"
               >
-                <td className="px-4 py-3 text-sm font-medium text-[var(--color-foreground)]">
+                <td className="px-4 py-3 text-sm text-center font-medium text-[var(--color-foreground)]">
                   {row.stt}
                 </td>
 
-                <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
+                <td className="px-4 py-3 text-sm text-center text-[var(--color-foreground)]">
                   {row.chuong}
                 </td>
 
                 {/* Loại chuồng */}
-                <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
+                <td className="px-4 py-3 text-sm text-center text-[var(--color-foreground)]">
                   {isEditing ? (
                     <select
                       autoFocus
@@ -96,7 +94,7 @@ const CageTable: React.FC<CageTableProps> = ({
                       }
                       onBlur={() => setEditingCell(null)}
                       className="w-full border border-[var(--color-border)] rounded-md px-2 py-1 text-sm
-                                 bg-[var(--color-card)] text-[var(--color-foreground)]
+                                 bg-[var(--color-card)] text-center text-[var(--color-foreground)]
                                  focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     >
                       <option value="Chuồng thịt">Chuồng thịt</option>
@@ -118,7 +116,7 @@ const CageTable: React.FC<CageTableProps> = ({
                   )}
                 </td>
 
-                <td className="px-4 py-3 text-sm text-[var(--color-foreground)]">
+                <td className="px-4 py-3 text-sm text-center text-[var(--color-foreground)]">
                   {row.trangThai}
                 </td>
 

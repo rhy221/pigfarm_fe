@@ -44,16 +44,16 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
       <table className="w-full table-fixed text-sm"> 
         <thead className="bg-[var(--color-muted)]">
           <tr className="divide-x divide-[var(--color-border)]/50">
-            <th className="w-[80px] px-3 py-3 text-center text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+            <th className="w-[80px] px-3 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)] uppercase">
               STT
             </th>
-            <th className="px-3 py-3 text-center text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
               Ca làm
             </th>
-            <th className="w-[150px] px-3 py-3 text-center text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
               Giờ bắt đầu
             </th>
-            <th className="w-[150px] px-3 py-3 text-center text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
               Giờ kết thúc
             </th>
             <th className="w-[80px] px-3 py-3 text-center">

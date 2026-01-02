@@ -47,7 +47,7 @@ const ExpandableContent: React.FC<ExpandableContentProps> = ({ contentType, chil
     <div className="w-full bg-[var(--color-card)] p-6 rounded-b-xl border border-t-0 border-[var(--color-border)] shadow-sm transition-shadow hover:shadow-lg">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
-        <h2 className="text-xl font-semibold text-[var(--color-card-foreground)]">{contentType}</h2>
+        <h2 className="text-x italic text-[var(--color-card-foreground)]">Danh sách {contentType.toLowerCase()}</h2>
         <div className="flex flex-wrap gap-2">
           {/* Lưu */}
           <button

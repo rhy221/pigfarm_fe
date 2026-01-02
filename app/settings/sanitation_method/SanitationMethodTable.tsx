@@ -25,17 +25,17 @@ const SanitationMethodTable: React.FC<SanitationMethodTableProps> = ({
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto border border-[var(--color-border)] rounded-lg bg-[var(--color-card)] shadow-sm">
-      <table className="min-w-full divide-y divide-[var(--color-border)] table-auto">
+    <div className="overflow-x-auto border border-[var(--color-border)] rounded-lg bg-[var(--color-card)] shadow-sm max-w-4xl mx-auto">
+      <table className="w-full table-fixed text-sm"> 
         <thead className="bg-[var(--color-muted)]">
-          <tr>
-            <th className="w-16 px-4 py-3 text-center text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+          <tr className="divide-x divide-[var(--color-border)]/50">
+            <th className="w-[80px] px-4 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)] uppercase">
               STT
             </th>
-            <th className="w-64 px-4 py-3 text-center text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+            <th className="w-[150px] px-4 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
               Hình thức vệ sinh
             </th>
-            <th className="w-16 text-center">
+            <th className="w-[80px] text-center">
               <div className="flex items-center justify-center">
                 <input
                   type="checkbox"

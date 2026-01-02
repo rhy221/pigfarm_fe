@@ -44,28 +44,40 @@ const ExpandableContent: React.FC<ExpandableContentProps> = ({ contentType, chil
   };
 
   return (
-    <div className="w-full bg-white p-6 rounded-b-xl border border-t-0 border-gray-200 shadow-sm transition-shadow hover:shadow-lg">
-      <div className="flex justify-between items-center mb-5">
-        <h2 className="text-xl font-semibold text-gray-900">{contentType}</h2>
-        <div className="flex space-x-2">
+    <div className="w-full bg-[var(--color-card)] p-6 rounded-b-xl border border-t-0 border-[var(--color-border)] shadow-sm transition-shadow hover:shadow-lg">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
+        <h2 className="text-xl font-semibold text-[var(--color-card-foreground)]">{contentType}</h2>
+        <div className="flex flex-wrap gap-2">
+          {/* Lưu */}
           <button
             onClick={() => setCages(editedCages)}
-            className="flex items-center gap-1 px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+            className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg
+                      bg-green-700 text-white
+                      hover:bg-green-800 transition"
           >
             <Save size={16} />
             <span>Lưu</span>
           </button>
+
+          {/* Thêm */}
           <button
             onClick={() => setIsAdding(true)}
             disabled={isAdding}
-            className="flex items-center gap-1 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition"
+            className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg
+                      bg-blue-700 text-white
+                      hover:bg-blue-800 disabled:opacity-50 transition"
           >
             <Plus size={16} />
             <span>Thêm</span>
           </button>
+
+          {/* Xoá */}
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-1 px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+            className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg
+                      bg-red-700 text-white
+                      hover:bg-red-800 transition"
           >
             <Trash2 size={16} />
             <span>Xoá</span>
@@ -73,10 +85,13 @@ const ExpandableContent: React.FC<ExpandableContentProps> = ({ contentType, chil
         </div>
       </div>
 
-      <div className="flex gap-6 transition-all duration-300">
-        <div className={isAdding ? "w-3/5" : "w-full"}>{renderChild()}</div>
+      {/* Content Area */}
+      <div className="flex flex-col lg:flex-row gap-6 transition-all duration-300">
+        <div className={isAdding ? "lg:w-3/5 w-full" : "w-full"}>{renderChild()}</div>
         {isAdding && addForm && (
-          <div className="w-2/5 bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-inner">{addForm}</div>
+          <div className="lg:w-2/5 w-full bg-[var(--color-muted)] p-4 rounded-lg border border-[var(--color-border)] shadow-inner">
+            {addForm}
+          </div>
         )}
       </div>
     </div>

@@ -7,8 +7,8 @@ export const metadata = {
 
 const SettingsPage: React.FC = () => {
   return (
-    <div className="flex-1 p-8 bg-white min-h-screen text-gray-900"> 
-        <SettingsList />
+    <div className="flex-1 p-8 min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
+      <SettingsList />
     </div>
   );
 };

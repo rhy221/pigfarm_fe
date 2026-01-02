@@ -22,33 +22,47 @@ const CageTable: React.FC<CageTableProps> = ({
   toggleAll,
   allChecked,
 }) => (
-  <div className="overflow-x-auto border border-gray-200 rounded-lg bg-white shadow-sm">
-    <table className="min-w-full divide-y divide-gray-200 table-fixed">
-      <thead className="bg-gray-50">
+  <div className="overflow-x-auto border border-[var(--color-border)] rounded-lg bg-[var(--color-card)] shadow-sm">
+    <table className="min-w-full divide-y divide-[var(--color-border)] table-fixed">
+      <thead className="bg-[var(--color-muted)]">
         <tr>
-          <th className="w-12 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">STT</th>
-          <th className="w-24 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Chuồng</th>
-          <th className="w-40 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Loại chuồng</th>
-          <th className="w-32 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Trạng thái</th>
+          <th className="w-12 px-4 py-3 text-left text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+            STT
+          </th>
+          <th className="w-24 px-4 py-3 text-left text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+            Chuồng
+          </th>
+          <th className="w-40 px-4 py-3 text-left text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+            Loại chuồng
+          </th>
+          <th className="w-32 px-4 py-3 text-left text-xs font-semibold text-[var(--color-secondary-foreground)] uppercase">
+            Trạng thái
+          </th>
           <th className="w-12 text-center">
             <div className="flex items-center justify-center">
               <input
                 type="checkbox"
                 checked={allChecked}
                 onChange={toggleAll}
-                className="form-checkbox h-4 w-4 text-green-600"
+                className="form-checkbox h-4 w-4 text-[var(--color-primary)]"
               />
             </div>
           </th>
-
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-200">
+      <tbody className="divide-y divide-[var(--color-border)]">
         {cages.map((row, index) => (
-          <tr key={row.stt} className="hover:bg-gray-50 transition">
-            <td className="w-12 px-4 py-3 text-sm font-medium text-gray-900">{row.stt}</td>
-            <td className="w-24 px-4 py-3 text-sm text-gray-700">{row.chuong}</td>
-            <td className="w-40 px-4 py-3 text-sm text-gray-700">
+          <tr
+            key={row.stt}
+            className="hover:bg-[var(--color-muted)] transition-colors"
+          >
+            <td className="w-12 px-4 py-3 text-sm font-medium text-[var(--color-foreground)]">
+              {row.stt}
+            </td>
+            <td className="w-24 px-4 py-3 text-sm text-[var(--color-foreground)]">
+              {row.chuong}
+            </td>
+            <td className="w-40 px-4 py-3 text-sm text-[var(--color-foreground)]">
               <select
                 value={editedCages[index]?.loaiChuong || row.loaiChuong}
                 onChange={(e) => {
@@ -57,20 +71,22 @@ const CageTable: React.FC<CageTableProps> = ({
                   newEdited[index].loaiChuong = e.target.value;
                   setEditedCages(newEdited);
                 }}
-                className="w-full border border-gray-300 rounded-lg p-1 text-sm"
+                className="w-full border border-[var(--color-border)] rounded-lg p-1 text-sm bg-[var(--color-card)] text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               >
                 <option value="Chuồng thịt">Chuồng thịt</option>
                 <option value="Chuồng cách ly">Chuồng cách ly</option>
               </select>
             </td>
-            <td className="w-32 px-4 py-3 text-sm text-gray-700">{row.trangThai}</td>
+            <td className="w-32 px-4 py-3 text-sm text-[var(--color-foreground)]">
+              {row.trangThai}
+            </td>
             <td className="w-12 text-center">
               <div className="flex items-center justify-center">
                 <input
                   type="checkbox"
                   checked={checkedRows[index] ?? false}
                   onChange={() => toggleRow(index)}
-                  className="form-checkbox h-4 w-4 text-green-600"
+                  className="form-checkbox h-4 w-4 text-[var(--color-primary)]"
                 />
               </div>
             </td>

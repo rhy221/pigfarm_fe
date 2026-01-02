@@ -8,23 +8,26 @@ const ExportManagement: React.FC = () => {
   const [viewMode, setViewMode] = useState<"list" | "add">("list");
 
   const [proposals] = useState<ExportProposal[]>([
-    { stt: 1, chuong: "A001", soLuong: 25, tongTrongLuong: 5000, donGia: 120000, thanhTienDuKien: 600000000, ngayXuatDuKien: "18/11/2025" },
-    { stt: 2, chuong: "A001", soLuong: 40, tongTrongLuong: 6000, donGia: 110000, thanhTienDuKien: 660000000, ngayXuatDuKien: "18/11/2025" },
+    { stt: 1, chuong: "A001", tongTrongLuong: 5000, donGia: 120000, thanhTienDuKien: 600000000, ngayXuatDuKien: "18/11/2025" },
+    { stt: 2, chuong: "A001", tongTrongLuong: 6000, donGia: 110000, thanhTienDuKien: 660000000, ngayXuatDuKien: "18/11/2025" },
   ]);
 
   const [receipts] = useState<ExportReceipt[]>([
-    { stt: 1, dot: "DXC-001", khachHang: "Nguyễn Văn A", tongTien: 50000000, ngayXuat: "18/11/2025", tinhTrangThanhToan: "Chưa TT & Chưa giao hàng" },
-    { stt: 2, dot: "DXC-002", khachHang: "Công ty ABC", tongTien: 120000000, ngayXuat: "19/11/2025", tinhTrangThanhToan: "Đã TT & Chưa giao hàng" },
+    { stt: 1, dot: "DXC-001", khachHang: "Nguyễn Văn A", tongTien: 50000000, ngayXuat: "18/11/2025", tinhTrangThanhToan: "Chưa thanh toán" },
+    { stt: 2, dot: "DXC-002", khachHang: "Công ty ABC", tongTien: 120000000, ngayXuat: "19/11/2025", tinhTrangThanhToan: "Đã thanh toán" },
   ]);
 
   const formatter = new Intl.NumberFormat("vi-VN");
 
   const renderStatus = (status: string) => {
-    const isPaid = status.includes("Đã TT");
+    const isPaid = status === "Đã thanh toán";
+
     return (
       <span
         className={`px-3 py-1 text-xs font-medium rounded-full ${
-          isPaid ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+          isPaid
+            ? "bg-green-100 text-green-700"
+            : "bg-yellow-100 text-yellow-700"
         }`}
       >
         {status}
@@ -56,8 +59,7 @@ const ExportManagement: React.FC = () => {
               <tr>
                 <th className="px-4 py-3 text-center">STT</th>
                 <th className="px-4 py-3 text-center">Chuồng</th>
-                <th className="px-4 py-3 text-center">Số lượng</th>
-                <th className="px-4 py-3 text-center">Tổng trọng lượng</th>
+                <th className="px-4 py-3 text-center">Tổng trọng lượng dự kiến</th>
                 <th className="px-4 py-3 text-center">Đơn giá</th>
                 <th className="px-4 py-3 text-center">Thành tiền dự kiến</th>
                 <th className="px-4 py-3 text-center">Ngày xuất dự kiến</th>
@@ -73,7 +75,6 @@ const ExportManagement: React.FC = () => {
                 >
                   <td className="px-4 py-3 text-center">{item.stt}</td>
                   <td className="px-4 py-3 text-center">{item.chuong}</td>
-                  <td className="px-4 py-3 text-center">{item.soLuong}</td>
                   <td className="px-4 py-3 text-center">{item.tongTrongLuong}</td>
                   <td className="px-4 py-3 text-center">{formatter.format(item.donGia)}</td>
                   <td className="px-4 py-3 text-center font-medium">{formatter.format(item.thanhTienDuKien)}</td>
@@ -108,7 +109,7 @@ const ExportManagement: React.FC = () => {
                 <th className="px-4 py-3 text-center">Khách hàng</th>
                 <th className="px-4 py-3 text-center">Tổng tiền</th>
                 <th className="px-4 py-3 text-center">Ngày xuất</th>
-                <th className="px-4 py-3 text-center">Thanh toán</th>
+                <th className="px-4 py-3 text-center">Trạng thái</th>
                 <th className="px-4 py-3 text-center"></th>
               </tr>
             </thead>

@@ -2,7 +2,6 @@
 export interface ExportProposal {
   stt: number;
   chuong: string;
-  soLuong: number;
   tongTrongLuong: number;
   donGia: number;
   thanhTienDuKien: number;
@@ -21,7 +20,6 @@ export interface ExportReceipt {
 export interface ExportDetailItem {
   stt: number;
   chuong: string;
-  soLuong: number;
   tongTrongLuong: number;
   donGia: number;
   checked?: boolean;

@@ -26,13 +26,20 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
     { stt: 2, chuong: "A001", tongTrongLuong: 0, donGia: 110000, checked: false }
   ]);
 
-  const allChecked = items.every(item => item.checked);
-
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const allChecked = items.length > 0 && items.every(item => item.checked);
+  const hasSelectedItems = items.some(item => item.checked);
+
+  const handleDeleteSelected = () => {
+    const remainingItems = items.filter(item => !item.checked);
+    setItems(remainingItems.map((item, index) => ({ ...item, stt: index + 1 })));
+    setShowDeleteModal(false);
+  };
 
   return (
     <div className="p-8 min-h-screen animate-in fade-in duration-500 bg-[var(--color-background)] text-[var(--color-foreground)]">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={onBack}
@@ -48,17 +55,22 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-2xl font-semibold text-[var(--color-primary)]">Phiếu xuất chuồng</h1>
+        <h1 className="text-2xl font-semibold text-[var(--color-primary)]">
+          Phiếu xuất chuồng
+        </h1>
       </div>
 
-      {/* Form thông tin */}
       <div className="mb-8">
-        <h2 className="text-xs font-bold uppercase tracking-wider mb-4 border-b pb-1 border-[var(--color-border)] text-[var(--color-muted-foreground)]">Thông tin</h2>
+        <h2 className="text-xs font-bold uppercase tracking-wider mb-4 border-b pb-1 border-[var(--color-border)] text-[var(--color-muted-foreground)]">
+          Thông tin
+        </h2>
+
         <div className="grid grid-cols-2 gap-x-16 gap-y-4">
           <div className="space-y-4">
-            {/* Đợt xuất */}
             <div className="flex items-center">
-              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)]">Đợt xuất</label>
+              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)]">
+                Đợt xuất
+              </label>
               <input
                 type="text"
                 value={formData.dotXuat}
@@ -66,9 +78,11 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
                 className="flex-1 border border-[var(--color-border)] rounded-md px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-[var(--color-card)] text-[var(--color-foreground)]"
               />
             </div>
-            {/* Tên khách hàng */}
+
             <div className="flex items-center">
-              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)]">Tên khách hàng</label>
+              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)]">
+                Tên khách hàng
+              </label>
               <input
                 type="text"
                 placeholder="Nhập tên khách hàng..."
@@ -77,19 +91,26 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
                 className="flex-1 border border-[var(--color-border)] rounded-md px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-[var(--color-card)] text-[var(--color-foreground)]"
               />
             </div>
-            {/* Địa chỉ */}
+
             <div className="flex items-start">
-              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)] pt-2">Địa chỉ</label>
+              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)] pt-2">
+                Địa chỉ
+              </label>
               <div className="flex-1 space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] italic w-36 text-[var(--color-muted-foreground)]">Số nhà, đường, tổ/khu phố</span>
+                  <span className="text-[11px] italic w-36 text-[var(--color-muted-foreground)]">
+                    Số nhà, đường, tổ/khu phố
+                  </span>
                   <input
                     type="text"
                     className="flex-1 border border-[var(--color-border)] rounded-md px-3 py-1.5 text-sm outline-none focus:border-[var(--color-primary)] bg-[var(--color-card)] text-[var(--color-foreground)]"
                   />
                 </div>
+
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] italic w-36 text-[var(--color-muted-foreground)]">Tỉnh/Thành phố</span>
+                  <span className="text-[11px] italic w-36 text-[var(--color-muted-foreground)]">
+                    Tỉnh/Thành phố
+                  </span>
                   <select
                     className="flex-1 border border-[var(--color-border)] rounded-md px-3 py-1.5 text-sm outline-none bg-[var(--color-card)] text-[var(--color-foreground)]"
                     value={formData.tinhThanh}
@@ -99,8 +120,11 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
                     <option>Hà Nội</option>
                   </select>
                 </div>
+
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] italic w-36 text-[var(--color-muted-foreground)]">Xã/Phường/Đặc khu</span>
+                  <span className="text-[11px] italic w-36 text-[var(--color-muted-foreground)]">
+                    Xã/Phường/Đặc khu
+                  </span>
                   <select
                     className="flex-1 border border-[var(--color-border)] rounded-md px-3 py-1.5 text-sm outline-none bg-[var(--color-card)] text-[var(--color-foreground)]"
                     value={formData.phuongXa}
@@ -115,7 +139,9 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
 
           <div className="space-y-4">
             <div className="flex items-center">
-              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)]">Ngày xuất</label>
+              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)]">
+                Ngày xuất
+              </label>
               <input
                 type="date"
                 value={formData.ngayXuat}
@@ -123,8 +149,11 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
                 className="flex-1 border border-[var(--color-border)] rounded-md px-3 py-2 text-sm focus:border-[var(--color-primary)] outline-none bg-[var(--color-card)] text-[var(--color-foreground)]"
               />
             </div>
+
             <div className="flex items-center">
-              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)]">Số điện thoại</label>
+              <label className="w-32 text-sm font-semibold text-[var(--color-secondary-foreground)]">
+                Số điện thoại
+              </label>
               <input
                 type="text"
                 placeholder="Nhập số điện thoại..."
@@ -137,10 +166,11 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
         </div>
       </div>
 
-      {/* Chi tiết hàng */}
       <div>
         <div className="flex justify-between items-end mb-4 border-b pb-1 border-[var(--color-border)]">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted-foreground)]">Chi tiết</h2>
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted-foreground)]">
+            Chi tiết
+          </h2>
           <div className="flex gap-2 pb-1">
             <button
               onClick={() => onSave(formData)}
@@ -151,7 +181,10 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
             <button className="border border-[var(--color-primary)] text-[var(--color-primary)] px-5 py-1.5 rounded-lg text-sm font-medium hover:bg-[var(--color-primary)/10] transition">
               Thêm
             </button>
-            <button className="bg-[var(--color-destructive)] text-[var(--color-primary-foreground)] px-5 py-1.5 rounded-lg text-sm font-medium hover:opacity-90 transition">
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="bg-[var(--color-destructive)] text-[var(--color-primary-foreground)] px-5 py-1.5 rounded-lg text-sm font-medium hover:opacity-90 transition"
+            >
               Xoá
             </button>
           </div>
@@ -171,29 +204,18 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
                     className="h-5 w-5 align-middle"
                   />
                 </th>
-
-                <th className="w-[80px] px-4 py-4 text-center font-semibold">
-                  STT
-                </th>
-
-                <th className="w-[120px] px-4 py-4 text-center font-semibold">
-                  Chuồng
-                </th>
-
+                <th className="w-[80px] px-4 py-4 text-center font-semibold">STT</th>
+                <th className="w-[120px] px-4 py-4 text-center font-semibold">Chuồng</th>
                 <th className="w-[200px] px-4 py-4 text-center font-semibold">
                   Đơn giá (VNĐ/kg)
                 </th>
-
                 <th className="w-[60px] px-4 py-4 text-center font-semibold"></th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-dashed divide-[var(--color-border)]">
               {items.map((item, index) => (
-                <tr
-                  key={item.stt}
-                  className="hover:bg-[var(--color-muted)]/20 transition"
-                >
+                <tr key={item.stt} className="hover:bg-[var(--color-muted)]/20 transition">
                   <td className="px-4 py-4 text-center align-middle">
                     <input
                       type="checkbox"
@@ -206,15 +228,12 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
                       className="h-5 w-5 align-middle"
                     />
                   </td>
-
                   <td className="px-4 py-4 text-center align-middle text-gray-600">
                     {item.stt}
                   </td>
-
                   <td className="px-4 py-4 text-center align-middle text-[var(--color-text-main)]">
                     {item.chuong}
                   </td>
-
                   <td className="px-4 py-4 text-center align-middle">
                     {editingIndex === index ? (
                       <input
@@ -230,21 +249,17 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
                         onKeyDown={(e) => {
                           if (e.key === "Enter") setEditingIndex(null);
                         }}
-                        className="w-full text-center border border-[var(--color-border)] rounded-md px-2 py-1
-                                  focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                        className="w-full text-center border border-[var(--color-border)] rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
                       />
                     ) : (
                       <span
                         onClick={() => setEditingIndex(index)}
                         className="cursor-pointer font-medium text-gray-800 hover:text-[var(--color-primary)]"
-                        title="Nhấn để sửa đơn giá"
                       >
                         {formatter.format(item.donGia)}
                       </span>
                     )}
                   </td>
-
-
                   <td className="px-4 py-4 text-center align-middle">
                     <button className="text-gray-400 hover:text-[var(--color-primary)] transition-colors">
                       <svg
@@ -254,12 +269,7 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
                         viewBox="0 0 24 24"
                         stroke="currentColor"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
                   </td>
@@ -269,8 +279,38 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onBack, onSave }) =
           </table>
         </div>
       </div>
-    </div>
 
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-[var(--color-card)] p-6 rounded-xl shadow-xl max-w-md w-full border border-[var(--color-border)] animate-in zoom-in duration-200">
+            <h3 className="text-lg font-semibold mb-2">
+              {hasSelectedItems ? "Xác nhận xóa" : "Thông báo"}
+            </h3>
+            <p className="text-[var(--color-muted-foreground)] mb-6">
+              {hasSelectedItems
+                ? "Bạn có chắc chắn muốn xóa các chuồng đã chọn khỏi danh sách không?"
+                : "Vui lòng chọn ít nhất một chuồng từ danh sách để thực hiện thao tác xóa."}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 rounded-lg border border-[var(--color-border)] text-sm font-medium hover:bg-[var(--color-muted)] transition"
+              >
+                {hasSelectedItems ? "Hủy" : "Đã hiểu"}
+              </button>
+              {hasSelectedItems && (
+                <button
+                  onClick={handleDeleteSelected}
+                  className="px-4 py-2 rounded-lg bg-[var(--color-destructive)] text-white text-sm font-medium hover:opacity-90 transition"
+                >
+                  Xóa
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

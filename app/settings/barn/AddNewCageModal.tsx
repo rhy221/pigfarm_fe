@@ -15,7 +15,7 @@ const AddNewCageModal: React.FC<AddNewCageModalProps> = ({ onClose, onSave }) =>
 
   return (
     <div className="p-6 bg-white rounded-xl shadow-md border border-gray-200 w-full max-w-sm">
-      <h3 className="text-xl font-bold mb-5 text-[#53A88B]">Thêm chuồng trại</h3>
+      <h3 className="text-lg py-4 font-bold text-emerald-700">Thêm chuồng trại</h3>
       <div className="grid grid-cols-1 gap-4 mb-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Chuồng</label>
@@ -44,7 +44,7 @@ const AddNewCageModal: React.FC<AddNewCageModalProps> = ({ onClose, onSave }) =>
       <div className="flex justify-end gap-3">
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+          className="px-6 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition text-gray-700"
         >
           Hủy
         </button>
@@ -53,7 +53,7 @@ const AddNewCageModal: React.FC<AddNewCageModalProps> = ({ onClose, onSave }) =>
             onSave(chuong, loaiChuong);
             onClose();
           }}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+          className="px-6 py-2 rounded-lg text-sm font-medium transition shadow-md bg-emerald-600 text-white hover:bg-emerald-700"
         >
           Lưu
         </button>

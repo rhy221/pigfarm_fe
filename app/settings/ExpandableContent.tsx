@@ -47,28 +47,14 @@ const ExpandableContent: React.FC<ExpandableContentProps> = ({ contentType, chil
     <div className="w-full bg-[var(--color-card)] p-6 rounded-b-xl border border-t-0 border-[var(--color-border)] shadow-sm transition-shadow hover:shadow-lg">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
-        <h2 className="text-x italic text-[var(--color-card-foreground)]">Danh sách {contentType.toLowerCase()}</h2>
+        <h2 className="text-x  text-[var(--color-card-foreground)]">Danh sách {contentType.toLowerCase()}</h2>
         <div className="flex flex-wrap gap-2">
-          {/* Lưu */}
-          <button
-            onClick={() => setCages(editedCages)}
-            className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg
-                      bg-green-700 text-white
-                      hover:bg-green-800 transition"
-          >
-            <Save size={16} />
-            <span>Lưu</span>
-          </button>
-
           {/* Thêm */}
           <button
             onClick={() => setIsAdding(true)}
             disabled={isAdding}
-            className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg
-                      bg-blue-700 text-white
-                      hover:bg-blue-800 disabled:opacity-50 transition"
+            className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
           >
-            <Plus size={16} />
             <span>Thêm</span>
           </button>
 

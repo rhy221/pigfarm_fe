@@ -40,20 +40,20 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
   };
 
   return (
-    <div className="overflow-x-auto border border-[var(--color-border)] rounded-lg bg-[var(--color-card)] shadow-sm max-w-4xl mx-auto">
+    <div className="overflow-x-auto border border-emerald-100 rounded-lg bg-[var(--color-card)] shadow-sm max-w-4xl mx-auto">
       <table className="w-full table-fixed text-sm"> 
-        <thead className="bg-[var(--color-muted)]">
-          <tr className="divide-x divide-[var(--color-border)]/50">
-            <th className="w-[80px] px-3 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)] uppercase">
+        <thead className="bg-emerald-50">
+          <tr className="divide-x divide-emerald-100">
+            <th className="w-[80px] px-3 py-3 text-center text-sm font-semibold text-emerald-700 uppercase">
               STT
             </th>
-            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
+            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-emerald-700">
               Ca làm
             </th>
-            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
+            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-emerald-700">
               Giờ bắt đầu
             </th>
-            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
+            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-emerald-700">
               Giờ kết thúc
             </th>
             <th className="w-[80px] px-3 py-3 text-center">
@@ -61,22 +61,22 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                 type="checkbox"
                 checked={allChecked}
                 onChange={toggleAll}
-                className="h-5 w-5 text-[var(--color-primary)] align-middle"
+                className="h-5 w-5 text-emerald-600 align-middle cursor-pointer"
               />
             </th>
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-[var(--color-border)]">
+        <tbody className="divide-y divide-emerald-100">
           {shifts.map((row, index) => {
             const current = editedShifts[index] || row;
 
             return (
               <tr
                 key={row.stt}
-                className="hover:bg-[var(--color-muted)]/50 transition-colors divide-x divide-[var(--color-border)]/30"
+                className="hover:bg-gray-100 transition-colors divide-x divide-emerald-50"
               >
-                <td className="px-3 py-3 text-center align-middle font-medium">
+                <td className="px-3 py-3 text-center align-middle font-medium text-gray-500">
                   {row.stt}
                 </td>
 
@@ -94,14 +94,14 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                       onKeyDown={(e) =>
                         e.key === "Enter" && setEditingCell(null)
                       }
-                      className="w-full border border-[var(--color-border)] rounded-md px-2 py-1 text-sm text-center focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                      className="w-full border border-emerald-200 rounded-md px-2 py-1 text-sm text-center focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   ) : (
                     <span
                       onClick={() =>
                         setEditingCell({ row: index, field: "name" })
                       }
-                      className="block cursor-pointer rounded-md px-2 py-1 hover:bg-[var(--color-muted)]"
+                      className="block cursor-pointer rounded-md px-2 py-1 hover:bg-emerald-50 text-emerald-900 font-medium"
                     >
                       {current.name}
                     </span>
@@ -122,14 +122,14 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                       onKeyDown={(e) =>
                         e.key === "Enter" && setEditingCell(null)
                       }
-                      className="w-full border border-[var(--color-border)] rounded-md px-1 py-1 text-sm text-center focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                      className="w-full border border-emerald-200 rounded-md px-1 py-1 text-sm text-center focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   ) : (
                     <span
                       onClick={() =>
                         setEditingCell({ row: index, field: "startTime" })
                       }
-                      className="inline-block w-full cursor-pointer rounded-md px-1 py-1 hover:bg-[var(--color-muted)]"
+                      className="inline-block w-full cursor-pointer rounded-md px-1 py-1 hover:bg-emerald-50"
                     >
                       {current.startTime}
                     </span>
@@ -150,14 +150,14 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                       onKeyDown={(e) =>
                         e.key === "Enter" && setEditingCell(null)
                       }
-                      className="w-full border border-[var(--color-border)] rounded-md px-1 py-1 text-sm text-center focus:ring-2 focus:ring-[var(--color-primary)] outline-none"
+                      className="w-full border border-emerald-200 rounded-md px-1 py-1 text-sm text-center focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   ) : (
                     <span
                       onClick={() =>
                         setEditingCell({ row: index, field: "endTime" })
                       }
-                      className="inline-block w-full cursor-pointer rounded-md px-1 py-1 hover:bg-[var(--color-muted)]"
+                      className="inline-block w-full cursor-pointer rounded-md px-1 py-1 hover:bg-emerald-50"
                     >
                       {current.endTime}
                     </span>
@@ -169,7 +169,7 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                     type="checkbox"
                     checked={checkedRows[index] ?? false}
                     onChange={() => toggleRow(index)}
-                    className="h-5 w-5 text-[var(--color-primary)] align-middle cursor-pointer"
+                    className="h-5 w-5 text-emerald-600 align-middle cursor-pointer"
                   />
                 </td>
               </tr>

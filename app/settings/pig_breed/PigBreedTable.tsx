@@ -25,14 +25,14 @@ const PigBreedTable: React.FC<PigBreedTableProps> = ({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   return (
-    <div className="overflow-x-auto border border-[var(--color-border)] rounded-lg bg-[var(--color-card)] shadow-sm max-w-4xl mx-auto">
+    <div className="overflow-x-auto border border-emerald-100 rounded-lg bg-white shadow-sm max-w-4xl mx-auto">
       <table className="w-full table-fixed text-sm"> 
-        <thead className="bg-[var(--color-muted)]">
-          <tr className="divide-x divide-[var(--color-border)]/50">
-            <th className="w-[80px] px-4 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)] uppercase">
+        <thead className="bg-emerald-50 text-emerald-700">
+          <tr className="divide-x divide-emerald-100">
+            <th className="w-[80px] px-4 py-3 text-center text-sm font-semibold uppercase">
               STT
             </th>
-            <th className="w-[150px] px-4 py-3 text-center text-sm font-semibold text-[var(--color-secondary-foreground)]">
+            <th className="w-[150px] px-4 py-3 text-center text-sm font-semibold">
               Giống heo
             </th>
             <th className="w-[80px] text-center">
@@ -41,24 +41,26 @@ const PigBreedTable: React.FC<PigBreedTableProps> = ({
                   type="checkbox"
                   checked={allChecked}
                   onChange={toggleAll}
-                  className="form-checkbox h-5 w-5 text-[var(--color-primary)]"
+                  className="form-checkbox h-5 w-5 text-emerald-600 cursor-pointer"
                 />
               </div>
             </th>
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-[var(--color-border)]">
+        <tbody className="divide-y divide-emerald-50">
           {pigBreeds.map((row, index) => (
             <tr
               key={row.stt}
-              className="hover:bg-[var(--color-muted)] transition-colors"
+              className={`transition-colors hover:bg-gray-100 ${
+                index % 2 === 0 ? "bg-white" : "bg-emerald-50/10"
+              }`}
             >
-              <td className="px-4 py-2 text-center text-sm font-medium text-[var(--color-foreground)]">
+              <td className="px-4 py-2 text-center text-sm font-medium text-gray-500">
                 {row.stt}
               </td>
-             
-              <td className="px-4 py-2 text-center text-sm text-[var(--color-foreground)]">
+              
+              <td className="px-4 py-2 text-center text-sm text-emerald-900 font-medium">
                 {editingIndex === index ? (
                   <input
                     type="text"
@@ -74,17 +76,15 @@ const PigBreedTable: React.FC<PigBreedTableProps> = ({
                     onKeyDown={(e) => {
                       if (e.key === "Enter") setEditingIndex(null);
                     }}
-                    className="w-full border border-[var(--color-border)] rounded-lg p-2 text-sm
-                               text-center bg-[var(--color-card)]
-                               focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+                    className="w-full border border-emerald-200 rounded-lg p-2 text-sm
+                               text-center bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 ) : (
                   <span
                     onClick={() => setEditingIndex(index)}
                     title="Nhấn để sửa giống heo"
                     className="cursor-pointer block px-2 py-1 rounded
-                               hover:bg-[var(--color-muted)]
-                               hover:text-[var(--color-primary)]"
+                               hover:bg-emerald-50 hover:text-emerald-700"
                   >
                     {editedPigBreeds[index]?.name ?? row.name}
                   </span>
@@ -97,7 +97,7 @@ const PigBreedTable: React.FC<PigBreedTableProps> = ({
                     type="checkbox"
                     checked={checkedRows[index] ?? false}
                     onChange={() => toggleRow(index)}
-                    className="form-checkbox h-5 w-5 text-[var(--color-primary)]"
+                    className="form-checkbox h-5 w-5 text-emerald-600 cursor-pointer"
                   />
                 </div>
               </td>

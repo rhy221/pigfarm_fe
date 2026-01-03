@@ -160,7 +160,7 @@ const SettingItem: React.FC<SettingItemProps> = ({
             <div className="p-3 bg-gray-100 rounded-full flex items-center justify-center">
               <IconComponent size={20} style={{ color: primaryColor }} />
             </div>
-            <span className="text-base font-medium text-gray-900">{title}</span>
+            <span className="text-base font-bold text-gray-900">{title}</span>
           </div>
 
           {isExpandable && (

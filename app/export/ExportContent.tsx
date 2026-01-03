@@ -16,6 +16,7 @@ const ExportManagement: React.FC = () => {
   const [receipts] = useState<ExportReceipt[]>([
     { stt: 1, dot: "DXC-001", khachHang: "Nguyễn Văn A", tongTien: 50000000, ngayXuat: "18/11/2025", tinhTrangThanhToan: "Chưa thanh toán" },
     { stt: 2, dot: "DXC-002", khachHang: "Công ty ABC", tongTien: 120000000, ngayXuat: "19/11/2025", tinhTrangThanhToan: "Đã thanh toán" },
+    { stt: 3, dot: "DXC-003", khachHang: "Trần Thị C", tongTien: 0, ngayXuat: "20/11/2025", tinhTrangThanhToan: "Chuẩn bị xuất chuồng" },
   ]);
 
   const formatter = new Intl.NumberFormat("vi-VN");
@@ -26,13 +27,23 @@ const ExportManagement: React.FC = () => {
   };
 
   const renderStatus = (status: string) => {
-    const isPaid = status === "Đã thanh toán";
+    let colorClass = "";
+    switch (status) {
+      case "Đã thanh toán":
+        colorClass = "bg-green-100 text-green-700";
+        break;
+      case "Chưa thanh toán":
+        colorClass = "bg-yellow-100 text-yellow-700";
+        break;
+      case "Chuẩn bị xuất chuồng":
+        colorClass = "bg-blue-100 text-blue-700";
+        break;
+      default:
+        colorClass = "bg-gray-100 text-gray-700";
+    }
+
     return (
-      <span
-        className={`px-3 py-1 text-xs font-medium rounded-full ${
-          isPaid ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-        }`}
-      >
+      <span className={`px-3 py-1 text-xs font-medium rounded-full ${colorClass}`}>
         {status}
       </span>
     );
@@ -48,9 +59,9 @@ const ExportManagement: React.FC = () => {
 
       <section className="mb-10">
         <h2 className="text-base font-semibold mb-4 text-[var(--color-secondary-foreground)]">Đề xuất xuất chuồng</h2>
-        <div className="bg-[var(--color-card)] rounded-xl shadow-sm overflow-x-auto border border-[var(--color-border)]">
+        <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-emerald-100">
           <table className="w-full text-sm">
-            <thead className="bg-[var(--color-muted)] text-[var(--color-muted-foreground)]">
+            <thead className="bg-emerald-50 text-emerald-700 border-b border-emerald-100">
               <tr>
                 <th className="px-4 py-3 text-center font-semibold">STT</th>
                 <th className="px-4 py-3 text-center font-semibold">Chuồng</th>
@@ -66,8 +77,8 @@ const ExportManagement: React.FC = () => {
                 .map((item, index) => (
                   <tr
                     key={index}
-                    className={`border-t border-[var(--color-border)] hover:bg-[var(--color-muted)] transition ${
-                      index % 2 === 0 ? "bg-[var(--color-card)]" : "bg-gray-50/50"
+                    className={`border-t border-emerald-50 hover:bg-gray-100 transition ${
+                      index % 2 === 0 ? "bg-white" : "bg-emerald-50/20"
                     }`}
                   >
                     <td className="px-4 py-3 text-center">{index + 1}</td>
@@ -88,15 +99,15 @@ const ExportManagement: React.FC = () => {
           <h2 className="text-base font-semibold text-[var(--color-secondary-foreground)]">Phiếu xuất chuồng</h2>
           <Link
             href="/export/add"
-            className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition shadow-sm"
+            className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
           >
-            + Thêm
+            Thêm
           </Link>
         </div>
 
-        <div className="bg-[var(--color-card)] rounded-xl shadow-sm overflow-x-auto border border-[var(--color-border)]">
+        <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-emerald-100">
           <table className="w-full text-sm">
-            <thead className="bg-[var(--color-muted)] text-[var(--color-muted-foreground)] border-b border-[var(--color-border)]">
+            <thead className="bg-emerald-50 text-emerald-700 border-b border-emerald-100">
               <tr>
                 <th className="px-4 py-3 text-center font-semibold">STT</th>
                 <th className="px-4 py-3 text-center font-semibold">Đợt</th>
@@ -110,26 +121,31 @@ const ExportManagement: React.FC = () => {
             <tbody>
               {[...receipts]
                 .sort((a, b) => parseDate(b.ngayXuat) - parseDate(a.ngayXuat))
-                .map((item, index) => (
-                  <tr
-                    key={item.dot}
-                    className={`border-t border-[var(--color-border)] hover:bg-[var(--color-muted)] transition ${
-                      index % 2 === 0 ? "bg-[var(--color-card)]" : "bg-gray-50/50"
-                    }`}
-                  >
-                    <td className="px-4 py-3 text-center">{index + 1}</td>
-                    <td className="px-4 py-3 text-center">{item.dot}</td>
-                    <td className="px-4 py-3 text-center">{item.khachHang}</td>
-                    <td className="px-4 py-3 text-center font-medium">{formatter.format(item.tongTien)}</td>
-                    <td className="px-4 py-3 text-center">{item.ngayXuat}</td>
-                    <td className="px-4 py-3 text-center">{renderStatus(item.tinhTrangThanhToan)}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="text-emerald-600 text-sm font-medium hover:underline cursor-pointer">
-                        Xem chi tiết
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                .map((item, index) => {
+                  const isPreparing = item.tinhTrangThanhToan === "Chuẩn bị xuất chuồng";
+                  return (
+                    <tr
+                      key={item.dot}
+                      className={`border-t border-emerald-50 hover:bg-gray-100 transition ${
+                        index % 2 === 0 ? "bg-white" : "bg-emerald-50/20"
+                      }`}
+                    >
+                      <td className="px-4 py-3 text-center">{index + 1}</td>
+                      <td className="px-4 py-3 text-center">{item.dot}</td>
+                      <td className="px-4 py-3 text-center">{item.khachHang}</td>
+                      <td className="px-4 py-3 text-center font-medium">
+                        {isPreparing ? "—" : formatter.format(item.tongTien)}
+                      </td>
+                      <td className="px-4 py-3 text-center">{item.ngayXuat}</td>
+                      <td className="px-4 py-3 text-center">{renderStatus(item.tinhTrangThanhToan)}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className="text-emerald-600 text-sm font-medium hover:underline cursor-pointer">
+                          Xem chi tiết
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </div>

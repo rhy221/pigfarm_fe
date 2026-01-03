@@ -21,7 +21,7 @@ const AddNewWorkShiftModal: React.FC<AddNewWorkShiftModalProps> = ({ onClose, on
 
   return (
     <div className="bg-white border rounded-lg shadow-lg p-6">
-      <h3 className="text-lg font-bold mb-4">Thêm ca làm mới</h3>
+      <h3 className="text-lg py-4 font-bold text-emerald-700">Thêm ca làm mới</h3>
       <input
         type="text"
         value={name}
@@ -52,13 +52,13 @@ const AddNewWorkShiftModal: React.FC<AddNewWorkShiftModalProps> = ({ onClose, on
       <div className="flex justify-end gap-3">
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+          className="px-6 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition text-gray-700"
         >
           Hủy
         </button>
         <button
           onClick={handleSave}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+          className="px-6 py-2 rounded-lg text-sm font-medium transition shadow-md bg-emerald-600 text-white hover:bg-emerald-700"
         >
           Lưu
         </button>

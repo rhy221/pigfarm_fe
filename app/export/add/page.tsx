@@ -4,10 +4,12 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ExportDetailItem } from "../type";
+import AddExportModal, { SelectedItem } from "./AddExportModal";
 
 const AddExportReceipt = () => {
   const router = useRouter();
   const formatter = new Intl.NumberFormat("vi-VN");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     dotXuat: "DXC-004",
@@ -29,6 +31,7 @@ const AddExportReceipt = () => {
 
   const allChecked = items.length > 0 && items.every((item) => item.checked);
   const hasSelectedItems = items.some((item) => item.checked);
+  const isTableEmpty = items.length === 0;
 
   const handleDeleteSelected = () => {
     const remainingItems = items.filter((item) => !item.checked);
@@ -37,17 +40,32 @@ const AddExportReceipt = () => {
   };
 
   const handleSave = () => {
+    if (isTableEmpty) return;
     console.log("Dữ liệu lưu:", { ...formData, items });
     router.push("/export");
+  };
+
+  const handleAddCagesFromModal = (selectedItems: SelectedItem[]) => {
+    const lastStt = items.length > 0 ? Math.max(...items.map((i) => i.stt)) : 0;
+
+    const newFormattedItems = selectedItems.map((item, index) => ({
+      stt: lastStt + index + 1,
+      chuong: item.chuong,
+      tongTrongLuong: 0,
+      donGia: item.donGia,
+      checked: false,
+    }));
+
+    setItems([...items, ...newFormattedItems]);
   };
 
   return (
     <div className="p-8 min-h-screen animate-in fade-in duration-500 bg-[var(--color-background)] text-[var(--color-muted-foreground)]">
       <div className="flex items-center gap-4 mb-6">
-        <Link 
-          href="/export" 
+        <Link
+          href="/export"
           className="p-2 rounded-full transition hover:bg-gray-100"
-        >         
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6 text-emerald-600"
@@ -159,27 +177,40 @@ const AddExportReceipt = () => {
           <div className="flex gap-3">
             <button
               onClick={handleSave}
-              className="bg-emerald-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition shadow-md"
+              disabled={isTableEmpty}
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition shadow-md ${
+                isTableEmpty 
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" 
+                : "bg-emerald-600 text-white hover:bg-emerald-700"
+              }`}
             >
               Lưu
             </button>
-            <button className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
+            >
               Thêm
             </button>
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="bg-red-500 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition shadow-md"
+              disabled={isTableEmpty}
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition shadow-md ${
+                isTableEmpty 
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" 
+                : "bg-red-600 text-white hover:bg-red-700"
+              }`}
             >
               Xoá
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden">
+        <div className="overflow-x-auto border border-emerald-100 rounded-xl bg-white shadow-sm overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-emerald-50 text-emerald-700">
               <tr>
-                <th className="w-[80px] px-6 py-4 text-center font-bold uppercase tracking-wider">
+                <th className="w-[50px] px-6 py-4 text-center font-bold uppercase tracking-wider">
                   <input
                     type="checkbox"
                     checked={allChecked}
@@ -189,10 +220,10 @@ const AddExportReceipt = () => {
                     className="h-5 w-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                   />
                 </th>
-                <th className="px-6 py-3 text-center font-bold text-[var(--color-secondary-foreground)]">STT</th>
-                <th className="px-6 py-3 text-center font-bold tracking-wider text-[var(--color-secondary-foreground)]">Chuồng</th>
-                <th className="px-6 py-3 text-center font-bold tracking-wider text-[var(--color-secondary-foreground)]">Đơn giá (VNĐ/kg)</th>
-                <th className="w-[80px] px-6 py-3 text-center font-bold uppercase tracking-wider"></th>
+                <th className="w-[50px] px-6 py-3 text-center font-semibold border-emerald-100">STT</th>
+                <th className="w-[80px] px-6 py-3 text-center font-semibold tracking-wider border-emerald-100">Chuồng</th>
+                <th className="w-[80px] px-6 py-3 text-center font-semibold tracking-wider border-emerald-100">Đơn giá (VNĐ/kg)</th>
+                <th className="w-[80px] px-6 py-3 text-center font-semibold uppercase tracking-wider"></th>
               </tr>
             </thead>
 
@@ -254,6 +285,13 @@ const AddExportReceipt = () => {
                   </td>
                 </tr>
               ))}
+              {isTableEmpty && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-10 text-center text-gray-400 italic">
+                    Danh sách chi tiết đang trống. Vui lòng thêm chuồng để tiếp tục.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -268,7 +306,7 @@ const AddExportReceipt = () => {
             <p className="text-gray-600 mb-8 leading-relaxed">
               {hasSelectedItems
                 ? "Các chuồng đã chọn sẽ bị loại khỏi phiếu xuất này. Bạn có chắc không?"
-                : "Vui lòng tick chọn ít nhất một chuồng để thực hiện xóa."}
+                : "Vui lòng chọn ít nhất một chuồng để thực hiện xóa."}
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -282,13 +320,19 @@ const AddExportReceipt = () => {
                   onClick={handleDeleteSelected}
                   className="px-6 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition shadow-lg shadow-red-200"
                 >
-                  Xóa ngay
+                  Xác nhận
                 </button>
               )}
             </div>
           </div>
         </div>
       )}
+
+      <AddExportModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleAddCagesFromModal}
+      />
     </div>
   );
 };

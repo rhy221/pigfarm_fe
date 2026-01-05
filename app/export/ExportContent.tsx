@@ -2,18 +2,21 @@
 
 import Link from "next/link";
 import React, { useState } from "react";
-import { ExportProposal, ExportReceipt } from "./type";
+import { ExportProposal, ExportReceipt, ExportDetailItem } from "./type";
 import AddExportReceipt from "./add/page";
+import ExportDetailModal from "./ExportDetailModal";
 
 const ExportManagement: React.FC = () => {
   const [viewMode, setViewMode] = useState<"list" | "add">("list");
+  const [selectedReceipt, setSelectedReceipt] = useState<ExportReceipt | null>(null);
+  const [detailItems, setDetailItems] = useState<ExportDetailItem[]>([]);
 
   const [proposals] = useState<ExportProposal[]>([
     { stt: 1, chuong: "A001", tongTrongLuong: 5000, donGia: 120000, thanhTienDuKien: 600000000, ngayXuatDuKien: "18/11/2025" },
     { stt: 2, chuong: "A001", tongTrongLuong: 6000, donGia: 110000, thanhTienDuKien: 660000000, ngayXuatDuKien: "18/11/2025" },
   ]);
 
-  const [receipts] = useState<ExportReceipt[]>([
+  const [receipts, setReceipts] = useState<ExportReceipt[]>([
     { stt: 1, dot: "DXC-001", khachHang: "Nguyễn Văn A", tongTien: 50000000, ngayXuat: "18/11/2025", tinhTrangThanhToan: "Chưa thanh toán" },
     { stt: 2, dot: "DXC-002", khachHang: "Công ty ABC", tongTien: 120000000, ngayXuat: "19/11/2025", tinhTrangThanhToan: "Đã thanh toán" },
     { stt: 3, dot: "DXC-003", khachHang: "Trần Thị C", tongTien: 0, ngayXuat: "20/11/2025", tinhTrangThanhToan: "Chuẩn bị xuất chuồng" },
@@ -25,6 +28,45 @@ const ExportManagement: React.FC = () => {
     const [day, month, year] = dateStr.split("/").map(Number);
     return new Date(year, month - 1, day).getTime();
   };
+
+  const handleAddReceipt = (newReceipt: { dot: string; khachHang: string; ngayXuat: string }) => {
+    const newItem: ExportReceipt = {
+      stt: receipts.length + 1,
+      dot: newReceipt.dot,
+      khachHang: newReceipt.khachHang,
+      tongTien: 0,
+      ngayXuat: newReceipt.ngayXuat,
+      tinhTrangThanhToan: "Chuẩn bị xuất chuồng",
+    };
+    setReceipts([newItem, ...receipts]);
+    setViewMode("list");
+  };
+
+  const handleOpenDetail = (receipt: ExportReceipt) => {
+    setSelectedReceipt(receipt);
+    setDetailItems([
+      { stt: 1, chuong: "A001", tongTrongLuong: 5000, donGia: 120000, checked: false },
+      { stt: 2, chuong: "A001", tongTrongLuong: 6000, donGia: 110000, checked: false },
+    ]);
+  };
+
+  const handleWeightChange = (index: number, weight: number) => {
+    const newItems = [...detailItems];
+    newItems[index].tongTrongLuong = weight;
+    setDetailItems(newItems);
+  };
+
+  const handleUpdateReceipt = (newStatus: string, newTotal: number) => {
+  if (selectedReceipt) {
+    const updatedReceipts = receipts.map((r) =>
+      r.dot === selectedReceipt.dot 
+        ? { ...r, tinhTrangThanhToan: newStatus, tongTien: newTotal } 
+        : r
+    );
+    setReceipts(updatedReceipts);
+    setSelectedReceipt(null); 
+  }
+};
 
   const renderStatus = (status: string) => {
     let colorClass = "";
@@ -50,7 +92,12 @@ const ExportManagement: React.FC = () => {
   };
 
   if (viewMode === "add") {
-    return <AddExportReceipt />;
+    return (
+      <AddExportReceipt 
+        onSaveSuccess={handleAddReceipt} 
+        onCancel={() => setViewMode("list")} 
+      />
+    );
   }
 
   return (
@@ -97,12 +144,12 @@ const ExportManagement: React.FC = () => {
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-base font-semibold text-[var(--color-secondary-foreground)]">Phiếu xuất chuồng</h2>
-          <Link
-            href="/export/add"
+          <button
+            onClick={() => setViewMode("add")}
             className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
           >
-            Thêm
-          </Link>
+            Tạo phiếu mới
+          </button>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-emerald-100">
@@ -134,13 +181,16 @@ const ExportManagement: React.FC = () => {
                       <td className="px-4 py-3 text-center">{item.dot}</td>
                       <td className="px-4 py-3 text-center">{item.khachHang}</td>
                       <td className="px-4 py-3 text-center font-medium">
-                        {isPreparing ? "—" : formatter.format(item.tongTien)}
+                        {isPreparing && item.tongTien === 0 ? "—" : formatter.format(item.tongTien)}
                       </td>
                       <td className="px-4 py-3 text-center">{item.ngayXuat}</td>
                       <td className="px-4 py-3 text-center">{renderStatus(item.tinhTrangThanhToan)}</td>
                       <td className="px-4 py-3 text-center">
-                        <span className="text-emerald-600 text-sm font-medium hover:underline cursor-pointer">
-                          Xem chi tiết
+                        <span 
+                          onClick={() => handleOpenDetail(item)}
+                          className="text-emerald-600 text-sm font-medium hover:underline cursor-pointer"
+                        >
+                          Chi tiết
                         </span>
                       </td>
                     </tr>
@@ -150,6 +200,17 @@ const ExportManagement: React.FC = () => {
           </table>
         </div>
       </section>
+
+      {selectedReceipt && (
+        <ExportDetailModal
+          isOpen={!!selectedReceipt}
+          onClose={() => setSelectedReceipt(null)}
+          receipt={selectedReceipt}
+          detailItems={detailItems}
+          onWeightChange={handleWeightChange}
+          onSave={handleUpdateReceipt}
+        />
+      )}
     </div>
   );
 };

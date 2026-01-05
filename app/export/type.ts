@@ -15,6 +15,8 @@ export interface ExportReceipt {
   tongTien: number;
   ngayXuat: string;
   tinhTrangThanhToan: string;
+  sdt?: string;     
+  diaChi?: string;
 }
 
 export interface ExportDetailItem {

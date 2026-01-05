@@ -2,11 +2,18 @@
 
 import Link from "next/link";
 import React, { useState } from "react";
+import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ExportDetailItem } from "../type";
 import AddExportModal, { SelectedItem } from "./AddExportModal";
+import CageDetailModal from "./CageDetailModal";
 
-const AddExportReceipt = () => {
+interface AddExportReceiptProps {
+  onSaveSuccess: (data: { dot: string; khachHang: string; ngayXuat: string }) => void;
+  onCancel: () => void;
+}
+
+const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onSaveSuccess, onCancel }) => {
   const router = useRouter();
   const formatter = new Intl.NumberFormat("vi-VN");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,6 +28,8 @@ const AddExportReceipt = () => {
     phuongXa: "Phường Thủ Đức",
   });
 
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
   const [items, setItems] = useState<ExportDetailItem[]>([
     { stt: 1, chuong: "A001", tongTrongLuong: 0, donGia: 120000, checked: false },
     { stt: 2, chuong: "A001", tongTrongLuong: 0, donGia: 110000, checked: false },
@@ -28,6 +37,9 @@ const AddExportReceipt = () => {
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const [isCageDetailOpen, setIsCageDetailOpen] = useState(false);
+  const [selectedCage, setSelectedCage] = useState<any>(null);
 
   const allChecked = items.length > 0 && items.every((item) => item.checked);
   const hasSelectedItems = items.some((item) => item.checked);
@@ -40,9 +52,30 @@ const AddExportReceipt = () => {
   };
 
   const handleSave = () => {
-    if (isTableEmpty) return;
-    console.log("Dữ liệu lưu:", { ...formData, items });
-    router.push("/export");
+    let newErrors: { [key: string]: string } = {};
+
+    if (!formData.tenKhachHang.trim()) newErrors.tenKhachHang = "Bắt buộc nhập tên khách hàng";
+    if (!formData.sdt.trim()) newErrors.sdt = "Bắt buộc nhập số điện thoại";
+    if (!formData.soNha.trim()) newErrors.soNha = "Bắt buộc nhập địa chỉ";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    if (isTableEmpty) {
+      alert("Vui lòng chi tiết chuồng!");
+      return;
+    }
+
+    const [year, month, day] = formData.ngayXuat.split("-");
+    const formattedDate = `${day}/${month}/${year}`;
+
+    onSaveSuccess({
+      dot: formData.dotXuat,
+      khachHang: formData.tenKhachHang,
+      ngayXuat: formattedDate,
+    });
   };
 
   const handleAddCagesFromModal = (selectedItems: SelectedItem[]) => {
@@ -59,11 +92,16 @@ const AddExportReceipt = () => {
     setItems([...items, ...newFormattedItems]);
   };
 
+  const handleViewDetail = (item: any) => {
+    setSelectedCage(item);
+    setIsCageDetailOpen(true);
+  };
+
   return (
     <div className="p-8 min-h-screen animate-in fade-in duration-500 bg-[var(--color-background)] text-[var(--color-muted-foreground)]">
       <div className="flex items-center gap-4 mb-6">
-        <Link
-          href="/export"
+        <button
+          onClick={onCancel}
           className="p-2 rounded-full transition hover:bg-gray-100"
         >
           <svg
@@ -75,14 +113,28 @@ const AddExportReceipt = () => {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-        </Link>
+        </button>
         <h1 className="text-2xl font-semibold text-[var(--color-secondary-foreground)]">Phiếu xuất chuồng</h1>
       </div>
 
       <div className="mb-10">
-        <h2 className="text-xs font-bold uppercase tracking-wider mb-6 border-b pb-1 border-gray-200 text-gray-500">
-          Thông tin
-        </h2>
+        <div className="flex items-center justify-between mb-6 border-b pb-1 border-gray-200">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+            Thông tin
+          </h2>
+
+          <button
+            onClick={handleSave}
+            disabled={isTableEmpty}
+            className={`px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${
+              isTableEmpty
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                : "bg-emerald-600 text-white hover:bg-emerald-700"
+            }`}
+          >
+            Lưu
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-20 gap-y-6">
           <div className="space-y-5">
@@ -96,28 +148,41 @@ const AddExportReceipt = () => {
               />
             </div>
 
-            <div className="flex items-center">
-              <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Tên khách hàng</label>
-              <input
-                type="text"
-                placeholder="Nhập tên khách hàng..."
-                value={formData.tenKhachHang}
-                onChange={(e) => setFormData({ ...formData, tenKhachHang: e.target.value })}
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-              />
+            <div className="flex flex-col flex-1">
+              <div className="flex items-center">
+                <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Tên khách hàng</label>
+                <input
+                  type="text"
+                  placeholder="Nhập tên khách hàng..."
+                  value={formData.tenKhachHang}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^a-zA-ZÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂÂÊÔƠưăâêôơ\s]/g, "");
+                    setFormData({ ...formData, tenKhachHang: val });
+                    setErrors({ ...errors, tenKhachHang: "" });
+                  }}
+                  className={`flex-1 border ${errors.tenKhachHang ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none`}
+                />
+              </div>
+              {errors.tenKhachHang && <p className="text-red-500 text-[11px] ml-40 mt-1">{errors.tenKhachHang}</p>}
             </div>
 
             <div className="flex items-start">
               <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)] pt-2">Địa chỉ</label>
               <div className="flex-1 space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] italic w-44 text-gray-500">Số nhà, đường, tổ/khu phố</span>
-                  <input
-                    type="text"
-                    value={formData.soNha}
-                    onChange={(e) => setFormData({ ...formData, soNha: e.target.value })}
-                    className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] italic w-44 text-gray-500">Số nhà, đường...</span>
+                    <input
+                      type="text"
+                      value={formData.soNha}
+                      onChange={(e) => {
+                        setFormData({ ...formData, soNha: e.target.value });
+                        setErrors({ ...errors, soNha: "" });
+                      }}
+                      className={`flex-1 border ${errors.soNha ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500`}
+                    />
+                  </div>
+                  {errors.soNha && <p className="text-red-500 text-[11px] ml-44 mt-1">{errors.soNha}</p>}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -157,15 +222,22 @@ const AddExportReceipt = () => {
               />
             </div>
 
-            <div className="flex items-center">
-              <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Số điện thoại</label>
-              <input
-                type="text"
-                placeholder="Nhập số điện thoại..."
-                value={formData.sdt}
-                onChange={(e) => setFormData({ ...formData, sdt: e.target.value })}
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-              />
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Số điện thoại</label>
+                <input
+                  type="text"
+                  placeholder="Nhập số điện thoại..."
+                  value={formData.sdt}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, "");
+                    setFormData({ ...formData, sdt: val });
+                    setErrors({ ...errors, sdt: "" });
+                  }}
+                  className={`flex-1 border ${errors.sdt ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none`}
+                />
+              </div>
+              {errors.sdt && <p className="text-red-500 text-[11px] ml-40 mt-1">{errors.sdt}</p>}
             </div>
           </div>
         </div>
@@ -175,17 +247,6 @@ const AddExportReceipt = () => {
         <div className="flex justify-between items-center mb-6 border-b pb-2 border-gray-200">
           <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">Chi tiết</h2>
           <div className="flex gap-3">
-            <button
-              onClick={handleSave}
-              disabled={isTableEmpty}
-              className={`px-6 py-2 rounded-lg text-sm font-medium transition shadow-md ${
-                isTableEmpty 
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" 
-                : "bg-emerald-600 text-white hover:bg-emerald-700"
-              }`}
-            >
-              Lưu
-            </button>
             <button
               onClick={() => setIsModalOpen(true)}
               className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
@@ -243,7 +304,7 @@ const AddExportReceipt = () => {
                     />
                   </td>
                   <td className="px-6 py-3 text-center text-gray-500">{item.stt}</td>
-                  <td className="px-6 py-3 text-center font-medium text-emerald-900">{item.chuong}</td>
+                  <td className="px-6 py-3 text-center text-emerald-900">{item.chuong}</td>
                   <td className="px-6 py-3 text-center">
                     {editingIndex === index ? (
                       <input
@@ -264,23 +325,17 @@ const AddExportReceipt = () => {
                     ) : (
                       <span
                         onClick={() => setEditingIndex(index)}
-                        className="cursor-pointer font-bold text-gray-800 hover:text-emerald-600 underline decoration-dotted underline-offset-4"
+                        className="cursor-pointer font-bold text-gray-800 hover:text-emerald-600"
                       >
                         {formatter.format(item.donGia)}
                       </span>
                     )}
                   </td>
                   <td className="px-6 py-3 text-center">
-                    <button className="text-gray-400 group-hover:text-emerald-600 transition-colors">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 mx-auto"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                    <button 
+                      onClick={() => handleViewDetail(item)}
+                      className="text-gray-400 group-hover:text-emerald-600 transition-colors">
+                      <Eye className="h-5 w-5 mx-auto" strokeWidth={2} />
                     </button>
                   </td>
                 </tr>
@@ -332,6 +387,12 @@ const AddExportReceipt = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleAddCagesFromModal}
+      />
+
+      <CageDetailModal 
+        isOpen={isCageDetailOpen}
+        onClose={() => setIsCageDetailOpen(false)}
+        cageData={selectedCage || {}}
       />
     </div>
   );

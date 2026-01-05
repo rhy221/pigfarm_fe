@@ -101,7 +101,7 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
               </div>
               <button
                 onClick={handleAdd}
-                className="bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-emerald-600 transition shadow-lg shadow-emerald-100 h-[46px] text-sm"
+                className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
               >
                 Thêm
               </button>

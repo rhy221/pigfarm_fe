@@ -25,7 +25,7 @@ const items = [
   },
   {
     title: "Heo bệnh",
-    url: "#",
+    url: "/health",
     icon: Pill,
   },
   {

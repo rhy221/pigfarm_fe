@@ -72,21 +72,21 @@ const CageDetailModal: React.FC<CageDetailModalProps> = ({ isOpen, onClose, cage
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <span className="text-sm font-bold text-[var(--color-secondary-foreground)] w-32">Chuồng:</span>
-                  <span className="text-sm font-semibold text-gray-800">
+                  <span className="text-sm text-gray-800">
                     {cageData.chuong || "A001"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-4">
                   <span className="text-sm font-bold text-[var(--color-secondary-foreground)] w-32">Giống:</span>
-                  <span className="text-sm font-semibold text-gray-800">
+                  <span className="text-sm text-gray-800">
                     {cageData.giong || "Landrace"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-4">
                   <span className="text-sm font-bold text-[var(--color-secondary-foreground)] w-32">Số lượng:</span>
-                  <span className="text-sm font-semibold text-gray-800">
+                  <span className="text-sm text-gray-800">
                     {cageData.soLuong || 13}
                   </span>
                 </div>

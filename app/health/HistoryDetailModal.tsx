@@ -64,23 +64,23 @@ const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({ isOpen, onClose
             </h3>
             <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-[15px]">
               <div className="flex items-center">
-                <span className="font-bold w-40 text-[var(--color-secondary-foreground)]">Chuồng</span>
+                <span className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Chuồng</span>
                 <span className="text-gray-800">{data.chuong}</span>
               </div>
               <div className="flex items-center">
-                <span className="font-bold w-40 text-[var(--color-secondary-foreground)]">Ngày phát bệnh</span>
+                <span className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Ngày phát bệnh</span>
                 <span className="text-gray-800">{data.ngayPhatHien}</span>
               </div>
               <div className="flex items-center">
-                <span className="font-bold w-40 text-[var(--color-secondary-foreground)]">Số lượng</span>
+                <span className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Số lượng</span>
                 <span className="text-gray-800">{data.soLuong}</span>
               </div>
               <div className="flex items-center">
-                <span className="font-bold w-40 text-[var(--color-secondary-foreground)]">Loại bệnh</span>
+                <span className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Loại bệnh</span>
                 <span className="text-gray-800">{data.loaiBenh}</span>
               </div>
               <div className="flex items-start col-span-2 mt-2">
-                <span className="font-bold w-40 text-[var(--color-secondary-foreground)] pt-0.5">Triệu chứng</span>
+                <span className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Triệu chứng</span>
                 <span className="text-gray-800 flex-1 leading-relaxed">
                   {data.trieuChung || "Bỏ ăn, sốt cao, phân lỏng có bọt"}
                 </span>

@@ -7,7 +7,6 @@ import AddExportReceipt from "./add/page";
 import ExportDetailModal from "./ExportDetailModal";
 
 const ExportManagement: React.FC = () => {
-  const [viewMode, setViewMode] = useState<"list" | "add">("list");
   const [selectedReceipt, setSelectedReceipt] = useState<ExportReceipt | null>(null);
   const [detailItems, setDetailItems] = useState<ExportDetailItem[]>([]);
 
@@ -39,7 +38,6 @@ const ExportManagement: React.FC = () => {
       tinhTrangThanhToan: "Chuẩn bị xuất chuồng",
     };
     setReceipts([newItem, ...receipts]);
-    setViewMode("list");
   };
 
   const handleOpenDetail = (receipt: ExportReceipt) => {
@@ -91,15 +89,6 @@ const ExportManagement: React.FC = () => {
     );
   };
 
-  if (viewMode === "add") {
-    return (
-      <AddExportReceipt 
-        onSaveSuccess={handleAddReceipt} 
-        onCancel={() => setViewMode("list")} 
-      />
-    );
-  }
-
   return (
     <div className="p-8 min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
       <h1 className="text-3xl font-extrabold mb-8" style={{ color: '#53A88B' }}>Xuất chuồng</h1>
@@ -144,12 +133,13 @@ const ExportManagement: React.FC = () => {
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-base font-semibold text-[var(--color-secondary-foreground)]">Phiếu xuất chuồng</h2>
-          <button
-            onClick={() => setViewMode("add")}
-            className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
-          >
-            Tạo phiếu mới
-          </button>
+          <Link href="/export/add">
+            <button
+              className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
+            >
+              Tạo phiếu mới
+            </button>
+          </Link>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-emerald-100">

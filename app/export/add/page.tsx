@@ -8,12 +8,7 @@ import { ExportDetailItem } from "../type";
 import AddExportModal, { SelectedItem } from "./AddExportModal";
 import CageDetailModal from "./CageDetailModal";
 
-interface AddExportReceiptProps {
-  onSaveSuccess: (data: { dot: string; khachHang: string; ngayXuat: string }) => void;
-  onCancel: () => void;
-}
-
-const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onSaveSuccess, onCancel }) => {
+const AddExportReceipt: React.FC = () => {
   const router = useRouter();
   const formatter = new Intl.NumberFormat("vi-VN");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,14 +63,7 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onSaveSuccess, onCa
       return;
     }
 
-    const [year, month, day] = formData.ngayXuat.split("-");
-    const formattedDate = `${day}/${month}/${year}`;
-
-    onSaveSuccess({
-      dot: formData.dotXuat,
-      khachHang: formData.tenKhachHang,
-      ngayXuat: formattedDate,
-    });
+    router.push("/export");
   };
 
   const handleAddCagesFromModal = (selectedItems: SelectedItem[]) => {
@@ -100,20 +88,21 @@ const AddExportReceipt: React.FC<AddExportReceiptProps> = ({ onSaveSuccess, onCa
   return (
     <div className="p-8 min-h-screen animate-in fade-in duration-500 bg-[var(--color-background)] text-[var(--color-muted-foreground)]">
       <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={onCancel}
-          className="p-2 rounded-full transition hover:bg-gray-100"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 text-emerald-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        <Link href="/export">
+          <button
+            className="p-2 rounded-full transition hover:bg-gray-100"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-emerald-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </Link>
         <h1 className="text-2xl font-semibold text-[var(--color-secondary-foreground)]">Phiếu xuất chuồng</h1>
       </div>
 

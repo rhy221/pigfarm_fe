@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo } from "react";
 import { Filter } from "lucide-react";
-// Import component TreatmentDetail
+import Link from "next/link";
 import TreatmentDetail from "./treatment/TreatmentDetail"; 
+import HistoryDetailModal from "./HistoryDetailModal"; 
 
 const SickPigManagement: React.FC = () => {
   const [activeRecords] = useState([
@@ -13,14 +14,16 @@ const SickPigManagement: React.FC = () => {
   ]);
 
   const [historyRecords] = useState([
-    { stt: 1, chuong: "A001", loaiBenh: "Dịch tả heo Châu Phi", ngayPhatHien: "10/11/2025" },
-    { stt: 2, chuong: "A001", loaiBenh: "Tụ huyết trùng", ngayPhatHien: "09/11/2025" },
+    { stt: 1, chuong: "A001", soLuong: 20, loaiBenh: "Dịch tả heo Châu Phi", ngayPhatHien: "10/11/2025" },
+    { stt: 2, chuong: "A001", soLuong: 15, loaiBenh: "Tụ huyết trùng", ngayPhatHien: "09/11/2025" },
   ]);
 
   const [filterActive, setFilterActive] = useState("");
   const [filterHistory, setFilterHistory] = useState("");
 
-  // Logic chuyển trang thay vì Modal
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [selectedHistoryRecord, setSelectedHistoryRecord] = useState<any>(null);
+
   const [showDetail, setShowDetail] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
@@ -52,13 +55,19 @@ const SickPigManagement: React.FC = () => {
     filterHistory === "" ? true : item.loaiBenh === filterHistory
   );
 
-  // Nếu showDetail là true, render component TreatmentDetail
   if (showDetail && selectedRecord) {
     return <TreatmentDetail data={selectedRecord} onBack={handleBackToList} />;
   }
 
   return (
     <div className="p-8 min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
+      {/* Thêm Modal vào đây */}
+      <HistoryDetailModal 
+        isOpen={isHistoryModalOpen} 
+        onClose={() => setIsHistoryModalOpen(false)} 
+        data={selectedHistoryRecord} 
+      />
+
       <h1 className="text-3xl font-extrabold mb-8" style={{ color: '#53A88B' }}>Heo bệnh</h1>
 
       <section className="mb-10">
@@ -107,12 +116,20 @@ const SickPigManagement: React.FC = () => {
                   <td className="px-4 py-6 text-center text-gray-600">{item.loaiBenh}</td>
                   <td className="px-4 py-6 text-center">{item.ngayPhatHien}</td>
                   <td className="px-4 py-6 text-center">
-                    <span 
-                      onClick={() => handleOpenDetail(item)}
+                    <Link 
+                        href={{
+                          pathname: "/health/treatment",
+                          query: { 
+                            chuong: item.chuong,
+                            soLuong: item.soLuong,
+                            loaiBenh: item.loaiBenh,
+                            ngayPhatHien: item.ngayPhatHien
+                          }
+                        }}
                       className="text-emerald-600 font-medium hover:underline cursor-pointer"
                     >
                       Chi tiết
-                    </span>
+                    </Link>
                   </td>
                 </tr>
               ))}
@@ -171,7 +188,10 @@ const SickPigManagement: React.FC = () => {
                   <td className="px-4 py-6 text-center">{item.ngayPhatHien}</td>
                   <td className="px-4 py-6 text-center">
                     <span 
-                      onClick={() => handleOpenDetail(item)}
+                      onClick={() => {
+                        setSelectedHistoryRecord({ ...item, soLuong: item.soLuong || 0 });
+                        setIsHistoryModalOpen(true);
+                      }}
                       className="text-emerald-600 font-medium hover:underline cursor-pointer"
                     >
                       Chi tiết

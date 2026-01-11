@@ -73,7 +73,7 @@ export default function SuppliersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
 
-  const { data: suppliers, isLoading } = useSuppliers(FARM_ID, searchTerm);
+  const { data: suppliers, isLoading } = useSuppliers( searchTerm);
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
 
@@ -129,11 +129,11 @@ export default function SuppliersPage() {
       if (editingSupplier) {
         await updateSupplier.mutateAsync({
           id: editingSupplier.id,
-          data: { ...data, farmId: FARM_ID },
+          data: { ...data},
         });
         toast('Thành công', { description: 'Đã cập nhật nhà cung cấp' });
       } else {
-        await createSupplier.mutateAsync({ ...data, farmId: FARM_ID });
+        await createSupplier.mutateAsync({ ...data});
         toast('Thành công', { description: 'Đã tạo nhà cung cấp mới' });
       }
       setIsDialogOpen(false);

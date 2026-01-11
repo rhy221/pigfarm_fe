@@ -4,7 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
-import {
+import type {
   TransactionCategory,
   CashAccount,
   Transaction,
@@ -22,40 +22,46 @@ import {
   CreateMonthlyBillDto,
   CreateMonthlyBillRecordDto,
   PayMonthlyBillDto,
+  PayBillDto,
   CreateCustomerDto,
   TransactionQueryParams,
   CashBookReportParams,
   FinancialSummaryParams,
   MonthlyBillQueryParams,
   TransactionType,
-  PaginatedResponse,
+  IncomeExpenseReport,
+  InventoryReport,
+  SupplierDebtReport,
+  CashFlowReport,
+  MonthlyBillSummary,
 } from '@/types/finance';
+import type { PaginatedResponse } from '@/types/common';
 
 const FINANCE_KEYS = {
   all: ['finance'] as const,
-  categories: (farmId: string, type?: TransactionType) => [...FINANCE_KEYS.all, 'categories', farmId, type] as const,
-  accounts: (farmId: string) => [...FINANCE_KEYS.all, 'accounts', farmId] as const,
+  categories: (type?: TransactionType) => [...FINANCE_KEYS.all, 'categories', type] as const,
+  accounts: () => [...FINANCE_KEYS.all, 'accounts'] as const,
   account: (id: string) => [...FINANCE_KEYS.all, 'account', id] as const,
-  accountBalances: (farmId: string) => [...FINANCE_KEYS.all, 'accountBalances', farmId] as const,
+  accountBalances: () => [...FINANCE_KEYS.all, 'accountBalances'] as const,
   transactions: (params: TransactionQueryParams) => [...FINANCE_KEYS.all, 'transactions', params] as const,
   transaction: (id: string) => [...FINANCE_KEYS.all, 'transaction', id] as const,
   cashBook: (params: CashBookReportParams) => [...FINANCE_KEYS.all, 'cashBook', params] as const,
   summary: (params: FinancialSummaryParams) => [...FINANCE_KEYS.all, 'summary', params] as const,
-  dashboard: (farmId: string) => [...FINANCE_KEYS.all, 'dashboard', farmId] as const,
-  monthlyBills: (farmId: string) => [...FINANCE_KEYS.all, 'monthlyBills', farmId] as const,
+  dashboard: () => [...FINANCE_KEYS.all, 'dashboard'] as const,
+  monthlyBills: () => [...FINANCE_KEYS.all, 'monthlyBills'] as const,
   monthlyBillRecords: (params: MonthlyBillQueryParams) => [...FINANCE_KEYS.all, 'monthlyBillRecords', params] as const,
-  customers: (farmId: string) => [...FINANCE_KEYS.all, 'customers', farmId] as const,
+  customers: () => [...FINANCE_KEYS.all, 'customers'] as const,
 };
 
 // ============ TRANSACTION CATEGORY HOOKS ============
-export function useTransactionCategories(farmId: string, type?: TransactionType) {
-  const params = new URLSearchParams({ farmId });
+export function useTransactionCategories(type?: TransactionType) {
+  const params = new URLSearchParams();
   if (type) params.append('type', type);
 
   return useQuery({
-    queryKey: FINANCE_KEYS.categories(farmId, type),
+    queryKey: FINANCE_KEYS.categories(type),
     queryFn: () => api.get<TransactionCategory[]>(`/api/finance/categories?${params}`),
-    enabled: !!farmId,
+    // enabled: !!farmId,
   });
 }
 
@@ -65,7 +71,7 @@ export function useCreateTransactionCategory() {
     mutationFn: (data: CreateTransactionCategoryDto) =>
       api.post<TransactionCategory>('/api/finance/categories', data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.categories(variables.farmId) });
+      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.categories() });
     },
   });
 }
@@ -92,11 +98,11 @@ export function useDeleteTransactionCategory() {
 }
 
 // ============ CASH ACCOUNT HOOKS ============
-export function useCashAccounts(farmId: string) {
+export function useCashAccounts() {
   return useQuery({
-    queryKey: FINANCE_KEYS.accounts(farmId),
-    queryFn: () => api.get<CashAccount[]>(`/api/finance/accounts?farmId=${farmId}`),
-    enabled: !!farmId,
+    queryKey: FINANCE_KEYS.accounts(),
+    queryFn: () => api.get<CashAccount[]>(`/api/finance/accounts`),
+    // enabled: !!farmId,
   });
 }
 
@@ -108,11 +114,11 @@ export function useCashAccount(id: string) {
   });
 }
 
-export function useCashAccountBalances(farmId: string) {
+export function useCashAccountBalances() {
   return useQuery({
-    queryKey: FINANCE_KEYS.accountBalances(farmId),
-    queryFn: () => api.get<CashAccountBalances>(`/api/finance/accounts/balances?farmId=${farmId}`),
-    enabled: !!farmId,
+    queryKey: FINANCE_KEYS.accountBalances(),
+    queryFn: () => api.get<CashAccountBalances>(`/api/finance/accounts/balances`),
+    // enabled: !!farmId,
   });
 }
 
@@ -122,7 +128,7 @@ export function useCreateCashAccount() {
     mutationFn: (data: CreateCashAccountDto) =>
       api.post<CashAccount>('/api/finance/accounts', data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.accounts(variables.farmId) });
+      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.accounts() });
     },
   });
 }
@@ -160,7 +166,7 @@ export function useTransactions(params: TransactionQueryParams) {
   return useQuery({
     queryKey: FINANCE_KEYS.transactions(params),
     queryFn: () => api.get<PaginatedResponse<Transaction>>(`/api/finance/transactions?${searchParams}`),
-    enabled: !!params.farmId,
+    // enabled: !!params.farmId,
   });
 }
 
@@ -229,7 +235,9 @@ export function useCashBookReport(params: CashBookReportParams) {
   return useQuery({
     queryKey: FINANCE_KEYS.cashBook(params),
     queryFn: () => api.get<CashBookReport>(`/api/finance/reports/cash-book?${searchParams}`),
-    enabled: !!params.farmId && !!params.fromDate && !!params.toDate,
+    enabled: 
+    // !!params.farmId && 
+    !!params.fromDate && !!params.toDate,
   });
 }
 
@@ -244,24 +252,24 @@ export function useFinancialSummary(params: FinancialSummaryParams) {
   return useQuery({
     queryKey: FINANCE_KEYS.summary(params),
     queryFn: () => api.get<FinancialSummary>(`/api/finance/reports/summary?${searchParams}`),
-    enabled: !!params.farmId,
+    // enabled: !!params.farmId,
   });
 }
 
-export function useDashboardStats(farmId: string) {
+export function useDashboardStats() {
   return useQuery({
-    queryKey: FINANCE_KEYS.dashboard(farmId),
-    queryFn: () => api.get<DashboardStats>(`/api/finance/reports/dashboard?farmId=${farmId}`),
-    enabled: !!farmId,
+    queryKey: FINANCE_KEYS.dashboard(),
+    queryFn: () => api.get<DashboardStats>(`/api/finance/reports/dashboard`),
+    // enabled: !!farmId,
   });
 }
 
 // ============ MONTHLY BILL HOOKS ============
-export function useMonthlyBills(farmId: string) {
+export function useMonthlyBills() {
   return useQuery({
-    queryKey: FINANCE_KEYS.monthlyBills(farmId),
-    queryFn: () => api.get<MonthlyBill[]>(`/api/finance/monthly-bills?farmId=${farmId}`),
-    enabled: !!farmId,
+    queryKey: FINANCE_KEYS.monthlyBills(),
+    queryFn: () => api.get<MonthlyBill[]>(`/api/finance/monthly-bills`),
+    // enabled: !!farmId,
   });
 }
 
@@ -271,7 +279,7 @@ export function useCreateMonthlyBill() {
     mutationFn: (data: CreateMonthlyBillDto) =>
       api.post<MonthlyBill>('/api/finance/monthly-bills', data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.monthlyBills(variables.farmId) });
+      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.monthlyBills() });
     },
   });
 }
@@ -308,7 +316,7 @@ export function useMonthlyBillRecords(params: MonthlyBillQueryParams) {
   return useQuery({
     queryKey: FINANCE_KEYS.monthlyBillRecords(params),
     queryFn: () => api.get<MonthlyBillRecord[]>(`/api/finance/monthly-bills/records?${searchParams}`),
-    enabled: !!params.farmId,
+    // enabled: !!params.farmId,
   });
 }
 
@@ -323,7 +331,20 @@ export function useCreateMonthlyBillRecord() {
   });
 }
 
+// Thanh toán trực tiếp (tự động tạo record nếu chưa có)
 export function usePayMonthlyBill() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: PayBillDto) =>
+      api.post<Transaction>('/api/finance/monthly-bills/pay-direct', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.all });
+    },
+  });
+}
+
+// Thanh toán theo recordId (cần tạo record trước)
+export function usePayMonthlyBillByRecord() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: PayMonthlyBillDto) =>
@@ -335,14 +356,14 @@ export function usePayMonthlyBill() {
 }
 
 // ============ CUSTOMER HOOKS ============
-export function useCustomers(farmId: string, search?: string) {
-  const params = new URLSearchParams({ farmId });
+export function useCustomers( search?: string) {
+  const params = new URLSearchParams();
   if (search) params.append('search', search);
 
   return useQuery({
-    queryKey: [...FINANCE_KEYS.customers(farmId), search],
+    queryKey: [...FINANCE_KEYS.customers(), search],
     queryFn: () => api.get<Customer[]>(`/api/finance/customers?${params}`),
-    enabled: !!farmId,
+    // enabled: !!farmId,
   });
 }
 
@@ -352,7 +373,7 @@ export function useCreateCustomer() {
     mutationFn: (data: CreateCustomerDto) =>
       api.post<Customer>('/api/finance/customers', data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.customers(variables.farmId) });
+      queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.customers() });
     },
   });
 }
@@ -365,5 +386,78 @@ export function useUpdateCustomer() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: FINANCE_KEYS.all });
     },
+  });
+}
+
+// ============ REPORTS HOOKS ============
+
+const REPORT_KEYS = {
+  all: ['reports'] as const,
+  incomeExpense: ( startDate: string, endDate: string) => 
+    [...REPORT_KEYS.all, 'income-expense', startDate, endDate] as const,
+  inventory: (date: string) => 
+    [...REPORT_KEYS.all, 'inventory', date] as const,
+  supplierDebt: (startDate: string, endDate: string) => 
+    [...REPORT_KEYS.all, 'supplier-debt', startDate, endDate] as const,
+  cashFlow: (startDate: string, endDate: string) => 
+    [...REPORT_KEYS.all, 'cash-flow', startDate, endDate] as const,
+  billSummary: (month: number, year: number) =>
+    [...REPORT_KEYS.all, 'bill-summary', month, year] as const,
+};
+
+export function useIncomeExpenseReport(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: REPORT_KEYS.incomeExpense(startDate, endDate),
+    queryFn: () => api.get<IncomeExpenseReport>(
+      `/api/reports/income-expense&startDate=${startDate}&endDate=${endDate}`
+    ),
+    enabled: 
+    // !!farmId && 
+    !!startDate && !!endDate,
+  });
+}
+
+export function useInventoryReport(date?: string) {
+  const reportDate = date || new Date().toISOString().split('T')[0];
+  return useQuery({
+    queryKey: REPORT_KEYS.inventory(reportDate),
+    queryFn: () => api.get<InventoryReport>(
+      `/api/reports/inventory&date=${reportDate}`
+    ),
+    // enabled: !!farmId,
+  });
+}
+
+export function useSupplierDebtReport(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: REPORT_KEYS.supplierDebt(startDate, endDate),
+    queryFn: () => api.get<SupplierDebtReport>(
+      `/api/reports/supplier-debt&startDate=${startDate}&endDate=${endDate}`
+    ),
+    enabled: 
+    // !!farmId && 
+    !!startDate && !!endDate,
+  });
+}
+
+export function useCashFlowReport(startDate: string, endDate: string) {
+  return useQuery({
+    queryKey: REPORT_KEYS.cashFlow(startDate, endDate),
+    queryFn: () => api.get<CashFlowReport>(
+      `/api/reports/cash-flow&startDate=${startDate}&endDate=${endDate}`
+    ),
+    enabled: 
+    // !!farmId && 
+    !!startDate && !!endDate,
+  });
+}
+
+export function useMonthlyBillSummary( month: number, year: number) {
+  return useQuery({
+    queryKey: REPORT_KEYS.billSummary( month, year),
+    queryFn: () => api.get<MonthlyBillSummary>(
+      `/api/finance/monthly-bills/summary&month=${month}&year=${year}`
+    ),
+    // enabled: !!farmId,
   });
 }

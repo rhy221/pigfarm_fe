@@ -69,7 +69,7 @@ import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 
 
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 const issueTypeLabels: Record<string, string> = {
   usage: 'Sử dụng',
@@ -89,9 +89,9 @@ export default function StockIssuesPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  const { data: warehouses } = useWarehouses(FARM_ID);
+  const { data: warehouses } = useWarehouses();
   const { data: issues, isLoading } = useStockIssues({
-    farmId: FARM_ID,
+    // farmId: ,
     warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : undefined,
     status: selectedStatus !== 'all' ? (selectedStatus as any) : undefined,
     issueType: selectedType !== 'all' ? (selectedType as any) : undefined,

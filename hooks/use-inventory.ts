@@ -4,7 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
-import {
+import type {
   Warehouse,
   WarehouseCategory,
   Unit,
@@ -23,26 +23,30 @@ import {
   InventoryQueryParams,
   StockReceiptQueryParams,
   StockIssueQueryParams,
-  PaginatedResponse,
   ExpirySummary,
   ExpiryAlert,
   ExpiryAlertQueryParams,
   DisposeBatchDto,
   InventoryBatch,
+  InventoryHistoryQueryParams,
+  InventoryCheck,
+  CreateInventoryCheckDto,
+  UpdateInventoryCheckDto,
 } from '@/types/inventory';
+import type { PaginatedResponse } from '@/types/common';
 
 const INVENTORY_KEYS = {
   all: ['inventory'] as const,
-  warehouses: (farmId: string) => [...INVENTORY_KEYS.all, 'warehouses', farmId] as const,
+  warehouses: () => [...INVENTORY_KEYS.all, 'warehouses'] as const,
   warehouse: (id: string) => [...INVENTORY_KEYS.all, 'warehouse', id] as const,
-  categories: (farmId: string) => [...INVENTORY_KEYS.all, 'categories', farmId] as const,
-  units: (farmId: string) => [...INVENTORY_KEYS.all, 'units', farmId] as const,
-  products: (farmId: string) => [...INVENTORY_KEYS.all, 'products', farmId] as const,
+  categories: () => [...INVENTORY_KEYS.all, 'categories'] as const,
+  units: () => [...INVENTORY_KEYS.all, 'units'] as const,
+  products: () => [...INVENTORY_KEYS.all, 'products'] as const,
   product: (id: string) => [...INVENTORY_KEYS.all, 'product', id] as const,
-  suppliers: (farmId: string) => [...INVENTORY_KEYS.all, 'suppliers', farmId] as const,
+  suppliers: () => [...INVENTORY_KEYS.all, 'suppliers'] as const,
   supplier: (id: string) => [...INVENTORY_KEYS.all, 'supplier', id] as const,
   stock: (params: InventoryQueryParams) => [...INVENTORY_KEYS.all, 'stock', params] as const,
-  stockSummary: (farmId: string) => [...INVENTORY_KEYS.all, 'stockSummary', farmId] as const,
+  stockSummary: () => [...INVENTORY_KEYS.all, 'stockSummary'] as const,
   receipts: (params: StockReceiptQueryParams) => [...INVENTORY_KEYS.all, 'receipts', params] as const,
   receipt: (id: string) => [...INVENTORY_KEYS.all, 'receipt', id] as const,
   issues: (params: StockIssueQueryParams) => [...INVENTORY_KEYS.all, 'issues', params] as const,
@@ -51,11 +55,11 @@ const INVENTORY_KEYS = {
 };
 
 // ============ WAREHOUSE HOOKS ============
-export function useWarehouses(farmId: string) {
+export function useWarehouses() {
   return useQuery({
-    queryKey: INVENTORY_KEYS.warehouses(farmId),
-    queryFn: () => api.get<Warehouse[]>(`/api/inventory/warehouses?farmId=${farmId}`),
-    enabled: !!farmId,
+    queryKey: INVENTORY_KEYS.warehouses(),
+    queryFn: () => api.get<Warehouse[]>(`/api/inventory/warehouses`),
+    // enabled: !!farmId,
   });
 }
 
@@ -73,7 +77,7 @@ export function useCreateWarehouse() {
     mutationFn: (data: CreateWarehouseDto) =>
       api.post<Warehouse>('/api/inventory/warehouses', data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: INVENTORY_KEYS.warehouses(variables.farmId) });
+      queryClient.invalidateQueries({ queryKey: INVENTORY_KEYS.warehouses() });
     },
   });
 }
@@ -100,20 +104,20 @@ export function useDeleteWarehouse() {
 }
 
 // ============ CATEGORY HOOKS ============
-export function useWarehouseCategories(farmId: string) {
+export function useWarehouseCategories() {
   return useQuery({
-    queryKey: INVENTORY_KEYS.categories(farmId),
-    queryFn: () => api.get<WarehouseCategory[]>(`/api/inventory/categories?farmId=${farmId}`),
-    enabled: !!farmId,
+    queryKey: INVENTORY_KEYS.categories(),
+    queryFn: () => api.get<WarehouseCategory[]>(`/api/inventory/categories`),
+    // enabled: !!farmId,
   });
 }
 
 // ============ UNIT HOOKS ============
-export function useUnits(farmId: string) {
+export function useUnits() {
   return useQuery({
-    queryKey: INVENTORY_KEYS.units(farmId),
-    queryFn: () => api.get<Unit[]>(`/api/inventory/units?farmId=${farmId}`),
-    enabled: !!farmId,
+    queryKey: INVENTORY_KEYS.units(),
+    queryFn: () => api.get<Unit[]>(`/api/inventory/units`),
+    // enabled: !!farmId,
   });
 }
 
@@ -126,17 +130,17 @@ export interface ProductsQueryParams {
   limit?: number;
 }
 
-export function useProducts(farmId: string, options?: ProductsQueryParams) {
-  const params = new URLSearchParams({ farmId });
+export function useProducts( options?: ProductsQueryParams) {
+  const params = new URLSearchParams();
   if (options?.categoryId) params.append('categoryId', options.categoryId);
   if (options?.search) params.append('search', options.search);
   if (options?.page) params.append('page', options.page.toString());
   if (options?.limit) params.append('limit', options.limit.toString());
 
   return useQuery({
-    queryKey: [...INVENTORY_KEYS.products(farmId), options],
+    queryKey: [...INVENTORY_KEYS.products(), options],
     queryFn: () => api.get<PaginatedResponse<Product>>(`/api/inventory/products?${params}`),
-    enabled: !!farmId,
+    // enabled: !!farmId,
   });
 }
 
@@ -154,7 +158,7 @@ export function useCreateProduct() {
     mutationFn: (data: CreateProductDto) =>
       api.post<Product>('/api/inventory/products', data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: INVENTORY_KEYS.products(variables.farmId) });
+      queryClient.invalidateQueries({ queryKey: INVENTORY_KEYS.products() });
     },
   });
 }
@@ -181,14 +185,14 @@ export function useDeleteProduct() {
 }
 
 // ============ SUPPLIER HOOKS ============
-export function useSuppliers(farmId: string, search?: string) {
-  const params = new URLSearchParams({ farmId });
+export function useSuppliers(search?: string) {
+  const params = new URLSearchParams();
   if (search) params.append('search', search);
 
   return useQuery({
-    queryKey: [...INVENTORY_KEYS.suppliers(farmId), search],
+    queryKey: [...INVENTORY_KEYS.suppliers(), search],
     queryFn: () => api.get<Supplier[]>(`/api/inventory/suppliers?${params}`),
-    enabled: !!farmId,
+    // enabled: !!farmId,
   });
 }
 
@@ -206,7 +210,7 @@ export function useCreateSupplier() {
     mutationFn: (data: CreateSupplierDto) =>
       api.post<Supplier>('/api/inventory/suppliers', data),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: INVENTORY_KEYS.suppliers(variables.farmId) });
+      queryClient.invalidateQueries({ queryKey: INVENTORY_KEYS.suppliers() });
     },
   });
 }
@@ -234,32 +238,19 @@ export function useInventory(params: InventoryQueryParams) {
   return useQuery({
     queryKey: INVENTORY_KEYS.stock(params),
     queryFn: () => api.get<PaginatedResponse<Inventory>>(`/api/inventory/stock?${searchParams}`),
-    enabled: !!params.farmId,
+    // enabled: !!params.farmId,
   });
 }
 
-export function useInventorySummary(farmId: string) {
+export function useInventorySummary() {
   return useQuery({
-    queryKey: INVENTORY_KEYS.stockSummary(farmId),
-    queryFn: () => api.get<InventorySummary>(`/api/inventory/stock/summary?farmId=${farmId}`),
-    enabled: !!farmId,
+    queryKey: INVENTORY_KEYS.stockSummary(),
+    queryFn: () => api.get<InventorySummary>(`/api/inventory/stock/summary`),
+    // enabled: !!farmId,
   });
 }
 
-export function useInventoryHistory(params: any) {
-  const searchParams = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, String(value));
-    }
-  });
 
-  return useQuery({
-    queryKey: INVENTORY_KEYS.history(params),
-    queryFn: () => api.get<PaginatedResponse<InventoryHistory>>(`/api/inventory/stock/history?${searchParams}`),
-    enabled: !!params.farmId,
-  });
-}
 
 // ============ STOCK RECEIPT HOOKS ============
 export function useStockReceipts(params: StockReceiptQueryParams) {
@@ -273,7 +264,7 @@ export function useStockReceipts(params: StockReceiptQueryParams) {
   return useQuery({
     queryKey: INVENTORY_KEYS.receipts(params),
     queryFn: () => api.get<PaginatedResponse<StockReceipt>>(`/api/inventory/receipts?${searchParams}`),
-    enabled: !!params.farmId,
+    // enabled: !!params.farmId,
   });
 }
 
@@ -341,7 +332,7 @@ export function useStockIssues(params: StockIssueQueryParams) {
   return useQuery({
     queryKey: INVENTORY_KEYS.issues(params),
     queryFn: () => api.get<PaginatedResponse<StockIssue>>(`/api/inventory/issues?${searchParams}`),
-    enabled: !!params.farmId,
+    // enabled: !!params.farmId,
   });
 }
 
@@ -389,16 +380,16 @@ export function useCancelStockIssue() {
 // ============ EXPIRY ALERT HOOKS ============
 const EXPIRY_KEYS = {
   all: ['expiry'] as const,
-  summary: (farmId: string) => [...EXPIRY_KEYS.all, 'summary', farmId] as const,
-  alerts: (farmId: string) => [...EXPIRY_KEYS.all, 'alerts', farmId] as const,
+  summary: () => [...EXPIRY_KEYS.all, 'summary'] as const,
+  alerts: () => [...EXPIRY_KEYS.all, 'alerts'] as const,
   batches: (inventoryId: string) => [...EXPIRY_KEYS.all, 'batches', inventoryId] as const,
 };
 
-export function useExpirySummary(farmId: string) {
+export function useExpirySummary() {
   return useQuery({
-    queryKey: EXPIRY_KEYS.summary(farmId),
-    queryFn: () => api.get<ExpirySummary>(`/api/inventory/expiry/summary?farmId=${farmId}`),
-    enabled: !!farmId,
+    queryKey: EXPIRY_KEYS.summary(),
+    queryFn: () => api.get<ExpirySummary>(`/api/inventory/expiry/summary`),
+    // enabled: !!farmId,
   });
 }
 
@@ -411,9 +402,9 @@ export function useExpiryAlerts(params: ExpiryAlertQueryParams) {
   });
 
   return useQuery({
-    queryKey: [...EXPIRY_KEYS.alerts(params.farmId), params],
+    queryKey: [...EXPIRY_KEYS.alerts(), params],
     queryFn: () => api.get<PaginatedResponse<ExpiryAlert>>(`/api/inventory/expiry/alerts?${searchParams}`),
-    enabled: !!params.farmId,
+    // enabled: !!params.farmId,
   });
 }
 
@@ -432,8 +423,8 @@ export function useDisposeBatch() {
 export function useUpdateExpiredBatches() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (farmId: string) =>
-      api.post(`/api/inventory/expiry/update-status?farmId=${farmId}`),
+    mutationFn: () =>
+      api.post(`/api/inventory/expiry/update-status`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: EXPIRY_KEYS.all });
     },
@@ -446,5 +437,98 @@ export function useInventoryBatches(inventoryId: string, options?: { includeAll?
     queryKey: [...EXPIRY_KEYS.batches(inventoryId), options],
     queryFn: () => api.get<InventoryBatch[]>(`/api/inventory/batches/${inventoryId}${params}`),
     enabled: !!inventoryId,
+  });
+}
+
+// =====================================================
+// INVENTORY HISTORY HOOKS
+// =====================================================
+
+const HISTORY_KEYS = {
+  all: ['inventory-history'] as const,
+  list: (params: InventoryHistoryQueryParams) => [...HISTORY_KEYS.all, 'list', params] as const,
+};
+
+const CHECK_KEYS = {
+  all: ['inventory-checks'] as const,
+  list: () => [...CHECK_KEYS.all, 'list'] as const,
+  detail: (id: string) => [...CHECK_KEYS.all, 'detail', id] as const,
+};
+
+export function useInventoryHistory(params: InventoryHistoryQueryParams) {
+  const searchParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      searchParams.append(key, String(value));
+    }
+  });
+
+  return useQuery({
+    queryKey: HISTORY_KEYS.list(params),
+    queryFn: () => api.get<PaginatedResponse<InventoryHistory>>(`/api/inventory/history?${searchParams}`),
+    // enabled: !!params.farmId,
+  });
+}
+
+export function useInventoryChecks( status?: string) {
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  
+  return useQuery({
+    queryKey: CHECK_KEYS.list(),
+    queryFn: () => api.get<PaginatedResponse<InventoryCheck>>(`/api/inventory/checks?${params}`),
+    // enabled: !!farmId,
+  });
+}
+
+export function useInventoryCheck(id: string) {
+  return useQuery({
+    queryKey: CHECK_KEYS.detail(id),
+    queryFn: () => api.get<InventoryCheck>(`/api/inventory/checks/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useCreateInventoryCheck() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CreateInventoryCheckDto) => 
+      api.post<InventoryCheck>('/api/inventory/checks', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CHECK_KEYS.all });
+    },
+  });
+}
+
+export function useUpdateInventoryCheck() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateInventoryCheckDto }) =>
+      api.patch<InventoryCheck>(`/api/inventory/checks/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CHECK_KEYS.all });
+    },
+  });
+}
+
+export function useConfirmInventoryCheck() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post(`/api/inventory/checks/${id}/confirm`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CHECK_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: INVENTORY_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: HISTORY_KEYS.all });
+    },
+  });
+}
+
+export function useCancelInventoryCheck() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.post(`/api/inventory/checks/${id}/cancel`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CHECK_KEYS.all });
+    },
   });
 }

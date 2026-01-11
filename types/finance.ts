@@ -37,7 +37,7 @@ export enum BillStatus {
 // Interfaces
 export interface TransactionCategory {
   id: string;
-  farmId: string;
+  // farmId: string;
   parentId?: string;
   name: string;
   type: TransactionType;
@@ -53,7 +53,7 @@ export interface TransactionCategory {
 
 export interface CashAccount {
   id: string;
-  farmId: string;
+  // farmId: string;
   name: string;
   accountType: AccountType;
   accountNumber?: string;
@@ -69,7 +69,7 @@ export interface CashAccount {
 
 export interface Transaction {
   id: string;
-  farmId: string;
+  // farmId: string;
   cashAccountId: string;
   categoryId?: string;
   transactionCode: string;
@@ -98,7 +98,7 @@ export interface Transaction {
 
 export interface SupplierDebt {
   id: string;
-  farmId: string;
+  // farmId: string;
   supplierId: string;
   referenceType: string;
   referenceId: string;
@@ -113,7 +113,7 @@ export interface SupplierDebt {
 
 export interface Customer {
   id: string;
-  farmId: string;
+  // farmId: string;
   code?: string;
   name: string;
   contactPerson?: string;
@@ -129,7 +129,7 @@ export interface Customer {
 
 export interface MonthlyBill {
   id: string;
-  farmId: string;
+  // farmId: string;
   categoryId?: string;
   name: string;
   description?: string;
@@ -138,7 +138,11 @@ export interface MonthlyBill {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // Relations
   category?: TransactionCategory;
+  // Computed
+  currentMonthStatus?: BillStatus;
+  lastPaidDate?: string;
 }
 
 export interface MonthlyBillRecord {
@@ -154,13 +158,14 @@ export interface MonthlyBillRecord {
   notes?: string;
   createdAt: string;
   updatedAt: string;
+  // Relations
   bill?: MonthlyBill;
   transaction?: Transaction;
 }
 
 // DTOs
 export interface CreateTransactionCategoryDto {
-  farmId: string;
+  // farmId: string;
   parentId?: string;
   name: string;
   type: TransactionType;
@@ -170,7 +175,7 @@ export interface CreateTransactionCategoryDto {
 }
 
 export interface CreateCashAccountDto {
-  farmId: string;
+  // farmId: string;
   name: string;
   accountType?: AccountType;
   accountNumber?: string;
@@ -181,7 +186,7 @@ export interface CreateCashAccountDto {
 }
 
 export interface CreateTransactionDto {
-  farmId: string;
+  // farmId: string;
   cashAccountId: string;
   categoryId?: string;
   transactionType: TransactionType;
@@ -198,7 +203,7 @@ export interface CreateTransactionDto {
 }
 
 export interface CreateSupplierPaymentDto {
-  farmId: string;
+  // farmId: string;
   supplierId: string;
   cashAccountId: string;
   paymentDate: string;
@@ -208,7 +213,7 @@ export interface CreateSupplierPaymentDto {
 }
 
 export interface CreateMonthlyBillDto {
-  farmId: string;
+  // farmId: string;
   categoryId?: string;
   name: string;
   description?: string;
@@ -233,7 +238,7 @@ export interface PayMonthlyBillDto {
 }
 
 export interface CreateCustomerDto {
-  farmId: string;
+  // farmId: string;
   code?: string;
   name: string;
   contactPerson?: string;
@@ -245,7 +250,7 @@ export interface CreateCustomerDto {
 
 // Query params
 export interface TransactionQueryParams {
-  farmId?: string;
+  // farmId?: string;
   cashAccountId?: string;
   categoryId?: string;
   transactionType?: TransactionType;
@@ -258,14 +263,14 @@ export interface TransactionQueryParams {
 }
 
 export interface CashBookReportParams {
-  farmId: string;
+  // farmId: string;
   cashAccountId?: string;
   fromDate: string;
   toDate: string;
 }
 
 export interface FinancialSummaryParams {
-  farmId: string;
+  // farmId: string;
   month?: number;
   year?: number;
   fromDate?: string;
@@ -273,7 +278,7 @@ export interface FinancialSummaryParams {
 }
 
 export interface MonthlyBillQueryParams {
-  farmId?: string;
+  // farmId?: string;
   month?: number;
   year?: number;
   status?: BillStatus;
@@ -322,10 +327,165 @@ export interface DashboardStats {
   overdueCount: number;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+// =====================================================
+// ADDITIONAL MONTHLY BILLS TYPES
+// =====================================================
+
+export interface UpdateMonthlyBillDto {
+  categoryId?: string;
+  name?: string;
+  description?: string;
+  defaultAmount?: number;
+  dueDay?: number;
+  isActive?: boolean;
+}
+
+// DTO cho thanh toán theo recordId
+export interface PayMonthlyBillDto {
+  recordId: string;
+  cashAccountId: string;
+  paidDate?: string;
+  notes?: string;
+}
+
+// DTO cho thanh toán trực tiếp (tự động tạo record)
+export interface PayBillDto {
+  billId: string;
+  periodMonth: number;
+  periodYear: number;
+  amount: number;
+  cashAccountId: string;
+  paidDate: string;
+  notes?: string;
+}
+
+export interface MonthlyBillSummary {
+  totalBills: number;
+  paidCount: number;
+  pendingCount: number;
+  overdueCount: number;
+  totalAmount: number;
+  paidAmount: number;
+  pendingAmount: number;
+}
+
+// =====================================================
+// REPORTS TYPES
+// =====================================================
+
+export interface ReportPeriod {
+  startDate: string;
+  endDate: string;
+  periodType: 'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+}
+
+export interface IncomeExpenseReport {
+  period: ReportPeriod;
+  summary: {
+    totalIncome: number;
+    totalExpense: number;
+    netProfit: number;
+    profitMargin: number;
+  };
+  incomeByCategory: Array<{
+    categoryId: string;
+    categoryName: string;
+    amount: number;
+    percentage: number;
+    transactionCount: number;
+  }>;
+  expenseByCategory: Array<{
+    categoryId: string;
+    categoryName: string;
+    amount: number;
+    percentage: number;
+    transactionCount: number;
+  }>;
+  dailyData: Array<{
+    date: string;
+    income: number;
+    expense: number;
+    balance: number;
+  }>;
+}
+
+export interface InventoryReport {
+  period: ReportPeriod;
+  summary: {
+    totalProducts: number;
+    totalValue: number;
+    lowStockCount: number;
+    outOfStockCount: number;
+    expiringCount: number;
+  };
+  byCategory: Array<{
+    categoryId: string;
+    categoryName: string;
+    productCount: number;
+    totalValue: number;
+    percentage: number;
+  }>;
+  byWarehouse: Array<{
+    warehouseId: string;
+    warehouseName: string;
+    productCount: number;
+    totalValue: number;
+    percentage: number;
+  }>;
+  topProducts: Array<{
+    productId: string;
+    productName: string;
+    quantity: number;
+    value: number;
+    movement: number; // số lượng xuất trong kỳ
+  }>;
+}
+
+export interface SupplierDebtReport {
+  period: ReportPeriod;
+  summary: {
+    totalDebt: number;
+    totalPurchase: number;
+    totalPayment: number;
+    supplierCount: number;
+  };
+  bySupplier: Array<{
+    supplierId: string;
+    supplierName: string;
+    openingDebt: number;
+    purchaseAmount: number;
+    paymentAmount: number;
+    closingDebt: number;
+  }>;
+  agingAnalysis: {
+    current: number; // 0-30 ngày
+    days30to60: number;
+    days60to90: number;
+    over90Days: number;
+  };
+}
+
+export interface CashFlowReport {
+  period: ReportPeriod;
+  summary: {
+    openingBalance: number;
+    totalInflow: number;
+    totalOutflow: number;
+    closingBalance: number;
+  };
+  byAccount: Array<{
+    accountId: string;
+    accountName: string;
+    accountType: AccountType;
+    openingBalance: number;
+    inflow: number;
+    outflow: number;
+    closingBalance: number;
+  }>;
+  dailyFlow: Array<{
+    date: string;
+    inflow: number;
+    outflow: number;
+    balance: number;
+  }>;
 }

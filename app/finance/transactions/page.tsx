@@ -57,7 +57,7 @@ import { TransactionType } from '@/types/finance';
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS,  PageBreadcrumb } from '@/components/page-breadcrumb';
 
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 export default function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,10 +68,10 @@ export default function TransactionsPage() {
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: accounts } = useCashAccounts(FARM_ID);
-  const { data: categories } = useTransactionCategories(FARM_ID);
+  const { data: accounts } = useCashAccounts();
+  const { data: categories } = useTransactionCategories();
   const { data: transactions, isLoading } = useTransactions({
-    farmId: FARM_ID,
+    // farmId: ,
     cashAccountId: selectedAccount !== 'all' ? selectedAccount : undefined,
     categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
     transactionType: transactionType !== 'all' ? (transactionType as TransactionType) : undefined,

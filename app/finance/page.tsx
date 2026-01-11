@@ -50,7 +50,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { TransactionType } from '@/types/finance';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 export default function FinancePage() {
   const [dateRange, setDateRange] = useState({
@@ -63,10 +63,10 @@ export default function FinancePage() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState('transactions');
 
-  const { data: stats } = useDashboardStats(FARM_ID);
-  const { data: accounts } = useCashAccounts(FARM_ID);
+  const { data: stats } = useDashboardStats();
+  const { data: accounts } = useCashAccounts();
   const { data: transactions, isLoading: transactionsLoading } = useTransactions({
-    farmId: FARM_ID,
+    // farmId: ,
     cashAccountId: selectedAccount !== 'all' ? selectedAccount : undefined,
     transactionType: transactionType !== 'all' ? (transactionType as TransactionType) : undefined,
     fromDate: format(dateRange.from, 'yyyy-MM-dd'),
@@ -77,14 +77,14 @@ export default function FinancePage() {
   });
 
   const { data: cashBook } = useCashBookReport({
-    farmId: FARM_ID,
+    // farmId: ,
     cashAccountId: selectedAccount !== 'all' ? selectedAccount : undefined,
     fromDate: format(dateRange.from, 'yyyy-MM-dd'),
     toDate: format(dateRange.to, 'yyyy-MM-dd'),
   });
 
   const { data: summary } = useFinancialSummary({
-    farmId: FARM_ID,
+    // farmId: ,
     fromDate: format(dateRange.from, 'yyyy-MM-dd'),
     toDate: format(dateRange.to, 'yyyy-MM-dd'),
   });

@@ -58,7 +58,7 @@ export default function NewStockIssuePage() {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [createdIssueId, setCreatedIssueId] = useState<string | null>(null);
 
-  const { data: warehouses } = useWarehouses(FARM_ID);
+  const { data: warehouses } = useWarehouses();
 
   const form = useForm<StockIssueFormValues>({
     resolver: zodResolver(stockIssueFormSchema),
@@ -74,7 +74,7 @@ export default function NewStockIssuePage() {
 
   const selectedWarehouseId = form.watch('warehouseId');
   const { data: inventoryData } = useInventory({
-    farmId: FARM_ID,
+    // farmId: FARM_ID,
     warehouseId: selectedWarehouseId || undefined,
     limit: 1000,
   });
@@ -132,7 +132,7 @@ export default function NewStockIssuePage() {
 
     try {
       const result = await createIssue.mutateAsync({
-        farmId: FARM_ID,
+        // farmId: FARM_ID,
         warehouseId: data.warehouseId,
         issueDate: format(data.issueDate, 'yyyy-MM-dd'),
         issueType: data.issueType,

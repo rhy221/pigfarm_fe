@@ -60,7 +60,7 @@ import { formatCurrency, formatNumber, cn } from '@/lib/utils';
 import { ExpiryStatus, ExpiryAlert } from '@/types/inventory';
 import { toast } from 'sonner';
 
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 const breadcrumbItems = [
   { label: 'Quản lý Kho', href: '/inventory' },
@@ -79,11 +79,11 @@ export default function ExpiryAlertsPage() {
   const [disposeReason, setDisposeReason] = useState('');
 
 
-  const { data: summary } = useExpirySummary(FARM_ID);
-  const { data: warehouses } = useWarehouses(FARM_ID);
-  const { data: categories } = useWarehouseCategories(FARM_ID);
+  const { data: summary } = useExpirySummary();
+  const { data: warehouses } = useWarehouses();
+  const { data: categories } = useWarehouseCategories();
   const { data: alerts, isLoading, refetch } = useExpiryAlerts({
-    farmId: FARM_ID,
+    // farmId: ,
     expiryStatus: selectedStatus !== 'all' ? selectedStatus as ExpiryStatus : undefined,
     warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : undefined,
     categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
@@ -96,7 +96,7 @@ export default function ExpiryAlertsPage() {
 
   const handleUpdateExpiredStatus = async () => {
     try {
-      const result = await updateExpired.mutateAsync(FARM_ID);
+      const result = await updateExpired.mutateAsync();
       toast('Thành công',{description: `Đã cập nhật trạng thái` });
       refetch();
     } catch (error: any) {

@@ -41,10 +41,10 @@ import Link from 'next/link';
 import { TransactionType } from '@/types/finance';
 
 interface FinanceDashboardProps {
-  farmId: string;
+  // : string;
 }
 
-export default function FinanceDashboard({ farmId }: FinanceDashboardProps) {
+export default function FinanceDashboard() {
   const [dateRange, setDateRange] = useState({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
@@ -54,10 +54,10 @@ export default function FinanceDashboard({ farmId }: FinanceDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
 
-  const { data: stats, isLoading: statsLoading } = useDashboardStats(farmId);
-  const { data: accounts } = useCashAccounts(farmId);
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: accounts } = useCashAccounts();
   const { data: transactions, isLoading: transactionsLoading } = useTransactions({
-    farmId,
+    
     cashAccountId: selectedAccount !== 'all' ? selectedAccount : undefined,
     transactionType: transactionType !== 'all' ? (transactionType as TransactionType) : undefined,
     fromDate: format(dateRange.from, 'yyyy-MM-dd'),
@@ -68,7 +68,7 @@ export default function FinanceDashboard({ farmId }: FinanceDashboardProps) {
   });
 
   const { data: summary } = useFinancialSummary({
-    farmId,
+    
     fromDate: format(dateRange.from, 'yyyy-MM-dd'),
     toDate: format(dateRange.to, 'yyyy-MM-dd'),
   });
@@ -365,7 +365,7 @@ export default function FinanceDashboard({ farmId }: FinanceDashboardProps) {
         </TabsContent>
 
         <TabsContent value="cashbook">
-          <CashBookTab farmId={farmId} dateRange={dateRange} />
+          <CashBookTab dateRange={dateRange} />
         </TabsContent>
 
         <TabsContent value="summary">
@@ -373,7 +373,7 @@ export default function FinanceDashboard({ farmId }: FinanceDashboardProps) {
         </TabsContent>
 
         <TabsContent value="monthly-bills">
-          <MonthlyBillsTab farmId={farmId} />
+          <MonthlyBillsTab  />
         </TabsContent>
       </Tabs>
     </div>
@@ -382,14 +382,14 @@ export default function FinanceDashboard({ farmId }: FinanceDashboardProps) {
 
 // Sub-components
 function CashBookTab({
-  farmId,
+
   dateRange,
 }: {
-  farmId: string;
+ 
   dateRange: { from: Date; to: Date };
 }) {
   const { data: cashBook, isLoading } = useCashBookReport({
-    farmId,
+    
     fromDate: format(dateRange.from, 'yyyy-MM-dd'),
     toDate: format(dateRange.to, 'yyyy-MM-dd'),
   });
@@ -555,7 +555,7 @@ function FinancialSummaryTab({ summary }: { summary: any }) {
   );
 }
 
-function MonthlyBillsTab({ farmId }: { farmId: string }) {
+function MonthlyBillsTab() {
   return (
     <Card>
       <CardHeader>

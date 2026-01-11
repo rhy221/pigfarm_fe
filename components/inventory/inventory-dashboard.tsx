@@ -27,20 +27,20 @@ import {
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import Link from 'next/link';
 
-interface InventoryDashboardProps {
-  farmId: string;
-}
+// interface InventoryDashboardProps {
+//   : string;
+// }
 
-export default function InventoryDashboard({ farmId }: InventoryDashboardProps) {
+export default function InventoryDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>('all');
   const [stockStatus, setStockStatus] = useState<string>('all');
   const [page, setPage] = useState(1);
 
-  const { data: summary, isLoading: summaryLoading } = useInventorySummary(farmId);
-  const { data: warehouses } = useWarehouses(farmId);
+  const { data: summary, isLoading: summaryLoading } = useInventorySummary();
+  const { data: warehouses } = useWarehouses();
   const { data: inventory, isLoading: inventoryLoading } = useInventory({
-    farmId,
+    // ,
     warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : undefined,
     search: searchTerm || undefined,
     stockStatus: stockStatus as any,
@@ -271,15 +271,15 @@ export default function InventoryDashboard({ farmId }: InventoryDashboardProps) 
         </TabsContent>
 
         <TabsContent value="receipts">
-          <StockReceiptsList farmId={farmId} />
+          <StockReceiptsList  />
         </TabsContent>
 
         <TabsContent value="issues">
-          <StockIssuesList farmId={farmId} />
+          <StockIssuesList  />
         </TabsContent>
 
         <TabsContent value="history">
-          <InventoryHistoryList farmId={farmId} />
+          <InventoryHistoryList  />
         </TabsContent>
       </Tabs>
     </div>
@@ -287,7 +287,7 @@ export default function InventoryDashboard({ farmId }: InventoryDashboardProps) 
 }
 
 // Sub-components
-function StockReceiptsList({ farmId }: { farmId: string }) {
+function StockReceiptsList() {
   // Implementation for stock receipts list
   return (
     <Card>
@@ -315,7 +315,7 @@ function StockReceiptsList({ farmId }: { farmId: string }) {
   );
 }
 
-function StockIssuesList({ farmId }: { farmId: string }) {
+function StockIssuesList() {
   return (
     <Card>
       <CardHeader>
@@ -341,7 +341,7 @@ function StockIssuesList({ farmId }: { farmId: string }) {
   );
 }
 
-function InventoryHistoryList({ farmId }: { farmId: string }) {
+function InventoryHistoryList() {
   return (
     <Card>
       <CardHeader>

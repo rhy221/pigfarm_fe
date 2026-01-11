@@ -83,7 +83,7 @@ export default function WarehousesPage() {
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: warehouses, isLoading } = useWarehouses(FARM_ID);
+  const { data: warehouses, isLoading } = useWarehouses();
   const createWarehouse = useCreateWarehouse();
   const updateWarehouse = useUpdateWarehouse();
   const deleteWarehouse = useDeleteWarehouse();
@@ -128,11 +128,11 @@ export default function WarehousesPage() {
       if (editingWarehouse) {
         await updateWarehouse.mutateAsync({
           id: editingWarehouse.id,
-          data: { ...data, farmId: FARM_ID },
+          data: { ...data},
         });
         toast('Thành công',{ description: 'Đã cập nhật kho' });
       } else {
-        await createWarehouse.mutateAsync({ ...data, farmId: FARM_ID });
+        await createWarehouse.mutateAsync({ ...data});
         toast('Thành công',{ description: 'Đã tạo kho mới' });
       }
       setIsDialogOpen(false);

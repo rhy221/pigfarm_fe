@@ -131,6 +131,19 @@ export const BREADCRUMB_CONFIGS = {
     { label: 'Quản lý Kho', href: '/inventory' },
     { label: 'Cảnh báo hạn sử dụng' },
   ],
+  history: [
+    { label: 'Quản lý Kho', href: '/inventory' },
+    { label: 'Lịch sử kho' },
+  ],
+  checks: [
+    { label: 'Quản lý Kho', href: '/inventory' },
+    { label: 'Kiểm kê kho' },
+  ],
+  checkDetail: (code: string) => [
+    { label: 'Quản lý Kho', href: '/inventory' },
+    { label: 'Kiểm kê kho', href: '/inventory/checks' },
+    { label: code },
+  ],
 
   // Finance
   finance: [

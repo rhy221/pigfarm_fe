@@ -63,7 +63,7 @@ import {
 import { formatCurrency, formatNumber, cn } from '@/lib/utils';
 import { StockStatus, Inventory } from '@/types/inventory';
 
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 export default function InventoryPage() {
   const searchParams = useSearchParams();
@@ -77,12 +77,12 @@ export default function InventoryPage() {
   const [selectedInventory, setSelectedInventory] = useState<Inventory | null>(null);
   const [batchDetailOpen, setBatchDetailOpen] = useState(false);
 
-  const { data: summary, isLoading: summaryLoading } = useInventorySummary(FARM_ID);
-  const { data: expirySummary } = useExpirySummary(FARM_ID);
-  const { data: warehouses } = useWarehouses(FARM_ID);
-  const { data: categories } = useWarehouseCategories(FARM_ID);
+  const { data: summary, isLoading: summaryLoading } = useInventorySummary();
+  const { data: expirySummary } = useExpirySummary();
+  const { data: warehouses } = useWarehouses();
+  const { data: categories } = useWarehouseCategories();
   const { data: inventory, isLoading: inventoryLoading } = useInventory({
-    farmId: FARM_ID,
+    // farmId: ,
     warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : undefined,
     categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
     search: searchTerm || undefined,

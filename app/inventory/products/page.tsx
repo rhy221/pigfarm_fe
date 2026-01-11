@@ -84,7 +84,7 @@ import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 
 
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 const productFormSchema = z.object({
   name: z.string().min(1, 'Vui lòng nhập tên sản phẩm'),
@@ -105,14 +105,14 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: products, isLoading } = useProducts(FARM_ID, {
+  const { data: products, isLoading } = useProducts( {
     categoryId: selectedCategory !== 'all' ? selectedCategory : undefined,
     search: searchTerm || undefined,
     page,
     limit: 20,
   });
-  const { data: categories } = useWarehouseCategories(FARM_ID);
-  const { data: units } = useUnits(FARM_ID);
+  const { data: categories } = useWarehouseCategories();
+  const { data: units } = useUnits();
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
@@ -161,11 +161,11 @@ export default function ProductsPage() {
       if (editingProduct) {
         await updateProduct.mutateAsync({
           id: editingProduct.id,
-          data: { ...data, farmId: FARM_ID },
+          data: { ...data,   },
         });
         toast('Thành công', { description: 'Đã cập nhật sản phẩm' });
       } else {
-        await createProduct.mutateAsync({ ...data, farmId: FARM_ID });
+        await createProduct.mutateAsync({ ...data,   });
         toast('Thành công', { description: 'Đã tạo sản phẩm mới' });
       }
       setIsDialogOpen(false);

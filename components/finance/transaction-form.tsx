@@ -46,11 +46,11 @@ const transactionFormSchema = z.object({
 
 type TransactionFormValues = z.infer<typeof transactionFormSchema>;
 
-interface TransactionFormProps {
-  farmId: string;
-}
+// interface TransactionFormProps {
+//   : string;
+// }
 
-export default function TransactionForm({ farmId }: TransactionFormProps) {
+export default function TransactionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -58,10 +58,10 @@ export default function TransactionForm({ farmId }: TransactionFormProps) {
     ? TransactionType.INCOME 
     : TransactionType.EXPENSE;
 
-  const { data: accounts } = useCashAccounts(farmId);
-  const { data: incomeCategories } = useTransactionCategories(farmId, TransactionType.INCOME);
-  const { data: expenseCategories } = useTransactionCategories(farmId, TransactionType.EXPENSE);
-  const { data: suppliers } = useSuppliers(farmId);
+  const { data: accounts } = useCashAccounts();
+  const { data: incomeCategories } = useTransactionCategories( TransactionType.INCOME);
+  const { data: expenseCategories } = useTransactionCategories( TransactionType.EXPENSE);
+  const { data: suppliers } = useSuppliers();
 
   const createTransaction = useCreateTransaction();
 
@@ -102,7 +102,7 @@ export default function TransactionForm({ farmId }: TransactionFormProps) {
   const onSubmit = async (data: TransactionFormValues) => {
     try {
       await createTransaction.mutateAsync({
-        farmId,
+        
         cashAccountId: data.cashAccountId,
         categoryId: data.categoryId || undefined,
         transactionType: data.transactionType,

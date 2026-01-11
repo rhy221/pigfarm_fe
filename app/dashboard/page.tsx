@@ -24,11 +24,11 @@ import { useDashboardStats } from '@/hooks/use-finance';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 
 // Hardcoded farmId for demo - in production, get from auth context
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 export default function DashboardPage() {
-  const { data: inventorySummary } = useInventorySummary(FARM_ID);
-  const { data: financeStats } = useDashboardStats(FARM_ID);
+  const { data: inventorySummary } = useInventorySummary();
+  const { data: financeStats } = useDashboardStats();
 
   const profit = (financeStats?.monthlyIncome || 0) - (financeStats?.monthlyExpense || 0);
 

@@ -66,19 +66,19 @@ const stockReceiptFormSchema = z.object({
 type StockReceiptFormValues = z.infer<typeof stockReceiptFormSchema>;
 
 interface StockReceiptFormProps {
-  farmId: string;
+  // : string;
   receiptId?: string; // For edit mode
 }
 
-export default function StockReceiptForm({ farmId, receiptId }: StockReceiptFormProps) {
+export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
   const router = useRouter();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [createdReceiptId, setCreatedReceiptId] = useState<string | null>(null);
 
-  const { data: warehouses } = useWarehouses(farmId);
-  const { data: productsData } = useProducts(farmId, { limit: 1000 }); // Load all products for dropdown
+  const { data: warehouses } = useWarehouses();
+  const { data: productsData } = useProducts( { limit: 1000 }); // Load all products for dropdown
   const products = productsData?.data;
-  const { data: suppliers } = useSuppliers(farmId);
+  const { data: suppliers } = useSuppliers();
 
   const createReceipt = useCreateStockReceipt();
   const confirmReceipt = useConfirmStockReceipt();
@@ -156,7 +156,7 @@ export default function StockReceiptForm({ farmId, receiptId }: StockReceiptForm
   const onSubmit = async (data: StockReceiptFormValues) => {
     try {
       const result = await createReceipt.mutateAsync({
-        farmId,
+        
         warehouseId: data.warehouseId,
         supplierId: data.supplierId || undefined,
         receiptDate: format(data.receiptDate, 'yyyy-MM-dd'),

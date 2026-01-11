@@ -70,7 +70,7 @@ import {
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 export default function StockReceiptsPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,10 +82,10 @@ export default function StockReceiptsPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  const { data: warehouses } = useWarehouses(FARM_ID);
-  const { data: suppliers } = useSuppliers(FARM_ID);
+  const { data: warehouses } = useWarehouses();
+  const { data: suppliers } = useSuppliers();
   const { data: receipts, isLoading } = useStockReceipts({
-    farmId: FARM_ID,
+    // farmId: ,
     warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : undefined,
     supplierId: selectedSupplier !== 'all' ? selectedSupplier : undefined,
     status: selectedStatus !== 'all' ? (selectedStatus as any) : undefined,

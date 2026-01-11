@@ -75,7 +75,7 @@ import { AccountType, CashAccount } from '@/types/finance';
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 const accountFormSchema = z.object({
   name: z.string().min(1, 'Vui lòng nhập tên tài khoản'),
@@ -94,7 +94,7 @@ export default function CashAccountsPage() {
   const [editingAccount, setEditingAccount] = useState<CashAccount | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const { data: accounts, isLoading } = useCashAccounts(FARM_ID);
+  const { data: accounts, isLoading } = useCashAccounts();
   const createAccount = useCreateCashAccount();
   const updateAccount = useUpdateCashAccount();
   const deleteAccount = useDeleteCashAccount();
@@ -147,7 +147,7 @@ export default function CashAccountsPage() {
           id: editingAccount.id,
           data: {
             ...data,
-            farmId: FARM_ID,
+            // farmId: ,
           },
         });
         toast('Thành công',{
@@ -156,7 +156,7 @@ export default function CashAccountsPage() {
       } else {
         await createAccount.mutateAsync({
           ...data,
-          farmId: FARM_ID,
+          // farmId: ,
         });
         toast('Thành công', {
           description: 'Đã tạo tài khoản mới',

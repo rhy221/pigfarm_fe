@@ -53,7 +53,7 @@ export enum StockStatus {
 // Interfaces
 export interface Unit {
   id: string;
-  farmId: string;
+  // farmId: string;
   name: string;
   abbreviation?: string;
   isActive: boolean;
@@ -62,7 +62,7 @@ export interface Unit {
 
 export interface WarehouseCategory {
   id: string;
-  farmId: string;
+  // farmId: string;
   name: string;
   description?: string;
   type: CategoryType;
@@ -73,7 +73,7 @@ export interface WarehouseCategory {
 
 export interface Warehouse {
   id: string;
-  farmId: string;
+  // farmId: string;
   name: string;
   location?: string;
   description?: string;
@@ -89,7 +89,7 @@ export interface Warehouse {
 
 export interface Product {
   id: string;
-  farmId: string;
+  // farmId: string;
   categoryId?: string;
   code?: string;
   name: string;
@@ -108,7 +108,7 @@ export interface Product {
 
 export interface Supplier {
   id: string;
-  farmId: string;
+  // farmId: string;
   code?: string;
   name: string;
   contactPerson?: string;
@@ -127,7 +127,7 @@ export interface Supplier {
 
 export interface Inventory {
   id: string;
-  farmId: string;
+  // farmId: string;
   warehouseId: string;
   productId: string;
   quantity: number;
@@ -156,7 +156,7 @@ export interface StockReceiptItem {
 
 export interface StockReceipt {
   id: string;
-  farmId: string;
+  // farmId: string;
   warehouseId: string;
   supplierId?: string;
   receiptCode: string;
@@ -199,7 +199,7 @@ export interface StockIssueItem {
 
 export interface StockIssue {
   id: string;
-  farmId: string;
+  // farmId: string;
   warehouseId: string;
   issueCode: string;
   issueDate: string;
@@ -219,30 +219,9 @@ export interface StockIssue {
   approvedBy?: { id: string; fullName: string };
 }
 
-export interface InventoryHistory {
-  id: string;
-  farmId: string;
-  warehouseId: string;
-  productId: string;
-  transactionType: 'in' | 'out' | 'adjustment';
-  referenceType?: string;
-  referenceId?: string;
-  quantityBefore: number;
-  quantityChange: number;
-  quantityAfter: number;
-  unitCost: number;
-  totalCost: number;
-  notes?: string;
-  createdById?: string;
-  createdAt: string;
-  product?: Product;
-  warehouse?: Warehouse;
-  createdBy?: { id: string; fullName: string };
-}
-
 // DTOs
 export interface CreateWarehouseDto {
-  farmId: string;
+  // farmId: string;
   name: string;
   location?: string;
   description?: string;
@@ -250,7 +229,7 @@ export interface CreateWarehouseDto {
 }
 
 export interface CreateProductDto {
-  farmId: string;
+  // farmId: string;
   categoryId?: string;
   code?: string;
   name: string;
@@ -263,7 +242,7 @@ export interface CreateProductDto {
 }
 
 export interface CreateSupplierDto {
-  farmId: string;
+  // farmId: string;
   code?: string;
   name: string;
   contactPerson?: string;
@@ -290,7 +269,7 @@ export interface StockReceiptItemInput {
 }
 
 export interface CreateStockReceiptDto {
-  farmId: string;
+  // farmId: string;
   warehouseId: string;
   supplierId?: string;
   receiptDate: string;
@@ -312,7 +291,7 @@ export interface StockIssueItemInput {
 }
 
 export interface CreateStockIssueDto {
-  farmId: string;
+  // farmId: string;
   warehouseId: string;
   issueDate: string;
   issueType?: IssueType;
@@ -324,7 +303,7 @@ export interface CreateStockIssueDto {
 
 // Query params
 export interface InventoryQueryParams {
-  farmId?: string;
+  // farmId?: string;
   warehouseId?: string;
   categoryId?: string;
   search?: string;
@@ -334,7 +313,7 @@ export interface InventoryQueryParams {
 }
 
 export interface StockReceiptQueryParams {
-  farmId?: string;
+  // farmId?: string;
   warehouseId?: string;
   supplierId?: string;
   fromDate?: string;
@@ -347,7 +326,7 @@ export interface StockReceiptQueryParams {
 }
 
 export interface StockIssueQueryParams {
-  farmId?: string;
+  // farmId?: string;
   warehouseId?: string;
   fromDate?: string;
   toDate?: string;
@@ -366,14 +345,6 @@ export interface InventorySummary {
   lowStock: number;
   inStock: number;
   byCategory: Record<string, { count: number; value: number }>;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
 }
 
 // =====================================================
@@ -398,7 +369,7 @@ export enum ExpiryStatus {
 
 export interface InventoryBatch {
   id: string;
-  farmId: string;
+  // farmId: string;
   inventoryId: string;
   warehouseId: string;
   productId: string;
@@ -457,7 +428,7 @@ export interface ExpiryAlert {
 }
 
 export interface ExpiryAlertQueryParams {
-  farmId: string;
+  // farmId: string;
   expiryStatus?: ExpiryStatus;
   warehouseId?: string;
   categoryId?: string;
@@ -469,5 +440,122 @@ export interface ExpiryAlertQueryParams {
 export interface DisposeBatchDto {
   batchId: string;
   reason?: string;
+  notes?: string;
+}
+
+// =====================================================
+// INVENTORY HISTORY TYPES
+// =====================================================
+
+export enum HistoryTransactionType {
+  IN = 'in',
+  OUT = 'out',
+  ADJUSTMENT = 'adjustment',
+}
+
+export enum HistoryReferenceType {
+  RECEIPT = 'receipt',
+  ISSUE = 'issue',
+  ADJUSTMENT = 'adjustment',
+  TRANSFER = 'transfer',
+  CHECK = 'check',
+}
+
+export interface InventoryHistory {
+  id: string;
+  // farmId: string;
+  warehouseId: string;
+  productId: string;
+  transactionType: HistoryTransactionType;
+  referenceType?: HistoryReferenceType;
+  referenceId?: string;
+  quantityBefore: number;
+  quantityChange: number;
+  quantityAfter: number;
+  unitCost: number;
+  totalCost: number;
+  notes?: string;
+  createdBy?: string;
+  createdAt: string;
+  // Relations
+  warehouse?: Warehouse;
+  product?: Product;
+  user?: { fullName: string };
+}
+
+export interface InventoryHistoryQueryParams {
+  // farmId: string;
+  warehouseId?: string;
+  productId?: string;
+  transactionType?: HistoryTransactionType;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+}
+
+// =====================================================
+// INVENTORY CHECK TYPES
+// =====================================================
+
+export enum CheckStatus {
+  DRAFT = 'draft',
+  CONFIRMED = 'confirmed',
+  CANCELLED = 'cancelled',
+}
+
+export interface InventoryCheck {
+  id: string;
+  // farmId: string;
+  warehouseId: string;
+  checkCode: string;
+  checkDate: string;
+  notes?: string;
+  status: CheckStatus;
+  createdBy?: string;
+  approvedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Relations
+  warehouse?: Warehouse;
+  items?: InventoryCheckItem[];
+  creator?: { fullName: string };
+  approver?: { fullName: string };
+  // Computed
+  totalItems?: number;
+  itemsWithDifference?: number;
+  totalDifferenceValue?: number;
+}
+
+export interface InventoryCheckItem {
+  id: string;
+  checkId: string;
+  productId: string;
+  systemQuantity: number;
+  actualQuantity: number;
+  difference: number;
+  unitCost: number;
+  differenceValue: number;
+  notes?: string;
+  createdAt: string;
+  // Relations
+  product?: Product;
+}
+
+export interface CreateInventoryCheckDto {
+  // farmId: string;
+  warehouseId: string;
+  checkDate: string;
+  notes?: string;
+}
+
+export interface InventoryCheckItemDto {
+  productId: string;
+  actualQuantity: number;
+  notes?: string;
+}
+
+export interface UpdateInventoryCheckDto {
+  items: InventoryCheckItemDto[];
   notes?: string;
 }

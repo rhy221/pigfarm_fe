@@ -58,7 +58,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 
-const FARM_ID = 'demo-farm-id';
+// const  = 'demo-farm-id';
 
 const paymentFormSchema = z.object({
   supplierId: z.string().min(1, 'Vui lòng chọn nhà cung cấp'),
@@ -76,8 +76,8 @@ export default function SupplierDebtsPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
 
-  const { data: suppliers, isLoading } = useSuppliers(FARM_ID, searchTerm);
-  const { data: accounts } = useCashAccounts(FARM_ID);
+  const { data: suppliers, isLoading } = useSuppliers( searchTerm);
+  const { data: accounts } = useCashAccounts();
   const createPayment = useCreateSupplierPayment();
 
   const form = useForm<PaymentFormValues>({
@@ -111,7 +111,7 @@ export default function SupplierDebtsPage() {
   const onSubmit = async (data: PaymentFormValues) => {
     try {
       await createPayment.mutateAsync({
-        farmId: FARM_ID,
+        // farmId: 
         supplierId: data.supplierId,
         cashAccountId: data.cashAccountId,
         paymentDate: format(data.paymentDate, 'yyyy-MM-dd'),

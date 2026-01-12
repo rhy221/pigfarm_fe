@@ -5,6 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSideBar";
 import QueryProvider from "@/providers/query-provider";
 import { Header } from "@/components/Header";
+import { ChatWidget } from "@/components/ChatWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,20 +34,17 @@ export default function RootLayout({
       >
         <QueryProvider>
           <div className="flex flex-col">
-          <SidebarProvider>
-          <AppSidebar />
-            <SidebarTrigger />
-            <div className="min-h-screen w-full">
-            <Header/>
-            <main className="min-h-screen w-full p-4">
-              {children}
-            </main>
-            </div>
-        </SidebarProvider>
+            <SidebarProvider>
+              <AppSidebar />
+              <SidebarTrigger />
+              <div className="min-h-screen w-full">
+                <Header />
+                <main className="min-h-screen w-full p-4">{children}</main>
+              </div>
+            </SidebarProvider>
           </div>
-          
+          <ChatWidget />
         </QueryProvider>
-         
       </body>
     </html>
   );

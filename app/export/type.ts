@@ -2,6 +2,8 @@
 export interface ExportProposal {
   stt: number;
   chuong: string;
+  giong: string;          
+  soLuong: number;
   tongTrongLuong: number;
   donGia: number;
   thanhTienDuKien: number;
@@ -10,6 +12,7 @@ export interface ExportProposal {
 
 export interface ExportReceipt {
   stt: number;
+  id: string;
   dot: string;
   khachHang: string;
   tongTien: number;
@@ -21,8 +24,10 @@ export interface ExportReceipt {
 
 export interface ExportDetailItem {
   stt: number;
+  id?: string;
   chuong: string;
   tongTrongLuong: number;
   donGia: number;
   checked?: boolean;
+  pig_ids?: string[];
 }

@@ -1,33 +1,48 @@
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { X } from "lucide-react";
-
-const BARN_TYPES = [
-  { id: "thit", name: "Chuồng thịt" },
-];
-
-const BARNS_DATABASE = [
-  { id: "A001", typeId: "thit", name: "A001" },
-  { id: "A002", typeId: "thit", name: "A002" },
-];
 
 interface TransferPigModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (targetBarn: string) => void;
-  onRemovePig: (id: number) => void;
-  selectedPigs: { id: number; code: string }[];
+  onRemovePig: (id: string) => void;
+  selectedPigs: { id: string; code: string }[];
 }
 
-const TransferPigModal: React.FC<TransferPigModalProps> = ({ isOpen, onClose, onConfirm, onRemovePig,selectedPigs }) => {
-  const [selectedType, setSelectedType] = useState(BARN_TYPES[0].id);
-  const [selectedBarn, setSelectedBarn] = useState("");
+const TransferPigModal: React.FC<TransferPigModalProps> = ({ isOpen, onClose, onConfirm, onRemovePig, selectedPigs }) => {
+  const [barnTypes, setBarnTypes] = useState<any[]>([]);
+  const [allBarns, setAllBarns] = useState<any[]>([]);
+  const [selectedTypeId, setSelectedTypeId] = useState("");
+  const [selectedBarnId, setSelectedBarnId] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchBarnData = async () => {
+        try {
+          const [resTypes, resPens] = await Promise.all([
+            fetch("http://localhost:3000/pen-types"), 
+            fetch("http://localhost:3000/pens")      
+          ]);
+          const types = await resTypes.json();
+          const pens = await resPens.json();
+
+          setBarnTypes(types);
+          setAllBarns(pens);
+          if (types.length > 0) setSelectedTypeId(types[0].id);
+        } catch (error) {
+          console.error("Lỗi lấy dữ liệu chuồng:", error);
+        }
+      };
+      fetchBarnData();
+    }
+  }, [isOpen]);
 
   const filteredBarns = useMemo(() => {
-    const list = BARNS_DATABASE.filter(barn => barn.typeId === selectedType);
-    if (list.length > 0) setSelectedBarn(list[0].id);
+    const list = allBarns.filter(barn => barn.pen_type_id === selectedTypeId);
+    if (list.length > 0) setSelectedBarnId(list[0].id);
     return list;
-  }, [selectedType]);
+  }, [selectedTypeId, allBarns]);
 
   if (!isOpen) return null;
 
@@ -41,11 +56,11 @@ const TransferPigModal: React.FC<TransferPigModalProps> = ({ isOpen, onClose, on
             <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Loại chuồng chuyển về</label>
             <select 
               className="flex-1 bg-gray-50 border border-gray-100 rounded-lg p-3 outline-none text-gray-700 focus:ring-2 ring-emerald-100 transition"
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
+              value={selectedTypeId}
+              onChange={(e) => setSelectedTypeId(e.target.value)}
             >
-              {BARN_TYPES.map(type => (
-                <option key={type.id} value={type.id}>{type.name}</option>
+              {barnTypes.map(type => (
+                <option key={type.id} value={type.id}>{type.pen_type_name}</option>
               ))}
             </select>
           </div>
@@ -54,11 +69,11 @@ const TransferPigModal: React.FC<TransferPigModalProps> = ({ isOpen, onClose, on
             <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Chuồng chuyển về</label>
             <select 
               className="flex-1 bg-gray-50 border border-gray-100 rounded-lg p-3 outline-none text-gray-700 focus:ring-2 ring-emerald-100 transition"
-              value={selectedBarn}
-              onChange={(e) => setSelectedBarn(e.target.value)}
+              value={selectedBarnId}
+              onChange={(e) => setSelectedBarnId(e.target.value)}
             >
               {filteredBarns.map(barn => (
-                <option key={barn.id} value={barn.id}>{barn.name}</option>
+                <option key={barn.id} value={barn.id}>{barn.pen_name}</option>
               ))}
             </select>
           </div>
@@ -80,7 +95,7 @@ const TransferPigModal: React.FC<TransferPigModalProps> = ({ isOpen, onClose, on
 
         <div className="flex justify-end gap-4 mt-10">
           <button 
-            onClick={() => onConfirm(selectedBarn)}
+            onClick={() => onConfirm(selectedBarnId)}
             className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition shadow-md"
           >
             Lưu

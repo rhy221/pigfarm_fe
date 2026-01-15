@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { ExportReceipt, ExportDetailItem } from "./type";
-import { X, Trash2, Save } from "lucide-react";
+import { X } from "lucide-react";
 
 interface ExportDetailModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
   onWeightChange,
   onSave,
 }) => {
-  const [currentStatus, setCurrentStatus] = useState(receipt?.tinhTrangThanhToan);
+  const [currentStatus, setCurrentStatus] = useState("");
 
   useEffect(() => {
     if (receipt) setCurrentStatus(receipt.tinhTrangThanhToan);
@@ -38,6 +38,32 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
 
   const isTableEmpty = detailItems.length === 0;
 
+  const handleUpdate = async () => {
+    if (receipt) {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${(receipt as any).id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            payment_status: currentStatus,
+            details: detailItems.map(item => ({
+              id: (item as any).id,
+              total_weight: Number(item.tongTrongLuong)
+            }))
+          }),
+        });
+
+        if (response.ok) {
+          onSave(currentStatus, totalAmount);
+        } else {
+          alert("Lỗi cập nhật trạng thái");
+        }
+      } catch (error) {
+        alert("Không thể kết nối đến máy chủ");
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in duration-200 border border-gray-100">
@@ -50,16 +76,12 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
 
         <div className="px-6 py-3">
           <div className="flex justify-between items-center mb-6 border-b pb-1 border-gray-200">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">
-              Thông tin
-            </h2>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">Thông tin</h2>
             <button
-              onClick={() => onSave(currentStatus, totalAmount)}
+              onClick={handleUpdate}
               disabled={isTableEmpty}
               className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${
-                isTableEmpty
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                isTableEmpty ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"
               }`}
             >
               Lưu
@@ -77,11 +99,11 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm font-bold text-[var(--color-secondary-foreground)] w-32">Ngày xuất:</span>
-              <span className="text-sm text-gray-800">{receipt.ngayXuat}</span>
+              <span className="text-sm text-gray-800">{new Date(receipt.ngayXuat).toLocaleDateString("vi-VN")}</span>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm font-bold text-[var(--color-secondary-foreground)] w-32">Số điện thoại:</span>
-              <span className="text-sm text-gray-800">{receipt.sdt || "0123456789"}</span>
+              <span className="text-sm text-gray-800">{receipt.sdt || "Chưa có"}</span>
             </div>
             <div className="flex items-start gap-4 md:col-span-2">
               <span className="text-sm font-bold text-[var(--color-secondary-foreground)] w-32 shrink-0 pt-0.5">Địa chỉ:</span>
@@ -109,8 +131,8 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
                 <tr>
                   <th className="px-6 py-3 font-bold text-emerald-700 text-center w-16">STT</th>
                   <th className="px-6 py-3 font-bold text-emerald-700 text-center">Chuồng</th>
-                  <th className="px-6 py-3 font-bold text-emerald-700 text-center">Tổng trọng lượng (kg)</th>
-                  <th className="px-6 py-3 font-bold text-emerald-700 text-center">Đơn giá (VNĐ/kg)</th>
+                  <th className="px-6 py-3 font-bold text-emerald-700 text-center">Tổng TL (kg)</th>
+                  <th className="px-6 py-3 font-bold text-emerald-700 text-center">Đơn giá (VNĐ)</th>
                   <th className="px-6 py-3 font-bold text-emerald-700 text-center">Thành tiền</th>
                 </tr>
               </thead>
@@ -128,12 +150,8 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
                         className="w-28 border border-gray-200 rounded-lg px-3 py-1.5 text-center focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-700 shadow-inner"
                       />
                     </td>
-                    <td className="px-6 py-4 text-center text-gray-800">
-                      {formatter.format(item.donGia)}
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold text-gray-800">
-                      {formatter.format(item.tongTrongLuong * item.donGia)}
-                    </td>
+                    <td className="px-6 py-4 text-center text-gray-800">{formatter.format(item.donGia)}</td>
+                    <td className="px-6 py-4 text-center font-bold text-gray-800">{formatter.format(item.tongTrongLuong * item.donGia)}</td>
                   </tr>
                 ))}
               </tbody>

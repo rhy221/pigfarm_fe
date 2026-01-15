@@ -7,8 +7,8 @@ interface DeathReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  onRemovePig: (id: number) => void;
-  selectedPigs: { id: number; code: string }[];
+  onRemovePig: (id: string) => void; 
+  selectedPigs: { id: string; code: string }[]; 
 }
 
 const DeathReportModal: React.FC<DeathReportModalProps> = ({

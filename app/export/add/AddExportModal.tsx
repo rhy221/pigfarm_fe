@@ -3,12 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Trash2, X } from "lucide-react";
 
-const BREED_DATA: Record<string, string[]> = {
-  Landrace: ["A001", "A002", "A003", "A004", "A005"],
-  Yorkshire: ["B001", "B002", "B003", "B004", "B005"],
-};
-
 export interface SelectedItem {
+  chuong_id: string;
   chuong: string;
   donGia: number;
 }
@@ -20,27 +16,59 @@ interface AddExportModalProps {
 }
 
 const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
-  const [selectedBreed, setSelectedBreed] = useState("Landrace");
-  const [currentCage, setCurrentCage] = useState("A001");
-  const [price, setPrice] = useState<number>(120000);
+  const [breedData, setBreedData] = useState<Record<string, any[]>>({});
+  const [selectedBreed, setSelectedBreed] = useState("");
+  const [currentCageId, setCurrentCageId] = useState("");
+  const [price, setPrice] = useState<number>(60000); 
   const [tempList, setTempList] = useState<SelectedItem[]>([]);
 
   useEffect(() => {
-    if (BREED_DATA[selectedBreed]) {
-      setCurrentCage(BREED_DATA[selectedBreed][0]);
+    if (isOpen) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/facility/pens/grouped-by-breed`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && Object.keys(data).length > 0) {
+            setBreedData(data);
+            const firstBreed = Object.keys(data)[0];
+            setSelectedBreed(firstBreed);
+            if (data[firstBreed] && data[firstBreed].length > 0) {
+              setCurrentCageId(data[firstBreed][0].id);
+            }
+          }
+        })
+        .catch((err) => console.error("Lỗi fetch dữ liệu chuồng:", err));
     }
-  }, [selectedBreed]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (selectedBreed && breedData[selectedBreed] && breedData[selectedBreed].length > 0) {
+      setCurrentCageId(breedData[selectedBreed][0].id);
+    } else {
+      setCurrentCageId("");
+    }
+  }, [selectedBreed, breedData]);
 
   if (!isOpen) return null;
 
   const handleAdd = () => {
-    if (!tempList.some((item) => item.chuong === currentCage)) {
-      setTempList([...tempList, { chuong: currentCage, donGia: price }]);
+    if (!currentCageId) return;
+
+    const cageObj = breedData[selectedBreed]?.find((c) => c.id === currentCageId);
+    
+    if (cageObj && !tempList.some((item) => item.chuong_id === currentCageId)) {
+      setTempList([
+        ...tempList,
+        {
+          chuong_id: cageObj.id, 
+          chuong: cageObj.pen_name,
+          donGia: price,
+        },
+      ]);
     }
   };
 
-  const handleRemove = (cageName: string) => {
-    setTempList(tempList.filter((item) => item.chuong !== cageName));
+  const handleRemove = (cageId: string) => {
+    setTempList(tempList.filter((item) => item.chuong_id !== cageId));
   };
 
   const handleFinalSave = () => {
@@ -70,8 +98,10 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
                 onChange={(e) => setSelectedBreed(e.target.value)}
                 className="w-full border border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500 bg-white shadow-sm text-sm"
               >
-                {Object.keys(BREED_DATA).map((breed) => (
-                  <option key={breed} value={breed}>{breed}</option>
+                {Object.keys(breedData).map((breed) => (
+                  <option key={breed} value={breed}>
+                    {breed}
+                  </option>
                 ))}
               </select>
             </div>
@@ -79,13 +109,16 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
             <div className="space-y-2">
               <label className="text-sm font-semibold text-gray-700">Chuồng</label>
               <select
-                value={currentCage}
-                onChange={(e) => setCurrentCage(e.target.value)}
+                value={currentCageId}
+                onChange={(e) => setCurrentCageId(e.target.value)}
                 className="w-full border border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500 bg-white shadow-sm text-sm"
               >
-                {BREED_DATA[selectedBreed].map((cage) => (
-                  <option key={cage} value={cage}>{cage}</option>
-                ))}
+                {Array.isArray(breedData[selectedBreed]) && 
+                  breedData[selectedBreed].map((cage: any) => (
+                    <option key={cage.id} value={cage.id}>
+                      {cage.pen_name}
+                    </option>
+                ))} 
               </select>
             </div>
 
@@ -120,15 +153,15 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {tempList.map((item, index) => (
-                  <tr key={item.chuong} className="hover:bg-gray-50 transition group">
+                  <tr key={item.chuong_id} className="hover:bg-gray-50 transition group">
                     <td className="px-6 py-4 text-center text-gray-500">{index + 1}</td>
                     <td className="px-6 py-4 font-semibold text-gray-800">{item.chuong}</td>
                     <td className="px-6 py-4 text-right font-medium text-emerald-600">
                       {formatter.format(item.donGia)} <span className="text-[10px] text-gray-400">VNĐ</span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button 
-                        onClick={() => handleRemove(item.chuong)} 
+                      <button
+                        onClick={() => handleRemove(item.chuong_id)}
                         className="text-gray-300 hover:text-red-500 transition-colors"
                       >
                         <Trash2 size={18} />
@@ -151,7 +184,7 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
             <button
               onClick={handleFinalSave}
               disabled={tempList.length === 0}
-              className="bg-emerald-600 text-white px-12 py-3 rounded-xl font-bold hover:bg-emerald-700 transition shadow-xl shadow-emerald-200 disabled:bg-gray-300 disabled:shadow-none"
+              className="px-8 py-3 rounded-lg text-sm font-medium transition shadow-md bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-gray-300"
             >
               Lưu vào phiếu
             </button>

@@ -1,51 +1,85 @@
 "use client";
 
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ExportProposal, ExportReceipt, ExportDetailItem } from "./type";
-import AddExportReceipt from "./add/page";
 import ExportDetailModal from "./ExportDetailModal";
 
 const ExportManagement: React.FC = () => {
   const [selectedReceipt, setSelectedReceipt] = useState<ExportReceipt | null>(null);
   const [detailItems, setDetailItems] = useState<ExportDetailItem[]>([]);
-
-  const [proposals] = useState<ExportProposal[]>([
-    { stt: 1, chuong: "A001", tongTrongLuong: 5000, donGia: 120000, thanhTienDuKien: 600000000, ngayXuatDuKien: "18/11/2025" },
-    { stt: 2, chuong: "A001", tongTrongLuong: 6000, donGia: 110000, thanhTienDuKien: 660000000, ngayXuatDuKien: "18/11/2025" },
-  ]);
-
-  const [receipts, setReceipts] = useState<ExportReceipt[]>([
-    { stt: 1, dot: "DXC-001", khachHang: "Nguyễn Văn A", tongTien: 50000000, ngayXuat: "18/11/2025", tinhTrangThanhToan: "Chưa thanh toán" },
-    { stt: 2, dot: "DXC-002", khachHang: "Công ty ABC", tongTien: 120000000, ngayXuat: "19/11/2025", tinhTrangThanhToan: "Đã thanh toán" },
-    { stt: 3, dot: "DXC-003", khachHang: "Trần Thị C", tongTien: 0, ngayXuat: "20/11/2025", tinhTrangThanhToan: "Chuẩn bị xuất chuồng" },
-  ]);
+  const [proposals, setProposals] = useState<ExportProposal[]>([]);
+  const [receipts, setReceipts] = useState<ExportReceipt[]>([]);
 
   const formatter = new Intl.NumberFormat("vi-VN");
 
   const parseDate = (dateStr: string) => {
-    const [day, month, year] = dateStr.split("/").map(Number);
-    return new Date(year, month - 1, day).getTime();
+    return new Date(dateStr).getTime();
   };
 
-  const handleAddReceipt = (newReceipt: { dot: string; khachHang: string; ngayXuat: string }) => {
-    const newItem: ExportReceipt = {
-      stt: receipts.length + 1,
-      dot: newReceipt.dot,
-      khachHang: newReceipt.khachHang,
-      tongTien: 0,
-      ngayXuat: newReceipt.ngayXuat,
-      tinhTrangThanhToan: "Chuẩn bị xuất chuồng",
-    };
-    setReceipts([newItem, ...receipts]);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [resProposal, resReceipts] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/pig/proposals`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`)
+      ]);
+
+      const proposalsData = await resProposal.json();
+      const receiptsData = await resReceipts.json();
+
+      setProposals(
+        proposalsData.map((p: any, index: number) => ({
+          stt: index + 1,
+          chuong: p.pen_name,
+          soLuong: p.quantity, 
+          giong: p.breed,
+          tongTrongLuong: p.total_weight,
+          donGia: p.current_price || 0,
+          thanhTienDuKien: p.total_weight * (p.current_price || 0),
+          ngayXuatDuKien: p.expected_date ?? null,
+          arrival_date: p.arrival_date ?? null
+        }))
+      );
+
+      setReceipts(
+        receiptsData.map((r: any, index: number) => ({
+          stt: index + 1,
+          id: r.id,
+          dot: r.receipt_code,
+          khachHang: r.customer_name,
+          tongTien: Number(r.total_amount),
+          ngayXuat: r.export_date,
+          tinhTrangThanhToan: r.payment_status
+        }))
+      );
+    } catch (error) {
+      console.error("Lỗi fetch data:", error);
+    }
   };
 
-  const handleOpenDetail = (receipt: ExportReceipt) => {
-    setSelectedReceipt(receipt);
-    setDetailItems([
-      { stt: 1, chuong: "A001", tongTrongLuong: 5000, donGia: 120000, checked: false },
-      { stt: 2, chuong: "A001", tongTrongLuong: 6000, donGia: 110000, checked: false },
-    ]);
+  const handleOpenDetail = async (receipt: ExportReceipt) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${receipt.id}`);
+      const data = await res.json();
+
+      setSelectedReceipt(receipt);
+      setDetailItems(
+        data.pig_shipping_details.map((d: any, index: number) => ({
+          stt: index + 1,
+          id: d.id,
+          chuong: d.pens.pen_name,
+          tongTrongLuong: d.total_weight,
+          donGia: Number(d.price_unit),
+          pig_ids: d.shipped_pig_items.map((i: any) => i.pig_id)
+        }))
+      );
+    } catch (error) {
+      console.error("Lỗi lấy chi tiết:", error);
+    }
   };
 
   const handleWeightChange = (index: number, weight: number) => {
@@ -54,17 +88,27 @@ const ExportManagement: React.FC = () => {
     setDetailItems(newItems);
   };
 
-  const handleUpdateReceipt = (newStatus: string, newTotal: number) => {
-  if (selectedReceipt) {
-    const updatedReceipts = receipts.map((r) =>
-      r.dot === selectedReceipt.dot 
-        ? { ...r, tinhTrangThanhToan: newStatus, tongTien: newTotal } 
-        : r
-    );
-    setReceipts(updatedReceipts);
-    setSelectedReceipt(null); 
-  }
-};
+  const handleUpdateReceipt = async (newStatus: string, newTotal: number) => {
+    if (selectedReceipt) {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${selectedReceipt.id}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_status: newStatus,
+            details: detailItems.map(item => ({
+              id: (item as any).id,
+              total_weight: item.tongTrongLuong
+            }))
+          })
+        });
+        fetchData();
+        setSelectedReceipt(null);
+      } catch (error) {
+        console.error("Lỗi cập nhật:", error);
+      }
+    }
+  };
 
   const renderStatus = (status: string) => {
     let colorClass = "";
@@ -81,7 +125,6 @@ const ExportManagement: React.FC = () => {
       default:
         colorClass = "bg-gray-100 text-gray-700";
     }
-
     return (
       <span className={`px-3 py-1 text-xs font-medium rounded-full ${colorClass}`}>
         {status}
@@ -91,52 +134,76 @@ const ExportManagement: React.FC = () => {
 
   return (
     <div className="p-8 min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
-      <h1 className="text-3xl font-extrabold mb-8" style={{ color: '#53A88B' }}>Xuất chuồng</h1>
+      <h1 className="text-3xl font-extrabold mb-8" style={{ color: "#53A88B" }}>
+        Xuất chuồng
+      </h1>
 
+      {/* ===== ĐỀ XUẤT XUẤT CHUỒNG ===== */}
       <section className="mb-10">
-        <h2 className="text-base font-semibold mb-4 text-[var(--color-secondary-foreground)]">Đề xuất xuất chuồng</h2>
+        <h2 className="text-base font-semibold mb-4 text-[var(--color-secondary-foreground)]">
+          Đề xuất xuất chuồng
+        </h2>
+
         <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-emerald-100">
           <table className="w-full text-sm">
             <thead className="bg-emerald-50 text-emerald-700 border-b border-emerald-100">
               <tr>
                 <th className="px-4 py-3 text-center font-semibold">STT</th>
                 <th className="px-4 py-3 text-center font-semibold">Chuồng</th>
-                <th className="px-4 py-3 text-center font-semibold">Tổng trọng lượng dự kiến</th>
-                <th className="px-4 py-3 text-center font-semibold">Đơn giá</th>
-                <th className="px-4 py-3 text-center font-semibold">Thành tiền dự kiến</th>
-                <th className="px-4 py-3 text-center font-semibold">Ngày xuất dự kiến</th>
+                <th className="px-4 py-3 text-center font-semibold">Giống</th> 
+                <th className="px-4 py-3 text-center font-semibold">Số lượng</th>
+                <th className="px-4 py-3 text-center font-semibold">
+                  Tổng trọng lượng dự kiến
+                </th>
+                <th className="px-4 py-3 text-center font-semibold">
+                  Ngày xuất dự kiến
+                </th>
               </tr>
             </thead>
             <tbody>
-              {[...proposals]
-                .sort((a, b) => parseDate(b.ngayXuatDuKien) - parseDate(a.ngayXuatDuKien))
-                .map((item, index) => (
+              {proposals.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-6 text-center text-gray-500 italic"
+                  >
+                    Chưa có chuồng nào đến giai đoạn đề xuất xuất chuồng
+                  </td>
+                </tr>
+              ) : (
+                proposals.map((item, index) => (
                   <tr
                     key={index}
                     className={`border-t border-emerald-50 hover:bg-gray-100 transition ${
                       index % 2 === 0 ? "bg-white" : "bg-emerald-50/20"
                     }`}
                   >
-                    <td className="px-4 py-3 text-center">{index + 1}</td>
+                    <td className="px-4 py-3 text-center">{item.stt}</td>
                     <td className="px-4 py-3 text-center">{item.chuong}</td>
-                    <td className="px-4 py-3 text-center">{item.tongTrongLuong}</td>
-                    <td className="px-4 py-3 text-center">{formatter.format(item.donGia)}</td>
-                    <td className="px-4 py-3 text-center font-medium">{formatter.format(item.thanhTienDuKien)}</td>
-                    <td className="px-4 py-3 text-center">{item.ngayXuatDuKien}</td>
+                    <td className="px-4 py-3 text-center text-gray-600">{item.giong}</td>
+                    <td className="px-4 py-3 text-center text-gray-600">{item.soLuong} con</td> 
+                    <td className="px-4 py-3 text-center">
+                      {Number(item.tongTrongLuong).toFixed(1)} kg
+                    </td>
+                    <td className="px-4 py-3 text-center text-emerald-700 font-bold">
+                      {item.ngayXuatDuKien ? new Date(item.ngayXuatDuKien).toLocaleDateString("vi-VN") : "—"}
+                    </td>
                   </tr>
-                ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </section>
 
+      {/* ===== PHIẾU XUẤT CHUỒNG ===== */}
       <section>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-base font-semibold text-[var(--color-secondary-foreground)]">Phiếu xuất chuồng</h2>
+          <h2 className="text-base font-semibold text-[var(--color-secondary-foreground)]">
+            Phiếu xuất chuồng
+          </h2>
           <Link href="/export/add">
-            <button
-              className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
-            >
+            <button className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition">
               Tạo phiếu mới
             </button>
           </Link>
@@ -156,36 +223,40 @@ const ExportManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {[...receipts]
+              {receipts
                 .sort((a, b) => parseDate(b.ngayXuat) - parseDate(a.ngayXuat))
-                .map((item, index) => {
-                  const isPreparing = item.tinhTrangThanhToan === "Chuẩn bị xuất chuồng";
-                  return (
-                    <tr
-                      key={item.dot}
-                      className={`border-t border-emerald-50 hover:bg-gray-100 transition ${
-                        index % 2 === 0 ? "bg-white" : "bg-emerald-50/20"
-                      }`}
-                    >
-                      <td className="px-4 py-3 text-center">{index + 1}</td>
-                      <td className="px-4 py-3 text-center">{item.dot}</td>
-                      <td className="px-4 py-3 text-center">{item.khachHang}</td>
-                      <td className="px-4 py-3 text-center font-medium">
-                        {isPreparing && item.tongTien === 0 ? "—" : formatter.format(item.tongTien)}
-                      </td>
-                      <td className="px-4 py-3 text-center">{item.ngayXuat}</td>
-                      <td className="px-4 py-3 text-center">{renderStatus(item.tinhTrangThanhToan)}</td>
-                      <td className="px-4 py-3 text-center">
-                        <span 
-                          onClick={() => handleOpenDetail(item)}
-                          className="text-emerald-600 text-sm font-medium hover:underline cursor-pointer"
-                        >
-                          Chi tiết
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                .map((item, index) => (
+                  <tr
+                    key={item.id}
+                    className={`border-t border-emerald-50 hover:bg-gray-100 transition ${
+                      index % 2 === 0 ? "bg-white" : "bg-emerald-50/20"
+                    }`}
+                  >
+                    <td className="px-4 py-3 text-center">{index + 1}</td>
+                    <td className="px-4 py-3 text-center">{item.dot}</td>
+                    <td className="px-4 py-3 text-center">{item.khachHang}</td>
+                    <td className="px-4 py-3 text-center font-medium">
+                      {item.tinhTrangThanhToan === "Chuẩn bị xuất chuồng" &&
+                      item.tongTien === 0
+                        ? "—"
+                        : formatter.format(item.tongTien)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {new Date(item.ngayXuat).toLocaleDateString("vi-VN")}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {renderStatus(item.tinhTrangThanhToan)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span
+                        onClick={() => handleOpenDetail(item)}
+                        className="text-emerald-600 text-sm font-medium hover:underline cursor-pointer"
+                      >
+                        Chi tiết
+                      </span>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>

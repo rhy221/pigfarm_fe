@@ -9,6 +9,7 @@ export default function TreatmentPage() {
   const router = useRouter();
 
   const data = {
+    id: searchParams.get("id"), 
     chuong: searchParams.get("chuong"),
     soLuong: searchParams.get("soLuong"),
     loaiBenh: searchParams.get("loaiBenh"),

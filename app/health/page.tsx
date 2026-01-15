@@ -1,22 +1,15 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Filter } from "lucide-react";
 import Link from "next/link";
 import TreatmentDetail from "./treatment/TreatmentDetail"; 
 import HistoryDetailModal from "./HistoryDetailModal"; 
 
 const SickPigManagement: React.FC = () => {
-  const [activeRecords] = useState([
-    { stt: 1, chuong: "C001", soLuong: 20, loaiBenh: "Dịch tả heo Châu Phi", ngayPhatHien: "11/11/2025" },
-    { stt: 2, chuong: "C001", soLuong: 20, loaiBenh: "Lở mồm long móng", ngayPhatHien: "12/11/2025" },
-    { stt: 3, chuong: "C002", soLuong: 15, loaiBenh: "Dịch tả heo Châu Phi", ngayPhatHien: "13/11/2025" },
-  ]);
-
-  const [historyRecords] = useState([
-    { stt: 1, chuong: "A001", soLuong: 20, loaiBenh: "Dịch tả heo Châu Phi", ngayPhatHien: "10/11/2025" },
-    { stt: 2, chuong: "A001", soLuong: 15, loaiBenh: "Tụ huyết trùng", ngayPhatHien: "09/11/2025" },
-  ]);
+  const [activeRecords, setActiveRecords] = useState<any[]>([]);
+  const [historyRecords, setHistoryRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [filterActive, setFilterActive] = useState("");
   const [filterHistory, setFilterHistory] = useState("");
@@ -27,10 +20,28 @@ const SickPigManagement: React.FC = () => {
   const [showDetail, setShowDetail] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [resActive, resHistory] = await Promise.all([
+          fetch("http://localhost:3000/health/active"),
+          fetch("http://localhost:3000/health/history")
+        ]);
+        setActiveRecords(await resActive.json());
+        setHistoryRecords(await resHistory.json());
+      } catch (error) {
+        console.error("Lỗi fetch dữ liệu:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const handleOpenDetail = (record: any) => {
     setSelectedRecord({
       ...record,
-      soLuong: record.soLuong || 20,
+      soLuong: record._count?.pigs_in_treatment || 0,
     });
     setShowDetail(true);
   };
@@ -41,27 +52,28 @@ const SickPigManagement: React.FC = () => {
   };
 
   const activeDiseaseTypes = useMemo(() => 
-    Array.from(new Set(activeRecords.map(r => r.loaiBenh))), [activeRecords]
+    Array.from(new Set(activeRecords.map(r => r.diseases?.name))), [activeRecords]
   );
   const historyDiseaseTypes = useMemo(() => 
-    Array.from(new Set(historyRecords.map(r => r.loaiBenh))), [historyRecords]
+    Array.from(new Set(historyRecords.map(r => r.diseases?.name))), [historyRecords]
   );
 
   const filteredActive = activeRecords.filter(item => 
-    filterActive === "" ? true : item.loaiBenh === filterActive
+    filterActive === "" ? true : item.diseases?.name === filterActive
   );
 
   const filteredHistory = historyRecords.filter(item => 
-    filterHistory === "" ? true : item.loaiBenh === filterHistory
+    filterHistory === "" ? true : item.diseases?.name === filterHistory
   );
 
   if (showDetail && selectedRecord) {
     return <TreatmentDetail data={selectedRecord} onBack={handleBackToList} />;
   }
 
+  if (loading) return <div className="p-8">Đang tải dữ liệu...</div>;
+
   return (
     <div className="p-8 min-h-screen bg-[var(--color-background)] text-[var(--color-foreground)]">
-      {/* Thêm Modal vào đây */}
       <HistoryDetailModal 
         isOpen={isHistoryModalOpen} 
         onClose={() => setIsHistoryModalOpen(false)} 
@@ -107,23 +119,24 @@ const SickPigManagement: React.FC = () => {
             <tbody className="divide-y divide-dashed divide-gray-200">
               {filteredActive.map((item, index) => (
                 <tr 
-                  key={index} 
+                  key={item.id} 
                   className={`hover:bg-gray-50 transition ${index % 2 === 0 ? "bg-white" : "bg-emerald-50/10"}`}
                 >
                   <td className="px-4 py-6 text-center text-gray-500">{index + 1}</td>
-                  <td className="px-4 py-6 text-center font-medium text-emerald-900">{item.chuong}</td>
-                  <td className="px-4 py-6 text-center">{item.soLuong}</td>
-                  <td className="px-4 py-6 text-center text-gray-600">{item.loaiBenh}</td>
-                  <td className="px-4 py-6 text-center">{item.ngayPhatHien}</td>
+                  <td className="px-4 py-6 text-center font-medium text-emerald-900">{item.pens?.pen_name}</td>
+                  <td className="px-4 py-6 text-center">{item._count?.pigs_in_treatment || 0}</td>
+                  <td className="px-4 py-6 text-center text-gray-600">{item.diseases?.name}</td>
+                  <td className="px-4 py-6 text-center">{new Date(item.created_at).toLocaleDateString("vi-VN")}</td>
                   <td className="px-4 py-6 text-center">
                     <Link 
                         href={{
                           pathname: "/health/treatment",
                           query: { 
-                            chuong: item.chuong,
-                            soLuong: item.soLuong,
-                            loaiBenh: item.loaiBenh,
-                            ngayPhatHien: item.ngayPhatHien
+                            id: item.id,
+                            chuong: item.pens?.pen_name,
+                            soLuong: item._count?.pigs_in_treatment || 0,
+                            loaiBenh: item.diseases?.name,
+                            ngayPhatHien: new Date(item.created_at).toLocaleDateString("vi-VN")
                           }
                         }}
                       className="text-emerald-600 font-medium hover:underline cursor-pointer"
@@ -179,17 +192,22 @@ const SickPigManagement: React.FC = () => {
             <tbody className="divide-y divide-dashed divide-gray-200">
               {filteredHistory.map((item, index) => (
                 <tr 
-                  key={index} 
+                  key={item.id} 
                   className={`hover:bg-gray-50 transition ${index % 2 === 0 ? "bg-white" : "bg-emerald-50/10"}`}
                 >
                   <td className="px-4 py-6 text-center text-gray-500">{index + 1}</td>
-                  <td className="px-4 py-6 text-center font-medium text-emerald-900">{item.chuong}</td>
-                  <td className="px-4 py-6 text-center text-gray-600">{item.loaiBenh}</td>
-                  <td className="px-4 py-6 text-center">{item.ngayPhatHien}</td>
+                  <td className="px-4 py-6 text-center font-medium text-emerald-900">{item.pens?.pen_name}</td>
+                  <td className="px-4 py-6 text-center text-gray-600">{item.diseases?.name}</td>
+                  <td className="px-4 py-6 text-center">{new Date(item.created_at).toLocaleDateString("vi-VN")}</td>
                   <td className="px-4 py-6 text-center">
                     <span 
                       onClick={() => {
-                        setSelectedHistoryRecord({ ...item, soLuong: item.soLuong || 0 });
+                        setSelectedHistoryRecord({ 
+                          ...item, 
+                          chuong: item.pens?.pen_name,
+                          loaiBenh: item.diseases?.name,
+                          soLuong: item.pigs_in_treatment?.length || 0 
+                        });
                         setIsHistoryModalOpen(true);
                       }}
                       className="text-emerald-600 font-medium hover:underline cursor-pointer"

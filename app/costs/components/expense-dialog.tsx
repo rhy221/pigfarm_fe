@@ -1,61 +1,95 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X } from "lucide-react"
-import type { Expense } from "../page"
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { X } from "lucide-react";
+import type { Expense } from "../page";
 
 interface ExpenseDialogProps {
-  isOpen: boolean
-  onOpenChange: (open: boolean) => void
-  expense: Expense | null
-  onSave: (formData: Partial<Expense>) => void
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  expense: Expense | null;
 }
 
-export function ExpenseDialog({ isOpen, onOpenChange, expense, onSave }: ExpenseDialogProps) {
-  const [formData, setFormData] = useState({
-    number: "",
-    date: "",
-    category: "",
-    object: "",
-    amount: 0,
-    status: "pending",
-  })
+export function ExpenseDialog({
+  isOpen,
+  onOpenChange,
+  expense,
+}: ExpenseDialogProps) {
+  const initialFormData = React.useMemo(
+    () => ({
+      number: "",
+      date: "",
+      category: "",
+      object: "",
+      amount: 0,
+      status: "pending",
+    }),
+    []
+  );
 
+  const [formData, setFormData] = useState(
+    expense
+      ? {
+          number: expense.number,
+          date: expense.date,
+          category: expense.category,
+          object: "",
+          amount: expense.amount,
+          status: expense.status,
+        }
+      : initialFormData
+  );
+
+  // Reset form when dialog opens/closes or expense changes
   useEffect(() => {
-    if (expense) {
-      setFormData({
-        number: expense.number,
-        date: expense.date,
-        category: expense.category,
-        object: "",
-        amount: expense.amount,
-        status: expense.status,
-      })
-    } else {
-      setFormData({
-        number: "",
-        date: "",
-        category: "",
-        object: "",
-        amount: 0,
-        status: "pending",
-      })
+    if (!isOpen) {
+      return;
     }
-  }, [expense, isOpen])
+
+    if (expense) {
+      // Use a microtask to avoid cascading updates
+      queueMicrotask(() => {
+        setFormData({
+          number: expense.number,
+          date: expense.date,
+          category: expense.category,
+          object: "",
+          amount: expense.amount,
+          status: expense.status,
+        });
+      });
+    } else {
+      queueMicrotask(() => {
+        setFormData(initialFormData);
+      });
+    }
+  }, [expense, isOpen, initialFormData]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     // onSave(formData)
-  }
+  };
 
-  const isEditMode = !!expense
+  const isEditMode = !!expense;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -83,7 +117,9 @@ export function ExpenseDialog({ isOpen, onOpenChange, expense, onSave }: Expense
               <Input
                 id="number"
                 value={formData.number}
-                onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, number: e.target.value })
+                }
                 placeholder="SP004"
                 className="text-sm"
               />
@@ -94,7 +130,12 @@ export function ExpenseDialog({ isOpen, onOpenChange, expense, onSave }: Expense
               <Label htmlFor="object" className="text-sm font-medium">
                 Đối tượng
               </Label>
-              <Select value={formData.object} onValueChange={(value) => setFormData({ ...formData, object: value })}>
+              <Select
+                value={formData.object}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, object: value })
+                }
+              >
                 <SelectTrigger id="object" className="text-sm">
                   <SelectValue placeholder="Nhân công" />
                 </SelectTrigger>
@@ -115,7 +156,9 @@ export function ExpenseDialog({ isOpen, onOpenChange, expense, onSave }: Expense
                 id="date"
                 type="date"
                 value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
                 className="text-sm"
               />
             </div>
@@ -129,7 +172,12 @@ export function ExpenseDialog({ isOpen, onOpenChange, expense, onSave }: Expense
                 id="amount"
                 type="number"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: Number.parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    amount: Number.parseInt(e.target.value),
+                  })
+                }
                 placeholder="15000000"
                 className="text-sm"
               />
@@ -142,7 +190,9 @@ export function ExpenseDialog({ isOpen, onOpenChange, expense, onSave }: Expense
               </Label>
               <Select
                 value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, category: value })
+                }
               >
                 <SelectTrigger id="category" className="text-sm">
                   <SelectValue placeholder="Nhân công" />
@@ -191,12 +241,15 @@ export function ExpenseDialog({ isOpen, onOpenChange, expense, onSave }: Expense
             >
               Hủy
             </Button>
-            <Button type="submit" className="bg-primary hover:bg-primary-dark text-white">
+            <Button
+              type="submit"
+              className="bg-primary hover:bg-primary-dark text-white"
+            >
               Lưu
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

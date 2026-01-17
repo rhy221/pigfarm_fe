@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { reportApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -19,49 +20,67 @@ import {
 } from "@/components/ui/table";
 import { FileDown, TrendingUp, TrendingDown } from "lucide-react";
 
-// Mock data
-const mockData = {
-  revenues: [
-    { id: 1, item: "Bán heo thịt", amount: 450000000, type: "revenue" },
-    { id: 2, item: "Bán heo giống", amount: 180000000, type: "revenue" },
-    { id: 3, item: "Bán phân hữu cơ", amount: 25000000, type: "revenue" },
-  ],
-  expenses: [
-    { id: 4, item: "Chi phí thức ăn", amount: 280000000, type: "expense" },
-    {
-      id: 5,
-      item: "Chi phí thuốc, vắc-xin",
-      amount: 45000000,
-      type: "expense",
-    },
-    { id: 6, item: "Chi phí nhân công", amount: 120000000, type: "expense" },
-    { id: 7, item: "Chi phí điện nước", amount: 30000000, type: "expense" },
-    { id: 8, item: "Chi phí bảo trì", amount: 20000000, type: "expense" },
-    { id: 9, item: "Chi phí khác", amount: 15000000, type: "expense" },
-  ],
-};
+interface RevenueReportData {
+  revenue?: number;
+  expenses?: number;
+  profit?: number;
+  revenueItems?: Array<{ id: string; date: string; description: string; amount: number; type: string }>;
+  expenseItems?: Array<{ id: string; date: string; description: string; amount: number; type: string }>;
+}
 
 export default function RevenueReportPage() {
-  const [selectedMonth, setSelectedMonth] = useState("all");
-  const [selectedYear, setSelectedYear] = useState("2024");
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
+  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
+  const [reportData, setReportData] = useState<RevenueReportData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const currentMonthStr = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
+        const data = await reportApi.getRevenueReport({ month: currentMonthStr });
+        setReportData(data);
+      } catch (error) {
+        console.error("Error fetching revenue report:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, [selectedMonth, selectedYear]);
 
   const handleExportPDF = () => {
     alert("Xuất PDF (chức năng sẽ được triển khai sau)");
   };
 
-  const totalRevenue = mockData.revenues.reduce(
-    (sum, item) => sum + item.amount,
-    0
-  );
-  const totalExpense = mockData.expenses.reduce(
-    (sum, item) => sum + item.amount,
-    0
-  );
-  const netProfit = totalRevenue - totalExpense;
-  const profitMargin = (netProfit / totalRevenue) * 100;
+  // Calculate totals from API data
+  const totalRevenue =
+    reportData?.revenue ||
+    reportData?.revenueItems?.reduce((sum, item) => sum + item.amount, 0) ||
+    0;
+
+  const totalExpense =
+    reportData?.expenses ||
+    reportData?.expenseItems?.reduce((sum, item) => sum + item.amount, 0) ||
+    0;
+
+  const netProfit = reportData?.profit || totalRevenue - totalExpense;
+  const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+  // Generate Year Options (2020 - Current)
+  const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) => (currentYear - i).toString());
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
@@ -80,38 +99,39 @@ export default function RevenueReportPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-full sm:w-[200px]">
+          <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Chọn tháng" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả tháng</SelectItem>
-            <SelectItem value="1">Tháng 1</SelectItem>
-            <SelectItem value="2">Tháng 2</SelectItem>
-            <SelectItem value="3">Tháng 3</SelectItem>
-            <SelectItem value="4">Tháng 4</SelectItem>
-            <SelectItem value="5">Tháng 5</SelectItem>
-            <SelectItem value="6">Tháng 6</SelectItem>
-            <SelectItem value="7">Tháng 7</SelectItem>
-            <SelectItem value="8">Tháng 8</SelectItem>
-            <SelectItem value="9">Tháng 9</SelectItem>
-            <SelectItem value="10">Tháng 10</SelectItem>
-            <SelectItem value="11">Tháng 11</SelectItem>
-            <SelectItem value="12">Tháng 12</SelectItem>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+              const isDisabled = parseInt(selectedYear) === currentYear && month > currentMonth;
+              return (
+                <SelectItem key={month} value={month.toString()} disabled={isDisabled}>
+                  Tháng {month}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
 
         <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-full sm:w-[200px]">
+          <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Chọn năm" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="2024">Năm 2024</SelectItem>
-            <SelectItem value="2023">Năm 2023</SelectItem>
-            <SelectItem value="2022">Năm 2022</SelectItem>
+             {years.map((year) => (
+              <SelectItem key={year} value={year}>
+                Năm {year}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
+
+        <div className="ml-auto text-sm text-gray-500 italic hidden lg:block">
+            * Dữ liệu tổng hợp trong tháng {selectedMonth}/{selectedYear}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -173,14 +193,17 @@ export default function RevenueReportPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockData.revenues.map((row) => (
+            {(reportData?.revenueItems || []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.item}</TableCell>
+                <TableCell className="font-medium">{row.description}</TableCell>
                 <TableCell className="text-right font-semibold text-green-600">
                   {row.amount.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-right">
-                  {((row.amount / totalRevenue) * 100).toFixed(1)}%
+                  {totalRevenue > 0
+                    ? ((row.amount / totalRevenue) * 100).toFixed(1)
+                    : 0}
+                  %
                 </TableCell>
               </TableRow>
             ))}
@@ -213,14 +236,17 @@ export default function RevenueReportPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockData.expenses.map((row) => (
+            {(reportData?.expenseItems || []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.item}</TableCell>
+                <TableCell className="font-medium">{row.description}</TableCell>
                 <TableCell className="text-right font-semibold text-red-600">
                   {row.amount.toLocaleString()}
                 </TableCell>
                 <TableCell className="text-right">
-                  {((row.amount / totalExpense) * 100).toFixed(1)}%
+                  {totalExpense > 0
+                    ? ((row.amount / totalExpense) * 100).toFixed(1)
+                    : 0}
+                  %
                 </TableCell>
               </TableRow>
             ))}
@@ -256,23 +282,26 @@ export default function RevenueReportPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
             <div>
               <span className="font-medium">Chi phí lớn nhất:</span>{" "}
-              {
-                mockData.expenses.reduce((max, item) =>
-                  item.amount > max.amount ? item : max
-                ).item
-              }
+              {reportData?.expenseItems && reportData.expenseItems.length > 0
+                ? reportData.expenseItems.reduce((max, item) =>
+                    item.amount > max.amount ? item : max
+                  ).description
+                : "N/A"}
             </div>
             <div>
               <span className="font-medium">Nguồn thu chính:</span>{" "}
-              {
-                mockData.revenues.reduce((max, item) =>
-                  item.amount > max.amount ? item : max
-                ).item
-              }
+              {reportData?.revenueItems && reportData.revenueItems.length > 0
+                ? reportData.revenueItems.reduce((max, item) =>
+                    item.amount > max.amount ? item : max
+                  ).description
+                : "N/A"}
             </div>
             <div>
               <span className="font-medium">ROI:</span>{" "}
-              {((netProfit / totalExpense) * 100).toFixed(1)}%
+              {totalExpense > 0
+                ? ((netProfit / totalExpense) * 100).toFixed(1)
+                : 0}
+              %
             </div>
           </div>
         </div>

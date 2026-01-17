@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,21 +12,90 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { mockTasks, mockEmployees, mockBarns } from "./mock-data";
 import { Task, ViewMode, ShiftType } from "./types";
 import { TaskCalendar } from "./components/task-calendar";
 import { AddEditTaskDialog } from "./components/add-edit-task-dialog";
 import { TaskDetailDialog } from "./components/task-detail-dialog";
+import { taskApi } from "@/lib/api";
 
 export default function TasksPage() {
   const isMobile = useIsMobile();
 
   // State
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 1)); // December 2025
+  const [currentDate, setCurrentDate] = useState(new Date()); // Default to current date
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     isMobile ? "week" : "month"
   );
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [pens, setPens] = useState<any[]>([]);
+
+  // Fetch tasks from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [tasksData, employeesData, pensData] = await Promise.all([
+          taskApi.getTasks() || [],
+          taskApi.getEmployees() || [],
+          taskApi.getPens() || [],
+        ]);
+
+        interface ApiEmployee {
+          id: string;
+          name: string;
+        }
+
+        interface ApiPen {
+          id: string;
+          name: string;
+        }
+
+        // Ensure we have arrays
+        const safeTasksData = Array.isArray(tasksData) ? tasksData : [];
+        const safeEmployeesData = Array.isArray(employeesData) ? employeesData : [];
+        const safePensData = Array.isArray(pensData) ? pensData : [];
+
+        // Transform API data to match Task interface
+        const transformedTasks = safeTasksData.map((task) => ({
+          id: task.id,
+          date: task.date || new Date().toISOString().split("T")[0],
+          shift: (task.shift as ShiftType) || "morning",
+          employeeId: task.employeeId || "",
+          employeeName: task.employeeName || "Chưa phân công",
+          barnId: task.barnId || "",
+          barnName: task.barnName || "Chưa chọn",
+          taskType: (task.taskType as any) || "other",
+          taskDescription: task.taskDescription || "",
+          status: (task.status as any) || "pending",
+          notes: task.notes || "",
+          createdAt: task.createdAt || new Date().toISOString(),
+          updatedAt: task.updatedAt || new Date().toISOString(),
+        }));
+
+        setTasks(transformedTasks);
+        setEmployees(
+          safeEmployeesData.map((e: any) => ({
+            id: e.id,
+            name: e.name,
+            role: e.role || "employee",
+          }))
+        );
+        setPens(
+          safePensData.map((p: any) => ({
+            id: p.id,
+            name: p.name || p.pen_name || "",
+            code: p.code || "",
+            capacity: p.capacity || 0,
+            currentCount: p.currentCount || 0,
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Dialog states
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
@@ -108,38 +177,80 @@ export default function TasksPage() {
     setIsDetailDialogOpen(true);
   };
 
-  const handleDeleteTask = (taskId: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    setIsDetailDialogOpen(false);
-    setSelectedTask(null);
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await taskApi.deleteTask(taskId);
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      setIsDetailDialogOpen(false);
+      setSelectedTask(null);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
   };
 
-  const handleSaveTask = (
+  const handleSaveTask = async (
     taskData: Omit<Task, "id" | "createdAt" | "updatedAt"> & { id?: string }
   ) => {
-    if (taskData.id) {
-      // Update existing task
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskData.id
-            ? { ...t, ...taskData, updatedAt: new Date().toISOString() }
-            : t
-        )
-      );
-    } else {
-      // Add new task
-      const newTask: Task = {
-        ...taskData,
-        id: `task-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setTasks((prev) => [...prev, newTask]);
+    try {
+      if (taskData.id) {
+        // Update existing task
+        await taskApi.updateTask(taskData.id, {
+          taskDescription: taskData.taskDescription,
+          barnId: taskData.barnId,
+          employeeId: taskData.employeeId,
+          taskType: taskData.taskType,
+          status: taskData.status,
+          notes: taskData.notes,
+          shift: taskData.shift,
+          date: taskData.date,
+        });
+
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === taskData.id
+              ? { ...t, ...taskData, updatedAt: new Date().toISOString() }
+              : t
+          )
+        );
+      } else {
+        // Add new task
+        const newTask = await taskApi.createTask({
+          taskDescription: taskData.taskDescription,
+          barnId: taskData.barnId,
+          employeeId: taskData.employeeId,
+          taskType: taskData.taskType,
+          status: taskData.status,
+          notes: taskData.notes,
+          shift: taskData.shift,
+          date: taskData.date,
+        });
+
+        const transformedTask: Task = {
+          id: newTask.id,
+          date: newTask.date,
+          shift: newTask.shift as ShiftType,
+          employeeId: newTask.employeeId,
+          employeeName: newTask.employeeName,
+          barnId: newTask.barnId,
+          barnName: newTask.barnName,
+          taskType: newTask.taskType as any,
+          taskDescription: newTask.taskDescription,
+          status: newTask.status as any,
+          notes: newTask.notes,
+          createdAt: newTask.createdAt,
+          updatedAt: newTask.updatedAt,
+        };
+
+        setTasks((prev) => [...prev, transformedTask]);
+      }
+
+      setIsAddEditDialogOpen(false);
+      setSelectedTask(null);
+      setSelectedDate(null);
+      setSelectedShift(null);
+    } catch (error) {
+      console.error("Error saving task:", error);
     }
-    setIsAddEditDialogOpen(false);
-    setSelectedTask(null);
-    setSelectedDate(null);
-    setSelectedShift(null);
   };
 
   // View mode icons
@@ -247,8 +358,8 @@ export default function TasksPage() {
         task={selectedTask}
         defaultDate={selectedDate}
         defaultShift={selectedShift}
-        employees={mockEmployees}
-        barns={mockBarns}
+        employees={employees}
+        barns={pens}
         onSave={handleSaveTask}
       />
 

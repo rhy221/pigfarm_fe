@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -16,7 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { mockTasks, currentUser } from "../mock-data";
+import { taskApi } from "@/lib/api";
 import {
   Task,
   ViewMode,
@@ -26,6 +26,7 @@ import {
   STATUS_LABELS,
   DAY_OF_WEEK_LABELS,
   ROLE_PERMISSIONS,
+  Employee,
 } from "../types";
 import { TaskDetailDialog } from "../components/task-detail-dialog";
 
@@ -63,26 +64,73 @@ const STATUS_BADGE_VARIANTS: Record<
 export default function MySchedulePage() {
   const isMobile = useIsMobile();
 
-  // For demo, use currentUser from mock data
-  // In real app, this would come from auth context
-  const user = currentUser;
-
   // State
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 11, 1)); // December 2025
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>(() =>
     isMobile ? "day" : "week"
   );
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [user, setUser] = useState<Employee | null>(null);
+
+  // Fetch data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [tasksData, employeesData] = await Promise.all([
+          taskApi.getTasks() || [],
+          taskApi.getEmployees() || [],
+        ]);
+
+        const safeTasksData = Array.isArray(tasksData) ? tasksData : [];
+        const safeEmployeesData = Array.isArray(employeesData) ? employeesData : [];
+
+        // Simulate login: Pick the first employee found
+        const currentUserData = safeEmployeesData.length > 0 ? safeEmployeesData[0] : null;
+        if (currentUserData) {
+            setUser({
+                id: currentUserData.id,
+                name: currentUserData.name,
+                role: currentUserData.role || 'employee',
+                email: currentUserData.email
+            });
+        }
+
+        const transformedTasks = safeTasksData.map((task) => ({
+          id: task.id,
+          date: task.date || new Date().toISOString().split("T")[0],
+          shift: (task.shift as ShiftType) || "morning",
+          employeeId: task.employeeId || "",
+          employeeName: task.employeeName || "Chưa phân công",
+          barnId: task.barnId || "",
+          barnName: task.barnName || "Chưa chọn",
+          taskType: (task.taskType as any) || "other",
+          taskDescription: task.taskDescription || "",
+          status: (task.status as any) || "pending",
+          notes: task.notes || "",
+          createdAt: task.createdAt || new Date().toISOString(),
+          updatedAt: task.updatedAt || new Date().toISOString(),
+        }));
+
+        setTasks(transformedTasks);
+      } catch (error) {
+        console.error("Error fetching schedule:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Filter tasks based on user role
   const allowedTaskTypes = useMemo(() => {
-    return ROLE_PERMISSIONS[user.role];
-  }, [user.role]);
+    if (!user) return [];
+    return ROLE_PERMISSIONS[user.role] || [];
+  }, [user]);
 
   // Filter tasks for current user
   const myTasks = useMemo(() => {
-    return mockTasks.filter((task) => {
+    if (!user) return [];
+    return tasks.filter((task) => {
       // Check if task type is allowed for this role
       const isAllowedType = allowedTaskTypes.includes(task.taskType);
       // Check if task is assigned to this user
@@ -90,7 +138,7 @@ export default function MySchedulePage() {
 
       return isAllowedType && isAssignedToMe;
     });
-  }, [allowedTaskTypes, user.id]);
+  }, [allowedTaskTypes, user, tasks]);
 
   // Get date range based on view mode
   const dateRange = useMemo(() => {

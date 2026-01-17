@@ -1,5 +1,18 @@
-import { Banknote, BrushCleaning, Calendar, Clipboard, Home, House, Inbox, LogOut, LogOutIcon, Pill, Search, Settings, Sprout, SquarePen, Syringe, Users, Utensils, Warehouse } from "lucide-react"
- 
+import {
+  Banknote,
+  BrushCleaning,
+  Clipboard,
+  LogOutIcon,
+  Pill,
+  Settings,
+  Sprout,
+  SquarePen,
+  Syringe,
+  Users,
+  Utensils,
+  Warehouse,
+} from "lucide-react";
+
 import {
   Sidebar,
   SidebarContent,
@@ -9,8 +22,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
- 
+} from "@/components/ui/sidebar";
+
 // Menu items.
 const items = [
   {
@@ -78,8 +91,8 @@ const items = [
     url: "#",
     icon: LogOutIcon,
   },
-]
- 
+];
+
 export function AppSidebar() {
   return (
     <Sidebar>
@@ -103,5 +116,5 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }

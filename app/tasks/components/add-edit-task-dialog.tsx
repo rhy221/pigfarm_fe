@@ -257,8 +257,7 @@ export function AddEditTaskDialog({
               <SelectContent>
                 {barns.map((barn) => (
                   <SelectItem key={barn.id} value={barn.id}>
-                    {barn.name} ({barn.code}) - {barn.currentCount}/
-                    {barn.capacity} con
+                    {barn.name} {barn.code ? `(${barn.code})` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -267,7 +266,7 @@ export function AddEditTaskDialog({
 
           {/* Task type select */}
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="taskType" className="text-right">
+            <Label htmlFor="taskType" className="text-right whitespace-nowrap">
               Loại công việc <span className="text-red-500">*</span>
             </Label>
             <Select value={taskType} onValueChange={handleTaskTypeChange}>

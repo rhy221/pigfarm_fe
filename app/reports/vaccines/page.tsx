@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { reportApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -19,65 +20,76 @@ import {
 } from "@/components/ui/table";
 import { FileDown } from "lucide-react";
 
-// Mock data
-const mockData = [
-  {
-    id: 1,
-    tenVaccine: "Vắc-xin dịch tả heo",
-    loaiBenh: "Dịch tả heo",
-    chiPhi: 2500000,
-    soHeoTiem: 100,
-    soHeoMacBenh: 2,
-    tiLeKhoi: 98,
-  },
-  {
-    id: 2,
-    tenVaccine: "Vắc-xin tai xanh",
-    loaiBenh: "Tai xanh",
-    chiPhi: 1800000,
-    soHeoTiem: 80,
-    soHeoMacBenh: 5,
-    tiLeKhoi: 93.75,
-  },
-  {
-    id: 3,
-    tenVaccine: "Vắc-xin tụ huyết trùng",
-    loaiBenh: "Tụ huyết trùng",
-    chiPhi: 3200000,
-    soHeoTiem: 120,
-    soHeoMacBenh: 3,
-    tiLeKhoi: 97.5,
-  },
-  {
-    id: 4,
-    tenVaccine: "Vắc-xin phó thương hàn",
-    loaiBenh: "Phó thương hàn",
-    chiPhi: 2100000,
-    soHeoTiem: 90,
-    soHeoMacBenh: 4,
-    tiLeKhoi: 95.56,
-  },
-  {
-    id: 5,
-    tenVaccine: "Vắc-xin viêm mũi teo",
-    loaiBenh: "Viêm mũi teo",
-    chiPhi: 2800000,
-    soHeoTiem: 110,
-    soHeoMacBenh: 6,
-    tiLeKhoi: 94.55,
-  },
-];
+interface VaccineDetail {
+  vaccineName: string;
+  diseaseName: string;
+  cost: number;
+  pigsVaccinated: number;
+  pigsSick: number;
+  effectivenessRate: number;
+}
+
+interface VaccineReportData {
+  details?: VaccineDetail[];
+}
 
 export default function VaccinesReportPage() {
-  const [selectedMonth, setSelectedMonth] = useState("all");
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
+  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedVaccine, setSelectedVaccine] = useState("all");
+  const [reportData, setReportData] = useState<VaccineReportData | null>(null);
+  const [allVaccines, setAllVaccines] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const vaccines = await reportApi.getVaccinesList();
+        setAllVaccines(vaccines);
+      } catch (error) {
+        console.error("Error fetching vaccines list:", error);
+      }
+    };
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        const currentMonthStr = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
+        const data = await reportApi.getVaccineReport({ month: currentMonthStr });
+        setReportData(data);
+      } catch (error) {
+        console.error("Error fetching vaccine report:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, [selectedMonth, selectedYear]);
 
   const handleExportPDF = () => {
     alert("Xuất PDF (chức năng sẽ được triển khai sau)");
   };
 
+  // Map backend data to frontend format
+  const mappedData =
+    reportData?.details?.map((detail, index) => ({
+      id: index + 1,
+      tenVaccine: detail.vaccineName || "N/A",
+      loaiBenh: detail.diseaseName || "N/A",
+      chiPhi: detail.cost || 0,
+      soHeoTiem: detail.totalVaccinated || 0,
+      soHeoMacBenh: detail.sickCount || 0,
+      tiLeKhoi: detail.effectivenessRate || 0,
+    })) || [];
+
   // Filter logic
-  const filteredData = mockData.filter((item) => {
+  const filteredData = mappedData.filter((item) => {
     if (selectedVaccine !== "all" && item.tenVaccine !== selectedVaccine)
       return false;
     return true;
@@ -89,12 +101,22 @@ export default function VaccinesReportPage() {
     (sum, item) => sum + item.soHeoMacBenh,
     0
   );
-  const avgEffectiveness =
-    filteredData.reduce((sum, item) => sum + item.tiLeKhoi, 0) /
-    filteredData.length;
+  
+  // Calculate weighted average effectiveness: (Total Vaccinated - Total Sick) / Total Vaccinated
+  const avgEffectiveness = totalPigs > 0 
+    ? ((totalPigs - totalSick) / totalPigs) * 100 
+    : 0;
+
+  // Generate Year Options (2020 - Current)
+  const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) => (currentYear - i).toString());
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
@@ -115,19 +137,33 @@ export default function VaccinesReportPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-full sm:w-[200px]">
+          <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Chọn tháng" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả tháng</SelectItem>
-            <SelectItem value="1">Tháng 1</SelectItem>
-            <SelectItem value="2">Tháng 2</SelectItem>
-            <SelectItem value="3">Tháng 3</SelectItem>
-            <SelectItem value="4">Tháng 4</SelectItem>
-            <SelectItem value="5">Tháng 5</SelectItem>
-            <SelectItem value="6">Tháng 6</SelectItem>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+              const isDisabled = parseInt(selectedYear) === currentYear && month > currentMonth;
+              return (
+                <SelectItem key={month} value={month.toString()} disabled={isDisabled}>
+                  Tháng {month}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Chọn năm" />
+          </SelectTrigger>
+          <SelectContent>
+             {years.map((year) => (
+              <SelectItem key={year} value={year}>
+                Năm {year}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -137,13 +173,17 @@ export default function VaccinesReportPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tất cả vắc-xin</SelectItem>
-            {mockData.map((item) => (
-              <SelectItem key={item.id} value={item.tenVaccine}>
-                {item.tenVaccine}
+            {allVaccines.map((v) => (
+              <SelectItem key={v.id} value={v.vaccine_name}>
+                {v.vaccine_name}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+
+        <div className="ml-auto text-sm text-gray-500 italic hidden lg:block">
+            * Dữ liệu tổng hợp trong tháng {selectedMonth}/{selectedYear}
+        </div>
       </div>
 
       {/* Table */}
@@ -227,37 +267,41 @@ export default function VaccinesReportPage() {
         <h3 className="text-lg font-semibold text-[#53A88B] mb-2">
           Phân tích hiệu quả
         </h3>
-        <div className="space-y-2 text-gray-700">
-          <p>
-            • Vắc-xin có hiệu quả cao nhất:{" "}
-            <span className="font-semibold">
-              {
-                filteredData.reduce((max, item) =>
-                  item.tiLeKhoi > max.tiLeKhoi ? item : max
-                ).tenVaccine
-              }{" "}
-              (
-              {filteredData
-                .reduce((max, item) =>
-                  item.tiLeKhoi > max.tiLeKhoi ? item : max
-                )
-                .tiLeKhoi.toFixed(2)}
-              %)
-            </span>
-          </p>
-          <p>
-            • Chi phí trung bình mỗi heo:{" "}
-            <span className="font-semibold">
-              {(totalCost / totalPigs).toLocaleString()} VNĐ
-            </span>
-          </p>
-          <p>
-            • Tỉ lệ mắc bệnh sau tiêm:{" "}
-            <span className="font-semibold">
-              {((totalSick / totalPigs) * 100).toFixed(2)}%
-            </span>
-          </p>
-        </div>
+        {filteredData.length > 0 ? (
+          <div className="space-y-2 text-gray-700">
+            <p>
+              • Vắc-xin có hiệu quả cao nhất:{" "}
+              <span className="font-semibold">
+                {
+                  filteredData.reduce((max, item) =>
+                    item.tiLeKhoi > max.tiLeKhoi ? item : max
+                  ).tenVaccine
+                }{" "}
+                (
+                {filteredData
+                  .reduce((max, item) =>
+                    item.tiLeKhoi > max.tiLeKhoi ? item : max
+                  )
+                  .tiLeKhoi.toFixed(2)}
+                %)
+              </span>
+            </p>
+            <p>
+              • Chi phí trung bình mỗi heo:{" "}
+              <span className="font-semibold">
+                {totalPigs > 0 ? (totalCost / totalPigs).toLocaleString() : 0} VNĐ
+              </span>
+            </p>
+            <p>
+              • Tỉ lệ mắc bệnh sau tiêm:{" "}
+              <span className="font-semibold">
+                {totalPigs > 0 ? ((totalSick / totalPigs) * 100).toFixed(2) : 0}%
+              </span>
+            </p>
+          </div>
+        ) : (
+          <p className="text-gray-500 italic">Không có dữ liệu phân tích cho giai đoạn này.</p>
+        )}
       </div>
     </div>
   );

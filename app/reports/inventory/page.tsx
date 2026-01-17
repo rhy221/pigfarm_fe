@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { reportApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -32,55 +33,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-// Mock data for chart
-const chartData = [
-  { month: "Tháng 1", value: 150 },
-  { month: "Tháng 2", value: 165 },
-  { month: "Tháng 3", value: 180 },
-  { month: "Tháng 4", value: 175 },
-  { month: "Tháng 5", value: 190 },
-  { month: "Tháng 6", value: 200 },
-];
-
-// Mock data for table
-const mockTableData = [
-  {
-    id: 1,
-    vatTu: "Thức ăn hỗn hợp",
-    tonDau: 500,
-    phatSinh: 200,
-    tonCuoi: 400,
-  },
-  {
-    id: 2,
-    vatTu: "Vitamin tổng hợp",
-    tonDau: 100,
-    phatSinh: 50,
-    tonCuoi: 80,
-  },
-  {
-    id: 3,
-    vatTu: "Thuốc kháng sinh",
-    tonDau: 80,
-    phatSinh: 30,
-    tonCuoi: 60,
-  },
-  {
-    id: 4,
-    vatTu: "Vắc-xin dịch tả",
-    tonDau: 200,
-    phatSinh: 100,
-    tonCuoi: 150,
-  },
-  {
-    id: 5,
-    vatTu: "Thức ăn đặc biệt",
-    tonDau: 300,
-    phatSinh: 150,
-    tonCuoi: 250,
-  },
-];
-
 const chartConfig = {
   value: {
     label: "Tồn kho",
@@ -88,16 +40,67 @@ const chartConfig = {
   },
 };
 
+interface InventoryItem {
+  materialId: string;
+  materialName: string;
+  openingStock: number;
+  changeAmount: number;
+  closingStock: number;
+}
+
+interface InventoryReportData {
+  items?: InventoryItem[];
+  trends?: Array<{ month: string; value: number }>;
+}
+
 export default function InventoryReportPage() {
-  const [selectedMonth, setSelectedMonth] = useState("all");
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
+  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedType, setSelectedType] = useState("all");
+  const [reportData, setReportData] = useState<InventoryReportData | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        // Get current month in YYYY-MM format
+        const currentMonthStr = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
+        
+        const data = await reportApi.getInventoryReport({
+          month: currentMonthStr,
+        });
+        setReportData(data);
+      } catch (error) {
+        console.error("Error fetching inventory report:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, [selectedMonth, selectedYear]);
 
   const handleExportPDF = () => {
     alert("Xuất PDF (chức năng sẽ được triển khai sau)");
   };
 
+  // Map backend data to frontend format
+  const mappedData =
+    reportData?.items?.map((item, index) => ({
+      id: index + 1,
+      vatTu: item.materialName || "N/A",
+      tonDau: item.openingStock || 0,
+      phatSinh: item.changeAmount || 0,
+      tonCuoi: item.closingStock || 0,
+    })) || [];
+
   // Filter logic
-  const filteredData = mockTableData.filter((item) => {
+  const filteredData = mappedData.filter((item) => {
     if (
       selectedType !== "all" &&
       !item.vatTu.toLowerCase().includes(selectedType)
@@ -106,8 +109,18 @@ export default function InventoryReportPage() {
     return true;
   });
 
+  const chartData = reportData?.trends || [];
+
+  // Generate Year Options (2020 - Current)
+  const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) => (currentYear - i).toString());
+
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
@@ -124,19 +137,34 @@ export default function InventoryReportPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 items-center">
         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-full sm:w-[200px]">
+          <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="Chọn tháng" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tất cả tháng</SelectItem>
-            <SelectItem value="1">Tháng 1</SelectItem>
-            <SelectItem value="2">Tháng 2</SelectItem>
-            <SelectItem value="3">Tháng 3</SelectItem>
-            <SelectItem value="4">Tháng 4</SelectItem>
-            <SelectItem value="5">Tháng 5</SelectItem>
-            <SelectItem value="6">Tháng 6</SelectItem>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+              // Disable future months if current year is selected
+              const isDisabled = parseInt(selectedYear) === currentYear && month > currentMonth;
+              return (
+                <SelectItem key={month} value={month.toString()} disabled={isDisabled}>
+                  Tháng {month}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Chọn năm" />
+          </SelectTrigger>
+          <SelectContent>
+             {years.map((year) => (
+              <SelectItem key={year} value={year}>
+                Năm {year}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -152,6 +180,10 @@ export default function InventoryReportPage() {
             <SelectItem value="vitamin">Vitamin</SelectItem>
           </SelectContent>
         </Select>
+
+         <div className="ml-auto text-sm text-gray-500 italic hidden sm:block">
+            * Dữ liệu chốt sổ đến cuối tháng {selectedMonth}/{selectedYear}
+        </div>
       </div>
 
       {/* Chart */}

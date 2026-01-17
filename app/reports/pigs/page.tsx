@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { reportApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -19,13 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { FileDown, CalendarIcon } from "lucide-react";
+import { FileDown } from "lucide-react";
 import {
   ChartContainer,
   ChartTooltip,
@@ -33,170 +28,149 @@ import {
 } from "@/components/ui/chart";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
-import { vi } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-
-// Mock data for donut chart (Đàn heo)
-const chartData = [
-  { name: "Heo khỏe", value: 40, color: "#059669" },
-  { name: "Heo bệnh", value: 40, color: "#EAB308" },
-  { name: "Heo chết", value: 20, color: "#EF4444" },
-];
-
-// Mock data for herd table (Đàn heo)
-const herdTableData = [
-  {
-    id: 1,
-    stt: 1,
-    chuong: "A001",
-    soHeoKhoe: 50,
-    soHeoBinh: 50,
-    soHeoChết: 50,
-    soHeoXuatChuong: 50,
-  },
-  {
-    id: 2,
-    stt: 2,
-    chuong: "A002",
-    soHeoKhoe: 45,
-    soHeoBinh: 30,
-    soHeoChết: 10,
-    soHeoXuatChuong: 25,
-  },
-  {
-    id: 3,
-    stt: 3,
-    chuong: "B001",
-    soHeoKhoe: 60,
-    soHeoBinh: 20,
-    soHeoChết: 5,
-    soHeoXuatChuong: 35,
-  },
-  {
-    id: 4,
-    stt: 4,
-    chuong: "B002",
-    soHeoKhoe: 55,
-    soHeoBinh: 25,
-    soHeoChết: 8,
-    soHeoXuatChuong: 40,
-  },
-  {
-    id: 5,
-    stt: 5,
-    chuong: "C001",
-    soHeoKhoe: 48,
-    soHeoBinh: 35,
-    soHeoChết: 12,
-    soHeoXuatChuong: 30,
-  },
-];
-
-// Mock data for pigs in pens table (Heo tại chuồng)
-const pigsInPensData = [
-  {
-    id: 1,
-    stt: 1,
-    chuong: "A1",
-    lua: "L001",
-    maSo: "H001",
-    trongLuong: 85.5,
-    trangThai: "Khỏe mạnh",
-  },
-  {
-    id: 2,
-    stt: 2,
-    chuong: "A1",
-    lua: "L001",
-    maSo: "H002",
-    trongLuong: 82.3,
-    trangThai: "Khỏe mạnh",
-  },
-  {
-    id: 3,
-    stt: 3,
-    chuong: "A2",
-    lua: "L002",
-    maSo: "H003",
-    trongLuong: 78.9,
-    trangThai: "Cần theo dõi",
-  },
-  {
-    id: 4,
-    stt: 4,
-    chuong: "A2",
-    lua: "L002",
-    maSo: "H004",
-    trongLuong: 90.2,
-    trangThai: "Khỏe mạnh",
-  },
-  {
-    id: 5,
-    stt: 5,
-    chuong: "B1",
-    lua: "L003",
-    maSo: "H005",
-    trongLuong: 88.7,
-    trangThai: "Khỏe mạnh",
-  },
-  {
-    id: 6,
-    stt: 6,
-    chuong: "B1",
-    lua: "L003",
-    maSo: "H006",
-    trongLuong: 75.5,
-    trangThai: "Cần theo dõi",
-  },
-  {
-    id: 7,
-    stt: 7,
-    chuong: "B2",
-    lua: "L004",
-    maSo: "H007",
-    trongLuong: 92.1,
-    trangThai: "Khỏe mạnh",
-  },
-  {
-    id: 8,
-    stt: 8,
-    chuong: "B2",
-    lua: "L004",
-    maSo: "H008",
-    trongLuong: 86.4,
-    trangThai: "Khỏe mạnh",
-  },
-];
 
 const chartConfig = {
   heoKhoe: { label: "Heo khỏe", color: "#059669" },
   heoBinh: { label: "Heo bệnh", color: "#EAB308" },
   heoChét: { label: "Heo chết", color: "#EF4444" },
+  heoXuat: { label: "Heo đã xuất", color: "#3B82F6" },
 };
 
+interface PenData {
+  penId: string;
+  penName: string;
+  healthyCount: number;
+  sickCount: number;
+  deadCount: number;
+  shippedCount: number;
+}
+
+interface HerdReportData {
+  date?: string;
+  totalPigs?: number;
+  pens?: PenData[];
+}
+
 export default function PigReportsPage() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date()
-  );
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
+  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedPen, setSelectedPen] = useState("all");
   const [selectedBatch, setSelectedBatch] = useState("all");
   const [activeTab, setActiveTab] = useState("herd");
+  const [reportData, setReportData] = useState<HerdReportData | null>(null);
+  const [allPens, setAllPens] = useState<PenData[]>([]); // Store all pens for filter
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        setLoading(true);
+        
+        // Logic: If current month/year selected, use today. 
+        // Else, use the last day of the selected month to get the "closing" report.
+        let targetDateStr = "";
+        const isCurrent = 
+          parseInt(selectedYear) === new Date().getFullYear() && 
+          parseInt(selectedMonth) === (new Date().getMonth() + 1);
+
+        if (isCurrent) {
+           targetDateStr = new Date().toISOString().split("T")[0];
+        } else {
+           // Get last day of selected month
+           const lastDay = new Date(parseInt(selectedYear), parseInt(selectedMonth), 0);
+           targetDateStr = format(lastDay, "yyyy-MM-dd");
+        }
+
+        // Prepare query params
+        const params: { date?: string; pen?: string } = {};
+        if (targetDateStr) params.date = targetDateStr;
+        if (selectedPen !== "all") params.pen = selectedPen;
+
+        const data = await reportApi.getHerdReport(params);
+        console.log("Herd report data:", data);
+        console.log("Pens count:", data?.pens?.length || 0);
+        
+        setReportData(data);
+
+        // Populate filter options only if we don't have them yet (and we are not currently filtering by pen, which would restrict the list)
+        if (data?.pens && selectedPen === "all" && allPens.length === 0) {
+           setAllPens(data.pens);
+        } else if (data?.pens && selectedPen === "all" && data.pens.length > allPens.length) {
+           // Update if we somehow got more pens
+           setAllPens(data.pens);
+        }
+
+      } catch (error) {
+        console.error("Error fetching herd report:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReport();
+  }, [selectedMonth, selectedYear, selectedPen, selectedBatch, activeTab]); // Add dependencies
 
   const handleExportPDF = () => {
     alert("Xuất PDF (chức năng sẽ được triển khai sau)");
   };
 
-  // Filter pigs in pens data
-  const filteredPigsData = pigsInPensData.filter((item) => {
-    if (selectedPen !== "all" && item.chuong !== selectedPen) return false;
-    if (selectedBatch !== "all" && item.lua !== selectedBatch) return false;
-    return true;
-  });
+  // Map backend data to frontend format
+  const mappedHerdTable =
+    reportData?.pens?.map((pen, index) => ({
+      id: index + 1,
+      stt: index + 1,
+      chuong: pen.penName || pen.penId,
+      soHeoKhoe: pen.healthyCount || 0,
+      soHeoBinh: pen.sickCount || 0,
+      soHeoChết: pen.deadCount || 0,
+      soHeoXuatChuong: pen.shippedCount || 0,
+    })) || [];
 
-  const totalPigs = chartData.reduce((sum, item) => sum + item.value, 0);
+  // Calculate chart data from API response
+  const totalHealthy =
+    reportData?.pens?.reduce(
+      (sum: number, p) => sum + (p.healthyCount || 0),
+      0
+    ) || 0;
+  const totalSick =
+    reportData?.pens?.reduce((sum: number, p) => sum + (p.sickCount || 0), 0) ||
+    0;
+  const totalDead =
+    reportData?.pens?.reduce((sum: number, p) => sum + (p.deadCount || 0), 0) ||
+    0;
+  const totalShipped =
+    reportData?.pens?.reduce(
+      (sum: number, p) => sum + (p.shippedCount || 0),
+      0
+    ) || 0;
+
+  const mappedChartData = [
+    { name: "Heo khỏe", value: totalHealthy, color: "#059669" },
+    { name: "Heo bệnh", value: totalSick, color: "#EAB308" },
+    { name: "Heo chết", value: totalDead, color: "#EF4444" },
+    { name: "Heo đã xuất", value: totalShipped, color: "#3B82F6" },
+  ];
+
+  // Filter pigs in pens data (backend doesn't provide individual pig data yet)
+  const filteredPigsData: unknown[] = [];
+
+  const totalPigs = mappedChartData.reduce((sum, item) => sum + item.value, 0);
+
+  const chartDataSource = mappedChartData;
+  const herdTableSource = mappedHerdTable;
+
+  // Generate Year Options (2020 - Current)
+  const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) => (currentYear - i).toString());
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
@@ -214,55 +188,58 @@ export default function PigReportsPage() {
         </Button>
       </div>
 
-      {/* Date Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center p-4 bg-white rounded-lg border">
-        <span className="text-sm font-medium text-gray-700">Chọn ngày:</span>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-[280px] justify-start text-left font-normal",
-                !selectedDate && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {selectedDate ? (
-                format(selectedDate, "dd/MM/yyyy", { locale: vi })
-              ) : (
-                <span>Chọn ngày</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-        <Button
-          onClick={() => {
-            if (selectedDate) {
-              alert(
-                `Xem báo cáo ngày: ${format(selectedDate, "dd/MM/yyyy", {
-                  locale: vi,
-                })}`
+      {/* Date Filter (Month/Year) */}
+      <div className="flex flex-col sm:flex-row gap-4 items-center p-4 bg-white rounded-lg border">
+        <span className="text-sm font-medium text-gray-700">Thời gian báo cáo:</span>
+        
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Chọn tháng" />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+              // Disable future months if current year is selected
+              const isDisabled = parseInt(selectedYear) === currentYear && month > currentMonth;
+              return (
+                <SelectItem key={month} value={month.toString()} disabled={isDisabled}>
+                  Tháng {month}
+                </SelectItem>
               );
-              // TODO: Gọi API hoặc filter dữ liệu theo ngày đã chọn
-            }
-          }}
-          className="bg-[#53A88B] hover:bg-[#458F79] text-white"
-          disabled={!selectedDate}
-        >
-          Xem báo cáo
-        </Button>
+            })}
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Chọn năm" />
+          </SelectTrigger>
+          <SelectContent>
+            {years.map((year) => (
+              <SelectItem key={year} value={year}>
+                Năm {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="ml-auto text-sm text-gray-500 italic">
+            * Dữ liệu được tính đến {parseInt(selectedYear) === currentYear && parseInt(selectedMonth) === currentMonth ? "hôm nay" : "cuối tháng"}
+        </div>
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          setActiveTab(value);
+          // Reset to default state "like first load"
+          setSelectedMonth(currentMonth.toString());
+          setSelectedYear(currentYear.toString());
+          setSelectedPen("all");
+          setSelectedBatch("all");
+        }}
+        className="w-full"
+      >
         <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger
             value="herd"
@@ -294,7 +271,7 @@ export default function PigReportsPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={chartData}
+                        data={chartDataSource}
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
@@ -302,7 +279,7 @@ export default function PigReportsPage() {
                         paddingAngle={2}
                         dataKey="value"
                       >
-                        {chartData.map((entry, index) => (
+                        {chartDataSource.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -313,7 +290,7 @@ export default function PigReportsPage() {
               </div>
 
               <div className="w-full lg:w-1/2 space-y-4">
-                {chartData.map((item) => (
+                {chartDataSource.map((item) => (
                   <div
                     key={item.name}
                     className="flex items-center justify-between p-4 rounded-lg border"
@@ -326,10 +303,13 @@ export default function PigReportsPage() {
                       <span className="font-medium">{item.name}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-2xl font-bold">{item.value}%</span>
-                      <p className="text-sm text-gray-500">
-                        {Math.round((item.value / 100) * totalPigs)} con
-                      </p>
+                      <span className="text-2xl font-bold">
+                        {totalPigs > 0
+                          ? ((item.value / totalPigs) * 100).toFixed(1)
+                          : 0}
+                        %
+                      </span>
+                      <p className="text-sm text-gray-500">{item.value} con</p>
                     </div>
                   </div>
                 ))}
@@ -337,7 +317,75 @@ export default function PigReportsPage() {
             </div>
           </div>
 
-          {/* Herd Table */}
+          {/* Summary Statistics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-6 bg-green-500 text-white rounded-lg shadow-lg">
+              <p className="text-sm opacity-90 mb-1">Tổng số heo khỏe</p>
+              <p className="text-3xl font-bold">
+                {herdTableSource.reduce((sum, item) => sum + item.soHeoKhoe, 0)}
+              </p>
+              <p className="text-xs opacity-75 mt-1">Con</p>
+            </div>
+            <div className="p-6 bg-yellow-500 text-white rounded-lg shadow-lg">
+              <p className="text-sm opacity-90 mb-1">Tổng số heo bệnh</p>
+              <p className="text-3xl font-bold">
+                {herdTableSource.reduce((sum, item) => sum + item.soHeoBinh, 0)}
+              </p>
+              <p className="text-xs opacity-75 mt-1">Con</p>
+            </div>
+            <div className="p-6 bg-red-500 text-white rounded-lg shadow-lg">
+              <p className="text-sm opacity-90 mb-1">Tổng số heo chết</p>
+              <p className="text-3xl font-bold">
+                {herdTableSource.reduce((sum, item) => sum + item.soHeoChết, 0)}
+              </p>
+              <p className="text-xs opacity-75 mt-1">Con</p>
+            </div>
+            <div className="p-6 bg-blue-500 text-white rounded-lg shadow-lg">
+              <p className="text-sm opacity-90 mb-1">Đã xuất chuồng</p>
+              <p className="text-3xl font-bold">
+                {herdTableSource.reduce(
+                  (sum, item) => sum + item.soHeoXuatChuong,
+                  0
+                )}
+              </p>
+              <p className="text-xs opacity-75 mt-1">Con</p>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Tab: Heo tại chuồng */}
+        <TabsContent value="pens" className="space-y-6 mt-6">
+          {/* Additional Filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Select value={selectedPen} onValueChange={setSelectedPen}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Chọn chuồng" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả chuồng</SelectItem>
+                {allPens.map((pen) => (
+                  <SelectItem key={pen.penId} value={pen.penId}>
+                    {pen.penName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Chọn lứa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả lứa</SelectItem>
+                <SelectItem value="L001">Lứa L001</SelectItem>
+                <SelectItem value="L002">Lứa L002</SelectItem>
+                <SelectItem value="L003">Lứa L003</SelectItem>
+                <SelectItem value="L004">Lứa L004</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Herd Table (Reused) */}
           <div className="rounded-md border overflow-x-auto bg-white">
             <Table>
               <TableHeader>
@@ -363,7 +411,7 @@ export default function PigReportsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {herdTableData.map((row) => (
+                {herdTableSource.map((row) => (
                   <TableRow key={row.id}>
                     <TableCell>{row.stt}</TableCell>
                     <TableCell className="font-medium">{row.chuong}</TableCell>
@@ -393,157 +441,38 @@ export default function PigReportsPage() {
             </Table>
           </div>
 
-          {/* Summary Statistics */}
+          {/* Summary Statistics (Reused) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-6 bg-green-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Tổng số heo khỏe</p>
               <p className="text-3xl font-bold">
-                {herdTableData.reduce((sum, item) => sum + item.soHeoKhoe, 0)}
+                {herdTableSource.reduce((sum, item) => sum + item.soHeoKhoe, 0)}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
             <div className="p-6 bg-yellow-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Tổng số heo bệnh</p>
               <p className="text-3xl font-bold">
-                {herdTableData.reduce((sum, item) => sum + item.soHeoBinh, 0)}
+                {herdTableSource.reduce((sum, item) => sum + item.soHeoBinh, 0)}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
             <div className="p-6 bg-red-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Tổng số heo chết</p>
               <p className="text-3xl font-bold">
-                {herdTableData.reduce((sum, item) => sum + item.soHeoChết, 0)}
+                {herdTableSource.reduce((sum, item) => sum + item.soHeoChết, 0)}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
             <div className="p-6 bg-blue-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Đã xuất chuồng</p>
               <p className="text-3xl font-bold">
-                {herdTableData.reduce(
+                {herdTableSource.reduce(
                   (sum, item) => sum + item.soHeoXuatChuong,
                   0
                 )}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Tab: Heo tại chuồng */}
-        <TabsContent value="pens" className="space-y-6 mt-6">
-          {/* Additional Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Select value={selectedPen} onValueChange={setSelectedPen}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Chọn chuồng" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả chuồng</SelectItem>
-                <SelectItem value="A1">Chuồng A1</SelectItem>
-                <SelectItem value="A2">Chuồng A2</SelectItem>
-                <SelectItem value="B1">Chuồng B1</SelectItem>
-                <SelectItem value="B2">Chuồng B2</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Chọn lứa" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả lứa</SelectItem>
-                <SelectItem value="L001">Lứa L001</SelectItem>
-                <SelectItem value="L002">Lứa L002</SelectItem>
-                <SelectItem value="L003">Lứa L003</SelectItem>
-                <SelectItem value="L004">Lứa L004</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Pigs in Pens Table */}
-          <div className="rounded-md border overflow-x-auto bg-white">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold">STT</TableHead>
-                  <TableHead className="font-semibold">Chuồng</TableHead>
-                  <TableHead className="font-semibold">Lứa</TableHead>
-                  <TableHead className="font-semibold">Mã số</TableHead>
-                  <TableHead className="font-semibold">
-                    Trọng lượng (kg)
-                  </TableHead>
-                  <TableHead className="font-semibold">Trạng thái</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPigsData.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>{row.stt}</TableCell>
-                    <TableCell className="font-medium">{row.chuong}</TableCell>
-                    <TableCell>{row.lua}</TableCell>
-                    <TableCell>{row.maSo}</TableCell>
-                    <TableCell>{row.trongLuong}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          row.trangThai === "Khỏe mạnh"
-                            ? "default"
-                            : "secondary"
-                        }
-                        className={
-                          row.trangThai === "Khỏe mạnh"
-                            ? "bg-green-100 text-green-800 hover:bg-green-200"
-                            : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                        }
-                      >
-                        {row.trangThai}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Summary */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-4 bg-gray-50 rounded-lg">
-            <div>
-              <p className="text-sm text-gray-600">Tổng số heo</p>
-              <p className="text-2xl font-bold text-[#53A88B]">
-                {filteredPigsData.length}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Trọng lượng trung bình</p>
-              <p className="text-2xl font-bold text-[#53A88B]">
-                {(
-                  filteredPigsData.reduce(
-                    (sum, item) => sum + item.trongLuong,
-                    0
-                  ) / filteredPigsData.length
-                ).toFixed(1)}{" "}
-                kg
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Khỏe mạnh</p>
-              <p className="text-2xl font-bold text-green-600">
-                {
-                  filteredPigsData.filter(
-                    (item) => item.trangThai === "Khỏe mạnh"
-                  ).length
-                }
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Cần theo dõi</p>
-              <p className="text-2xl font-bold text-yellow-600">
-                {
-                  filteredPigsData.filter(
-                    (item) => item.trangThai === "Cần theo dõi"
-                  ).length
-                }
-              </p>
             </div>
           </div>
         </TabsContent>

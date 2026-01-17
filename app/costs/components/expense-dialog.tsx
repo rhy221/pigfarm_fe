@@ -2,26 +2,13 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { X } from "lucide-react";
-import type { Expense } from "../page";
+import { useState, useEffect } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import type { Expense } from "../page"
 
 interface ExpenseDialogProps {
   isOpen: boolean;
@@ -99,11 +86,7 @@ export function ExpenseDialog({
             <DialogTitle className="text-primary text-lg font-semibold">
               {isEditMode ? "Chỉnh sửa" : "Lập phiếu chi"}
             </DialogTitle>
-            <DialogClose asChild>
-              <button className="text-muted-foreground hover:text-foreground">
-                <X className="w-5 h-5" />
-              </button>
-            </DialogClose>
+           
           </div>
         </DialogHeader>
 

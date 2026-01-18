@@ -89,8 +89,8 @@ export interface Transaction {
   approvedById?: string;
   createdAt: string;
   updatedAt: string;
-  category?: TransactionCategory;
-  cashAccount?: CashAccount;
+  transactionCategories?: TransactionCategory;
+  cashAccounts?: CashAccount;
   createdBy?: { id: string; fullName: string };
   approvedBy?: { id: string; fullName: string };
   runningBalance?: number;
@@ -139,7 +139,7 @@ export interface MonthlyBill {
   createdAt: string;
   updatedAt: string;
   // Relations
-  category?: TransactionCategory;
+  transactionCategories?: TransactionCategory;
   // Computed
   currentMonthStatus?: BillStatus;
   lastPaidDate?: string;

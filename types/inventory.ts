@@ -102,8 +102,8 @@ export interface Product {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  category?: WarehouseCategory;
-  unit?: Unit;
+  warehouseCategories?: WarehouseCategory;
+  units?: Unit;
 }
 
 export interface Supplier {
@@ -133,8 +133,8 @@ export interface Inventory {
   quantity: number;
   avgCost: number;
   lastUpdated: string;
-  warehouse?: Warehouse;
-  product?: Product;
+  warehouses?: Warehouse;
+  products?: Product;
 }
 
 export interface StockReceiptItem {
@@ -179,9 +179,9 @@ export interface StockReceipt {
   isCostRecorded: boolean;
   createdAt: string;
   updatedAt: string;
-  items?: StockReceiptItem[];
-  supplier?: Supplier;
-  warehouse?: Warehouse;
+  stockReceiptItems?: StockReceiptItem[];
+  suppliers?: Supplier;
+  warehouses?: Warehouse;
   createdBy?: { id: string; fullName: string };
   approvedBy?: { id: string; fullName: string };
 }
@@ -213,8 +213,8 @@ export interface StockIssue {
   pigBatchId?: string;
   createdAt: string;
   updatedAt: string;
-  items?: StockIssueItem[];
-  warehouse?: Warehouse;
+  stockIssueItems?: StockIssueItem[];
+  warehouses?: Warehouse;
   createdBy?: { id: string; fullName: string };
   approvedBy?: { id: string; fullName: string };
 }

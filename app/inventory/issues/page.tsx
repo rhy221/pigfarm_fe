@@ -313,7 +313,7 @@ export default function StockIssuesPage() {
                       <TableCell>
                         {format(new Date(issue.issueDate), 'dd/MM/yyyy', { locale: vi })}
                       </TableCell>
-                      <TableCell>{issue.warehouse?.name}</TableCell>
+                      <TableCell>{issue.warehouses?.name}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
                           {issueTypeLabels[issue.issueType] || issue.issueType}

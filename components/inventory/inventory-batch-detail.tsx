@@ -129,13 +129,13 @@ export function InventoryBatchDetail({ open, onClose, inventory }: InventoryBatc
           <div className="bg-muted/50 rounded-lg p-4 space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="font-semibold text-lg">{inventory.product?.name}</h3>
+                <h3 className="font-semibold text-lg">{inventory.products?.name}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Mã: {inventory.product?.code || '-'} | Danh mục: {inventory.product?.category?.name || '-'}
+                  Mã: {inventory.products?.code || '-'} | Danh mục: {inventory.products?.warehouseCategories?.name || '-'}
                 </p>
               </div>
               <Badge variant="outline" className="text-base px-3 py-1">
-                {inventory.warehouse?.name}
+                {inventory.warehouses?.name}
               </Badge>
             </div>
 
@@ -145,7 +145,7 @@ export function InventoryBatchDetail({ open, onClose, inventory }: InventoryBatc
               <div>
                 <p className="text-muted-foreground">Tổng tồn kho</p>
                 <p className="font-semibold text-lg">
-                  {formatNumber(inventory.quantity)} {inventory.product?.unit?.abbreviation}
+                  {formatNumber(inventory.quantity)} {inventory.products?.units?.abbreviation}
                 </p>
               </div>
               <div>

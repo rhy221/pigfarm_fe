@@ -1,21 +1,21 @@
 // =====================================================
-// STOCK RECEIPT FORM COMPONENT
+// EDIT STOCK RECEIPT PAGE - app/inventory/receipts/[id]/edit/page.tsx
 // =====================================================
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { CalendarIcon, Plus, Trash2, Save, ArrowLeft, Check } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,17 +23,22 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
-import { useWarehouses, useProducts, useSuppliers, useCreateStockReceipt, useConfirmStockReceipt } from '@/hooks/use-inventory';
+import {
+  useStockReceipt,
+  useWarehouses,
+  useProducts,
+  useSuppliers,
+  useUpdateStockReceipt,
+} from '@/hooks/use-inventory';
 import { formatCurrency, cn } from '@/lib/utils';
 import { ReceiptType } from '@/types/inventory';
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 
-
 // Form schema
 const stockReceiptItemSchema = z.object({
+  id: z.string().optional(),
   productId: z.string().min(1, 'Vui lòng chọn sản phẩm'),
   productName: z.string().optional(),
   unitName: z.string().optional(),
@@ -43,7 +48,7 @@ const stockReceiptItemSchema = z.object({
   discountAmount: z.number().min(0).optional(),
   taxPercent: z.number().min(0).max(100).optional(),
   taxAmount: z.number().min(0).optional(),
-  expiryDate: z.date().optional(),
+  expiryDate: z.date().optional().nullable(),
   batchNumber: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -52,36 +57,34 @@ const stockReceiptFormSchema = z.object({
   warehouseId: z.string().min(1, 'Vui lòng chọn kho'),
   supplierId: z.string().optional(),
   receiptDate: z.date({ error: 'Vui lòng chọn ngày nhập' }),
-  receiptType: z.nativeEnum(ReceiptType).optional(),
+  receiptType: z.enum(ReceiptType).optional(),
   discountAmount: z.number().min(0).optional(),
   taxAmount: z.number().min(0).optional(),
   shippingFee: z.number().min(0).optional(),
   paidAmount: z.number().min(0).optional(),
   invoiceNumber: z.string().optional(),
-  invoiceDate: z.date().optional(),
+  invoiceDate: z.date().optional().nullable(),
   notes: z.string().optional(),
   items: z.array(stockReceiptItemSchema).min(1, 'Vui lòng thêm ít nhất 1 sản phẩm'),
 });
 
 type StockReceiptFormValues = z.infer<typeof stockReceiptFormSchema>;
 
-interface StockReceiptFormProps {
-  // : string;
-  receiptId?: string; // For edit mode
+interface PageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
+export default function EditStockReceiptPage({ params }: PageProps) {
+  const { id } = use(params);
   const router = useRouter();
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const [createdReceiptId, setCreatedReceiptId] = useState<string | null>(null);
 
+  const { data: receipt, isLoading: isLoadingReceipt } = useStockReceipt(id);
   const { data: warehouses } = useWarehouses();
-  const { data: productsData } = useProducts( { limit: 1000 }); // Load all products for dropdown
+  const { data: productsData } = useProducts({ limit: 1000 });
   const products = productsData?.data;
   const { data: suppliers } = useSuppliers();
 
-  const createReceipt = useCreateStockReceipt();
-  const confirmReceipt = useConfirmStockReceipt();
+  const updateReceipt = useUpdateStockReceipt();
 
   const form = useForm<StockReceiptFormValues>({
     resolver: zodResolver(stockReceiptFormSchema),
@@ -105,15 +108,39 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
     name: 'items',
   });
 
-  // Set default warehouse when data is loaded
+  // Load receipt data into form
   useEffect(() => {
-    if (warehouses && !form.getValues('warehouseId')) {
-      const defaultWarehouse = warehouses.find((wh) => wh.isDefault);
-      if (defaultWarehouse) {
-        form.setValue('warehouseId', defaultWarehouse.id);
-      }
+    if (receipt) {
+      form.reset({
+        warehouseId: receipt.warehouseId,
+        supplierId: receipt.supplierId || '',
+        receiptDate: new Date(receipt.receiptDate),
+        receiptType: receipt.receiptType as ReceiptType,
+        discountAmount: Number(receipt.discountAmount) || 0,
+        taxAmount: Number(receipt.taxAmount) || 0,
+        shippingFee: Number(receipt.shippingFee) || 0,
+        paidAmount: Number(receipt.paidAmount) || 0,
+        invoiceNumber: receipt.invoiceNumber || '',
+        invoiceDate: receipt.invoiceDate ? new Date(receipt.invoiceDate) : null,
+        notes: receipt.notes || '',
+        items: receipt.stockReceiptItems?.map((item: any) => ({
+          id: item.id,
+          productId: item.productId,
+          productName: item.products?.name || '',
+          unitName: item.products?.units?.abbreviation || '',
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+          discountPercent: Number(item.discountPercent) || 0,
+          discountAmount: Number(item.discountAmount) || 0,
+          taxPercent: Number(item.taxPercent) || 0,
+          taxAmount: Number(item.taxAmount) || 0,
+          expiryDate: item.expiryDate ? new Date(item.expiryDate) : null,
+          batchNumber: item.batchNumber || '',
+          notes: item.notes || '',
+        })) || [],
+      });
     }
-  }, [warehouses, form]);
+  }, [receipt, warehouses, suppliers, form]);
 
   // Calculate totals
   const items = form.watch('items');
@@ -161,76 +188,101 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
       form.setValue(`items.${index}.unitPrice`, product.defaultPrice);
     }
   };
+const errors = form.formState.errors;
 
+useEffect(() => {
+  if (Object.keys(errors).length > 0) {
+    console.log("Validation Errors:", errors);
+  }
+}, [errors]);
   // Submit form
   const onSubmit = async (data: StockReceiptFormValues) => {
     try {
-      const result = await createReceipt.mutateAsync({
-        
-        warehouseId: data.warehouseId,
-        supplierId: data.supplierId || undefined,
-        receiptDate: format(data.receiptDate, 'yyyy-MM-dd'),
-        receiptType: data.receiptType,
-        discountAmount: data.discountAmount,
-        taxAmount: data.taxAmount,
-        shippingFee: data.shippingFee,
-        paidAmount: data.paidAmount,
-        invoiceNumber: data.invoiceNumber,
-        invoiceDate: data.invoiceDate ? format(data.invoiceDate, 'yyyy-MM-dd') : undefined,
-        notes: data.notes,
-        items: data.items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          discountPercent: item.discountPercent,
-          discountAmount: item.discountAmount,
-          taxPercent: item.taxPercent,
-          taxAmount: item.taxAmount,
-          expiryDate: item.expiryDate ? format(item.expiryDate, 'yyyy-MM-dd') : undefined,
-          batchNumber: item.batchNumber,
-          notes: item.notes,
-        })),
+      await updateReceipt.mutateAsync({
+        id,
+        data: {
+          warehouseId: data.warehouseId,
+          supplierId: data.supplierId || undefined,
+          receiptDate: format(data.receiptDate, 'yyyy-MM-dd'),
+          receiptType: data.receiptType,
+          discountAmount: data.discountAmount,
+          taxAmount: data.taxAmount,
+          shippingFee: data.shippingFee,
+          paidAmount: data.paidAmount,
+          invoiceNumber: data.invoiceNumber,
+          invoiceDate: data.invoiceDate ? format(data.invoiceDate, 'yyyy-MM-dd') : undefined,
+          notes: data.notes,
+          items: data.items.map((item) => ({
+            id: item.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            discountPercent: item.discountPercent,
+            discountAmount: item.discountAmount,
+            taxPercent: item.taxPercent,
+            taxAmount: item.taxAmount,
+            expiryDate: item.expiryDate ? format(item.expiryDate, 'yyyy-MM-dd') : undefined,
+            batchNumber: item.batchNumber,
+            notes: item.notes,
+          })),
+        },
       });
 
-      setCreatedReceiptId(result.id);
-
-      toast('Thành công',{
-        description: 'Đã tạo phiếu nhập kho. Bạn có muốn xác nhận ngay?',
+      toast('Thành công', {
+        description: 'Đã cập nhật phiếu nhập kho',
       });
 
-      setIsConfirmDialogOpen(true);
+      router.push(`/inventory/receipts/${id}`);
     } catch (error: any) {
-      toast('Lỗi',{
-        description: error.message || 'Không thể tạo phiếu nhập kho',
-        //variant: 'destructive',
+      toast('Lỗi', {
+        description: error.message || 'Không thể cập nhật phiếu nhập kho',
       });
     }
   };
 
-  // Confirm receipt
-  const handleConfirmReceipt = async () => {
-    if (!createdReceiptId) return;
+  if (isLoadingReceipt) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
-    try {
-      await confirmReceipt.mutateAsync(createdReceiptId);
-      toast('Thành công',{
-        description: 'Đã xác nhận phiếu nhập kho và cập nhật tồn kho',
-      });
-      router.push('/inventory');
-    } catch (error: any) {
-      toast('Lỗi',{
-        description: error.message || 'Không thể xác nhận phiếu',
-        //variant: 'destructive',
-      });
-    }
-    setIsConfirmDialogOpen(false);
-  };
+  if (!receipt) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <h3 className="text-lg font-medium mb-2">Không tìm thấy phiếu</h3>
+        <Button onClick={() => router.push('/inventory/receipts')}>
+          Quay lại danh sách
+        </Button>
+      </div>
+    );
+  }
+
+  if (receipt.status !== 'draft') {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <h3 className="text-lg font-medium mb-2">Không thể chỉnh sửa</h3>
+        <p className="text-muted-foreground mb-4">
+          Phiếu đã được xác nhận hoặc đã hủy, không thể chỉnh sửa
+        </p>
+        <Button onClick={() => router.push(`/inventory/receipts/${id}`)}>
+          Xem chi tiết
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Breadcrumb */}
-        <PageBreadcrumb items={BREADCRUMB_CONFIGS.receiptNew} />
+        <PageBreadcrumb items={[
+          ...BREADCRUMB_CONFIGS.receipts,
+          { label: receipt.receiptCode, href: `/inventory/receipts/${id}` },
+          { label: 'Chỉnh sửa', href: `/inventory/receipts/${id}/edit` }
+        ]} />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -238,17 +290,17 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Tạo phiếu nhập kho</h1>
-              <p className="text-muted-foreground">Nhập hàng hóa, vật tư vào kho</p>
+              <h1 className="text-2xl font-bold">Chỉnh sửa phiếu nhập</h1>
+              <p className="text-muted-foreground">{receipt.receiptCode}</p>
             </div>
           </div>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Hủy
             </Button>
-            <Button type="submit" disabled={createReceipt.isPending}>
+            <Button type="submit" disabled={updateReceipt.isPending}>
               <Save className="mr-2 h-4 w-4" />
-              {createReceipt.isPending ? 'Đang lưu...' : 'Lưu phiếu'}
+              {updateReceipt.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
             </Button>
           </div>
         </div>
@@ -389,12 +441,11 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[200px]">Sản phẩm</TableHead>
-                        <TableHead className="w-[80px]">Số lượng</TableHead>
-                        <TableHead className="w-[100px]">Đơn giá</TableHead>
-                        <TableHead className="w-[70px]">CK (%)</TableHead>
-                        <TableHead className="w-[120px]">Hạn sử dụng</TableHead>
-                        <TableHead className="w-[100px] text-right">Thành tiền</TableHead>
+                        <TableHead className="w-[250px]">Sản phẩm</TableHead>
+                        <TableHead className="w-[100px]">Số lượng</TableHead>
+                        <TableHead className="w-[120px]">Đơn giá</TableHead>
+                        <TableHead className="w-[100px]">CK (%)</TableHead>
+                        <TableHead className="w-[120px] text-right">Thành tiền</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -451,36 +502,6 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
                                 {...form.register(`items.${index}.discountPercent`, { valueAsNumber: true })}
                                 className="w-16"
                               />
-                            </TableCell>
-                            <TableCell>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    className={cn(
-                                      'w-[120px] pl-3 text-left font-normal text-xs',
-                                      !form.watch(`items.${index}.expiryDate`) && 'text-muted-foreground'
-                                    )}
-                                  >
-                                    {form.watch(`items.${index}.expiryDate`) ? (
-                                      format(form.watch(`items.${index}.expiryDate`)!, 'dd/MM/yyyy')
-                                    ) : (
-                                      <span>Chọn ngày</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-3 w-3 opacity-50" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    selected={form.watch(`items.${index}.expiryDate`) || undefined}
-                                    onSelect={(date) => form.setValue(`items.${index}.expiryDate`, date)}
-                                    disabled={(date) => date < new Date()}
-                                    initialFocus
-                                  />
-                                </PopoverContent>
-                              </Popover>
                             </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatCurrency(itemTotal)}
@@ -627,43 +648,8 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
                 </div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-sm text-muted-foreground space-y-2">
-                  <p>• Phiếu sẽ được lưu ở trạng thái nháp</p>
-                  <p>• Xác nhận phiếu để cập nhật tồn kho</p>
-                  <p>• Công nợ sẽ được ghi nhận khi xác nhận</p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
-
-        {/* Confirm Dialog */}
-        <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Xác nhận phiếu nhập kho?</DialogTitle>
-              <DialogDescription>
-                Sau khi xác nhận, tồn kho sẽ được cập nhật và công nợ nhà cung cấp sẽ được ghi nhận.
-                Bạn không thể sửa đổi phiếu sau khi xác nhận.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => {
-                setIsConfirmDialogOpen(false);
-                router.push('/inventory');
-              }}>
-                Để sau
-              </Button>
-              <Button onClick={handleConfirmReceipt} disabled={confirmReceipt.isPending}>
-                <Check className="mr-2 h-4 w-4" />
-                {confirmReceipt.isPending ? 'Đang xử lý...' : 'Xác nhận ngay'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </form>
     </Form>
   );

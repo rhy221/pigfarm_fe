@@ -220,19 +220,19 @@ export default function InventoryDashboard() {
                   ) : (
                     inventory?.data?.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-mono">{item.product?.code}</TableCell>
-                        <TableCell className="font-medium">{item.product?.name}</TableCell>
-                        <TableCell>{item.product?.category?.name || '-'}</TableCell>
-                        <TableCell>{item.warehouse?.name}</TableCell>
+                        <TableCell className="font-mono">{item.products?.code}</TableCell>
+                        <TableCell className="font-medium">{item.products?.name}</TableCell>
+                        <TableCell>{item.products?.warehouseCategories?.name || '-'}</TableCell>
+                        <TableCell>{item.warehouses?.name}</TableCell>
                         <TableCell className="text-right">
-                          {formatNumber(item.quantity)} {item.product?.unit?.abbreviation}
+                          {formatNumber(item.quantity)} {item.products?.units?.abbreviation}
                         </TableCell>
                         <TableCell className="text-right">{formatCurrency(item.avgCost)}</TableCell>
                         <TableCell className="text-right">
                           {formatCurrency(item.quantity * item.avgCost)}
                         </TableCell>
                         <TableCell>
-                          {getStockStatusBadge(item.quantity, item.product?.minQuantity || 0)}
+                          {getStockStatusBadge(item.quantity, item.products?.minQuantity || 0)}
                         </TableCell>
                       </TableRow>
                     ))

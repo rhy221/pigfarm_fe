@@ -56,6 +56,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { TransactionType } from '@/types/finance';
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS,  PageBreadcrumb } from '@/components/page-breadcrumb';
+import { useRouter } from 'next/navigation';
 
 // const  = 'demo-farm-id';
 
@@ -68,6 +69,7 @@ export default function TransactionsPage() {
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const router = useRouter();
   const { data: accounts } = useCashAccounts();
   const { data: categories } = useTransactionCategories();
   const { data: transactions, isLoading } = useTransactions({
@@ -303,8 +305,8 @@ export default function TransactionsPage() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>{tx.cashAccount?.name}</TableCell>
-                      <TableCell>{tx.category?.name || '-'}</TableCell>
+                      <TableCell>{tx.cashAccounts?.name}</TableCell>
+                      <TableCell>{tx.transactionCategories?.name || '-'}</TableCell>
                       <TableCell>{tx.contactName || '-'}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{tx.description || '-'}</TableCell>
                       <TableCell className={cn(
@@ -326,11 +328,13 @@ export default function TransactionsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                            onClick={() => router.push(`/finance/transactions/${tx.id}`)}>
                               <Eye className="mr-2 h-4 w-4" />
                               Xem chi tiết
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                            onClick={() => router.push(`/finance/transactions/${tx.id}/edit`)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Chỉnh sửa
                             </DropdownMenuItem>

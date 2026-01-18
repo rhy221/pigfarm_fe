@@ -291,9 +291,9 @@ export default function ProductsPage() {
                       <TableCell className="font-mono">{product.code}</TableCell>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{product.category?.name || '-'}</Badge>
+                        <Badge variant="outline">{product.warehouseCategories?.name || '-'}</Badge>
                       </TableCell>
-                      <TableCell>{product.unit?.name || '-'}</TableCell>
+                      <TableCell>{product.units?.name || '-'}</TableCell>
                       <TableCell className="text-right">
                         {formatCurrency(product.defaultPrice)}
                       </TableCell>
@@ -443,20 +443,40 @@ export default function ProductsPage() {
                 <FormField
                   control={form.control}
                   name="defaultPrice"
-                  render={({ field }) => (
-                    <FormItem>
+                  render={({ field }) => {
+                    const [displayValue, setDisplayValue] = useState(
+                    field.value ? field.value.toLocaleString('vi-VN') : ''
+                  );
+                  const [isFocused, setIsFocused] = useState(false);
+
+                    return <FormItem>
                       <FormLabel>Giá mặc định</FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
-                          min="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={isFocused ? displayValue : (field.value ? field.value.toLocaleString('vi-VN') : '')}
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/[^\d]/g, '');
+                            setDisplayValue(rawValue);
+                            field.onChange(rawValue === '' ? 0 : parseInt(rawValue, 10));
+                          }}
+                          onFocus={() => {
+                            setIsFocused(true);
+                            setDisplayValue(field.value ? field.value.toString() : '');
+                          }}
+                          onBlur={() => {
+                            setIsFocused(false);
+                            field.onBlur();
+                          }}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
-                  )}
+                  }}
                 />
 
                 <FormField
@@ -470,6 +490,7 @@ export default function ProductsPage() {
                           type="number"
                           min="0"
                           {...field}
+                          value={field.value || ""}
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
                       </FormControl>

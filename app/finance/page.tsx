@@ -49,6 +49,7 @@ import {
 import { formatCurrency, cn } from '@/lib/utils';
 import { TransactionType } from '@/types/finance';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
+import { useRouter } from 'next/navigation';
 
 // const  = 'demo-farm-id';
 
@@ -63,6 +64,7 @@ export default function FinancePage() {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState('transactions');
 
+  const router = useRouter();
   const { data: stats } = useDashboardStats();
   const { data: accounts } = useCashAccounts();
   const { data: transactions, isLoading: transactionsLoading } = useTransactions({
@@ -348,7 +350,7 @@ export default function FinancePage() {
                               <Badge className="badge-danger">Chi</Badge>
                             )}
                           </TableCell>
-                          <TableCell>{tx.category?.name || '-'}</TableCell>
+                          <TableCell>{tx.transactionCategories?.name || '-'}</TableCell>
                           <TableCell>{tx.contactName || '-'}</TableCell>
                           <TableCell className="max-w-[200px] truncate">
                             {tx.description || '-'}
@@ -372,11 +374,14 @@ export default function FinancePage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => router.push(`finance/transactions/${tx.id}`)}>
                                   <Eye className="mr-2 h-4 w-4" />
                                   Xem chi tiết
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => router.push(`finance/transactions/${tx.id}/edit`)}>
+
                                   <Edit className="mr-2 h-4 w-4" />
                                   Chỉnh sửa
                                 </DropdownMenuItem>
@@ -482,7 +487,7 @@ export default function FinancePage() {
                           {format(new Date(tx.transactionDate), 'dd/MM/yyyy', { locale: vi })}
                         </TableCell>
                         <TableCell className="font-mono text-sm">{tx.transactionCode}</TableCell>
-                        <TableCell>{tx.description || tx.category?.name || '-'}</TableCell>
+                        <TableCell>{tx.description || tx.transactionCategories?.name || '-'}</TableCell>
                         <TableCell className="text-right text-green-600">
                           {tx.transactionType === 'income' ? formatCurrency(tx.amount) : '-'}
                         </TableCell>

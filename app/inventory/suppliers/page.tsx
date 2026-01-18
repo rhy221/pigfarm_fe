@@ -145,7 +145,7 @@ export default function SuppliersPage() {
     }
   };
 
-  const totalDebt = suppliers?.reduce((sum, s) => sum + (s.totalDebt || 0), 0) || 0;
+  const totalDebt = suppliers?.reduce((sum, s) => sum + (Number(s.totalDebt) || 0), 0) || 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -158,10 +158,10 @@ export default function SuppliersPage() {
           <p className="text-muted-foreground">Quản lý danh sách nhà cung cấp</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <FileDown className="mr-2 h-4 w-4" />
             Xuất Excel
-          </Button>
+          </Button> */}
           <Button onClick={openCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
             Thêm NCC

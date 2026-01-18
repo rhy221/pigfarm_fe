@@ -69,6 +69,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
+import { useRouter } from 'next/navigation';
 
 // const  = 'demo-farm-id';
 
@@ -82,6 +83,7 @@ export default function StockReceiptsPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
+  const router = useRouter();
   const { data: warehouses } = useWarehouses();
   const { data: suppliers } = useSuppliers();
   const { data: receipts, isLoading } = useStockReceipts({
@@ -335,8 +337,8 @@ export default function StockReceiptsPage() {
                       <TableCell>
                         {format(new Date(receipt.receiptDate), 'dd/MM/yyyy', { locale: vi })}
                       </TableCell>
-                      <TableCell>{receipt.warehouse?.name}</TableCell>
-                      <TableCell>{receipt.supplier?.name || '-'}</TableCell>
+                      <TableCell>{receipt.warehouses?.name}</TableCell>
+                      <TableCell>{receipt.suppliers?.name || '-'}</TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(receipt.finalAmount)}
                       </TableCell>
@@ -357,20 +359,23 @@ export default function StockReceiptsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <Link href={`/inventory/receipts/${receipt.id}`}>
-                              <DropdownMenuItem>
+                            {/* <Link href={`/inventory/receipts/${receipt.id}`}> */}
+                              <DropdownMenuItem
+                                  onClick={() => router.push(`/inventory/receipts/${receipt.id}`)}>
+
                                 <Eye className="mr-2 h-4 w-4" />
                                 Xem chi tiết
                               </DropdownMenuItem>
-                            </Link>
+                            {/* </Link> */}
                             {receipt.status === 'draft' && (
                               <>
-                                <Link href={`/inventory/receipts/${receipt.id}/edit`}>
-                                  <DropdownMenuItem>
+                                {/* <Link href={`/inventory/receipts/${receipt.id}/edit`}> */}
+                                  <DropdownMenuItem
+                                  onClick={() => router.push(`/inventory/receipts/${receipt.id}/edit`)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     Chỉnh sửa
                                   </DropdownMenuItem>
-                                </Link>
+                                {/* </Link> */}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => setConfirmingId(receipt.id)}

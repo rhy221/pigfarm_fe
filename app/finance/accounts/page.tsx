@@ -79,7 +79,7 @@ import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb
 
 const accountFormSchema = z.object({
   name: z.string().min(1, 'Vui lòng nhập tên tài khoản'),
-  accountType: z.nativeEnum(AccountType),
+  accountType: z.enum(AccountType),
   accountNumber: z.string().optional(),
   bankName: z.string().optional(),
   openingBalance: z.number().min(0, 'Số dư không được âm'),
@@ -188,7 +188,7 @@ export default function CashAccountsPage() {
   };
 
   const accountType = form.watch('accountType');
-  const totalBalance = accounts?.reduce((sum, acc) => sum + acc.currentBalance, 0) || 0;
+  const totalBalance = accounts?.reduce((sum, acc) => sum + Number(acc.currentBalance), 0) || 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -412,22 +412,43 @@ export default function CashAccountsPage() {
               <FormField
                 control={form.control}
                 name="openingBalance"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Số dư ban đầu</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        placeholder="0"
-                      />
-                    </FormControl>
-                    <FormDescription>Số tiền hiện có trong tài khoản</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const [displayValue, setDisplayValue] = useState(
+                    field.value ? field.value.toLocaleString('vi-VN') : ''
+                  );
+                  const [isFocused, setIsFocused] = useState(false);
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Số dư ban đầu</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0"
+                          value={isFocused ? displayValue : (field.value ? field.value.toLocaleString('vi-VN') : '')}
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/[^\d]/g, '');
+                            setDisplayValue(rawValue);
+                            field.onChange(rawValue === '' ? 0 : parseInt(rawValue, 10));
+                          }}
+                          onFocus={() => {
+                            setIsFocused(true);
+                            setDisplayValue(field.value ? field.value.toString() : '');
+                          }}
+                          onBlur={() => {
+                            setIsFocused(false);
+                            field.onBlur();
+                          }}
+                          name={field.name}
+                          ref={field.ref}
+                        />
+                      </FormControl>
+                      <FormDescription>Số tiền hiện có trong tài khoản</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField

@@ -322,19 +322,19 @@ export default function InventoryPage() {
                   inventory?.data?.map((item) => (
                     <TableRow key={item.id} className="group">
                       <TableCell className="font-mono text-sm">
-                        {item.product?.code}
+                        {item.products?.code}
                       </TableCell>
                       <TableCell className="font-medium">
-                        {item.product?.name}
+                        {item.products?.name}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {item.product?.category?.name || '-'}
+                        {item.products?.warehouseCategories?.name || '-'}
                       </TableCell>
-                      <TableCell>{item.warehouse?.name}</TableCell>
+                      <TableCell>{item.warehouses?.name}</TableCell>
                       <TableCell className="text-right font-medium">
                         {formatNumber(item.quantity)}{' '}
                         <span className="text-muted-foreground text-xs">
-                          {item.product?.unit?.abbreviation}
+                          {item.products?.units?.abbreviation}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
@@ -346,7 +346,7 @@ export default function InventoryPage() {
                       <TableCell>
                         {getStockStatusBadge(
                           item.quantity,
-                          item.product?.minQuantity || 0
+                          item.products?.minQuantity || 0
                         )}
                       </TableCell>
                       <TableCell>

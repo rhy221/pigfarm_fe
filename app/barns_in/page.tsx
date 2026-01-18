@@ -3,7 +3,6 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Table,
   TableHeader,
@@ -12,17 +11,15 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table"
-import { Plus } from "lucide-react"
-import { ArrowLeft } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
+import { ArrowLeft, ChevronDown } from "lucide-react"
 
-import { ChevronDown } from "lucide-react"
-
+/* ================= TYPES ================= */
 type PigRow = {
   id: number
   code: string
@@ -30,210 +27,191 @@ type PigRow = {
   weight?: number
 }
 
-
-
+/* ================= PAGE ================= */
 export default function PigIntakePage() {
-  const [rows, setRows] = React.useState<PigRow[]>([
-    { id: 1, code: "00030001", earTag: "0001", weight: 50 },
-    { id: 2, code: "00030002", earTag: "0002" },
-  ])
+  const router = useRouter()
 
-  const addRow = () => {
-    const nextId = rows.length + 1
-    setRows([
-      ...rows,
-      {
-        id: nextId,
-        code: `0003000${nextId}`,
-        earTag: `000${nextId}`,
-      },
-    ])
+  /* ===== FORM ===== */
+  const [batch, setBatch] = React.useState("")
+  const [selectedBarn, setSelectedBarn] = React.useState<string | null>(null)
+
+  /* giả lập danh sách chuồng trống */
+  const emptyBarns = ["A001", "A002", "B001"]
+
+  /* ===== INLINE FLOW ===== */
+  const [showCount, setShowCount] = React.useState(false)
+  const [showDetail, setShowDetail] = React.useState(false)
+
+  /* ===== COUNT ===== */
+  const [count, setCount] = React.useState(0)
+
+  /* ===== DETAIL ===== */
+  const [rows, setRows] = React.useState<PigRow[]>([])
+
+  const createRows = () => {
+    const data: PigRow[] = Array.from({ length: count }).map((_, i) => ({
+      id: i + 1,
+      code: `PIG-${batch}-${i + 1}`,
+      earTag: "",
+    }))
+    setRows(data)
+    setShowDetail(true)
   }
 
-  const updateWeight = (id: number, value: string) => {
+  const updateRow = (
+    id: number,
+    field: keyof PigRow,
+    value: string | number
+  ) => {
     setRows(prev =>
-      prev.map(r =>
-        r.id === id ? { ...r, weight: Number(value) } : r
-      )
+      prev.map(r => (r.id === id ? { ...r, [field]: value } : r))
     )
   }
 
-  const router = useRouter()
-
-  const [selectedBarn, setSelectedBarn] = React.useState("A001")
-  const [breed, setBreed] = React.useState("Landrace")
-
   return (
     <div className="space-y-6">
-        <div className="flex items-center gap-3 mb-4">
-            <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => router.back()}
-            >
-                <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="h-9 gap-1">
-                    Chuồng {selectedBarn}
-                    <ChevronDown className="size-4 opacity-70" />
-                </Button>
-                </DropdownMenuTrigger>
+      {/* ===== HEADER ===== */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <span className="font-semibold">Tiếp nhận heo</span>
+      </div>
 
-                <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => setSelectedBarn("A001")}>
-                    Chuồng A001
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSelectedBarn("A002")}>
-                    Chuồng A002
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSelectedBarn("B001")}>
-                    Chuồng B001
-                </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-    </div>
-
-      {/* ===== FORM THÔNG TIN ===== */}
-      <div className="grid grid-cols-1 gap-4 pb-6 md:grid-cols-2">
-        <div className="space-y-3">
-          <Field label="Ngày">
-            <input type="date" className="input" defaultValue="2025-10-21" />
-          </Field>
-
-          <Field label="Lứa">
-            <input type="text" className="input" defaultValue="03" />
-          </Field>
-
-          <Field label="Ngày tuổi">
-            <input type="number" className="input" defaultValue={30} />
-          </Field>
-        </div>
-
-        <div className="space-y-3">
-          <Field label="Giống">
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                <Button
-                    variant="outline"
-                    className="w-full justify-between"
-                >
-                    {breed}
-                    <ChevronDown className="size-4 opacity-60" />
-                </Button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)]">
-                <DropdownMenuItem onClick={() => setBreed("Landrace")}>
-                    Landrace
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setBreed("Yorkshire")}>
-                    Yorkshire
-                </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+      {/* ================= FORM ================= */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field label="Lứa">
+          <input
+            type="text"
+            className="input"
+            placeholder="Nhập lứa (vd: 03)"
+            value={batch}
+            onChange={e => setBatch(e.target.value)}
+          />
         </Field>
 
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">Vaccine</span>
-            <Button size="icon-sm" variant="secondary">
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* ===== ACTIONS TOP ===== */}
-      <div className="flex justify-end gap-2">
-        <Button> Xác nhận </Button>
-        <Button variant="destructive"> Hủy </Button>
-      </div>
-        <div className="relative my-6 flex items-center">
-        {/* Line */}
-        <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
-        </div>
-
-        {/* Title */}
-        <span className="relative bg-white pr-3 text-sm text-muted-foreground">
-            Chi tiết
-        </span>
-        </div>
-      {/* ===== TABLE ===== */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-end gap-4 mb-2">
-          {/* <span className="text-sm text-muted-foreground">Chi tiết</span> */}
-          <div className="flex gap-2">
-            <Button size="sm">Lưu</Button>
-            <Button size="sm" variant="destructive">
-              Xóa
-            </Button>
-          </div>
-        </div>
-
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>
-                <Checkbox />
-              </TableHead>
-              <TableHead>STT</TableHead>
-              <TableHead>Mã số</TableHead>
-              <TableHead>Mã tai</TableHead>
-              <TableHead>Trọng lượng</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {rows.map((row, index) => (
-              <TableRow key={row.id}>
-                <TableCell>
-                  <Checkbox />
-                </TableCell>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>
-                  <input
-                    className="table-input"
-                    defaultValue={row.code}
-                  />
-                </TableCell>
-                <TableCell>
-                  <input
-                    className="table-input"
-                    defaultValue={row.earTag}
-                  />
-                </TableCell>
-                <TableCell>
-                  <input
-                    type="number"
-                    className="table-input"
-                    value={row.weight ?? ""}
-                    onChange={e =>
-                      updateWeight(row.id, e.target.value)
-                    }
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-
-            {/* Add row */}
-            <TableRow>
-              <TableCell colSpan={5}>
-                <button
-                  onClick={addRow}
-                  className="flex items-center gap-2 text-sm text-primary hover:underline"
+        <Field label="Chuồng">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                {selectedBarn ?? "Chọn chuồng trống"}
+                <ChevronDown className="size-4 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {emptyBarns.map(b => (
+                <DropdownMenuItem
+                  key={b}
+                  onClick={() => setSelectedBarn(b)}
                 >
-                  <Plus className="h-4 w-4" />
-                  Thêm dòng
-                </button>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+                  Chuồng {b}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Field>
       </div>
 
-      {/* ===== STYLE SHORTCUT ===== */}
+      <div className="flex justify-end">
+        <Button
+          disabled={!batch || !selectedBarn}
+          onClick={() => {
+            setShowCount(true)
+            setShowDetail(false)
+          }}
+        >
+          Lưu
+        </Button>
+      </div>
+
+      {/* ================= NHẬP SỐ LƯỢNG ================= */}
+      {showCount && (
+        <div className="mt-8 space-y-4">
+          <SectionTitle title="Nhập số lượng" />
+
+          <Field label="Số lượng con">
+            <input
+              type="number"
+              min={1}
+              className="input"
+              value={count}
+              onChange={e => setCount(Number(e.target.value))}
+            />
+          </Field>
+
+          <div className="flex justify-end">
+            <Button disabled={count <= 0} onClick={createRows}>
+              Tạo danh sách
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* ================= CHI TIẾT ================= */}
+      {showDetail && (
+        <div className="mt-10 space-y-4">
+          <SectionTitle title="Chi tiết từng con" />
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>STT</TableHead>
+                <TableHead>Mã số</TableHead>
+                <TableHead>Mã tai</TableHead>
+                <TableHead>Trọng lượng</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {rows.map((r, i) => (
+                <TableRow key={r.id}>
+                  <TableCell>{i + 1}</TableCell>
+                  <TableCell>
+                    <input
+                      className="table-input"
+                      value={r.code}
+                      onChange={e =>
+                        updateRow(r.id, "code", e.target.value)
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <input
+                      className="table-input"
+                      value={r.earTag}
+                      onChange={e =>
+                        updateRow(r.id, "earTag", e.target.value)
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <input
+                      type="number"
+                      className="table-input"
+                      value={r.weight ?? ""}
+                      onChange={e =>
+                        updateRow(r.id, "weight", Number(e.target.value))
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="destructive"
+              onClick={() => setShowDetail(false)}
+            >
+              Hủy
+            </Button>
+            <Button>Xác nhận</Button>
+          </div>
+        </div>
+      )}
+
+      {/* ===== STYLES ===== */}
       <style jsx>{`
         .input {
           width: 100%;
@@ -253,7 +231,7 @@ export default function PigIntakePage() {
   )
 }
 
-/* ===== FIELD ===== */
+/* ================= COMPONENTS ================= */
 function Field({
   label,
   children,
@@ -262,9 +240,19 @@ function Field({
   children: React.ReactNode
 }) {
   return (
-    <div className="grid grid-cols-[80px_1fr] items-center gap-3">
+    <div className="grid grid-cols-[120px_1fr] items-center gap-3">
       <label className="text-sm font-medium">{label}</label>
       {children}
+    </div>
+  )
+}
+
+function SectionTitle({ title }: { title: string }) {
+  return (
+    <div className="relative flex items-center">
+      <div className="flex-grow border-t" />
+      <span className="mx-3 text-sm text-muted-foreground">{title}</span>
+      <div className="flex-grow border-t" />
     </div>
   )
 }

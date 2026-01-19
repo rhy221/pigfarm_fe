@@ -23,16 +23,17 @@ const CageDetailModal: React.FC<CageDetailModalProps> = ({ isOpen, onClose, cage
   useEffect(() => {
     if (isOpen && cageData?.id) {
       setLoading(true);
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/pigs/pen/${cageData.id}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/pig/pen/${cageData.id}`)
         .then((res) => res.json())
         .then((data) => {
-          if (Array.isArray(data)) {
-            setDetails(data.map((pig: any, index: number) => ({
+          const rawList = Array.isArray(data) ? data : (data?.data || data?.pigs || []);
+          
+          if (Array.isArray(rawList)) {
+            setDetails(rawList.map((pig: any, index: number) => ({
               stt: index + 1,
               id: pig.id, 
               maSo: pig.ear_tag_number || "N/A",
               checked: false,
-              // Lấy tên giống từ pig_breeds do Backend trả về
               giongHeo: pig.pig_breeds?.breed_name || "N/A"
             })));
           } else {
@@ -50,7 +51,6 @@ const CageDetailModal: React.FC<CageDetailModalProps> = ({ isOpen, onClose, cage
 
   if (!isOpen) return null;
 
-  // Hiển thị giống: ưu tiên lấy từ con heo đầu tiên trong chuồng, nếu không có thì lấy từ cageData
   const displayBreed = details.length > 0 ? details[0].giongHeo : cageData.giong;
 
   const hasSelectedItems = details.some((item) => item.checked);

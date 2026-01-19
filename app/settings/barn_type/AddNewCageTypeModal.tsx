@@ -4,12 +4,11 @@ import React, { useState } from "react";
 
 interface AddNewCageTypeModalProps {
   onClose: () => void;
-  onSave: (loaiChuong: string, moTa: string) => void;
+  onSave: (loaiChuong: string) => void; 
 }
 
 const AddNewCageTypeModal: React.FC<AddNewCageTypeModalProps> = ({ onClose, onSave }) => {
-  const [loaiChuong, setLoaiChuong] = useState("Chuồng thịt");
-  const [moTa, setMoTa] = useState("Dùng để nuôi heo thịt");
+  const [loaiChuong, setLoaiChuong] = useState("");
 
   return (
     <div className="p-6 bg-white rounded-xl shadow-md border border-gray-200 w-full max-w-sm">
@@ -19,6 +18,7 @@ const AddNewCageTypeModal: React.FC<AddNewCageTypeModalProps> = ({ onClose, onSa
           <label className="block text-sm font-medium text-gray-700 mb-1">Loại chuồng</label>
           <input
             type="text"
+            placeholder="Ví dụ: Chuồng thịt"
             value={loaiChuong}
             onChange={(e) => setLoaiChuong(e.target.value)}
             className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -34,8 +34,10 @@ const AddNewCageTypeModal: React.FC<AddNewCageTypeModalProps> = ({ onClose, onSa
         </button>
         <button
           onClick={() => {
-            onSave(loaiChuong, moTa);
-            onClose();
+            if (loaiChuong.trim()) {
+              onSave(loaiChuong); 
+              onClose();
+            }
           }}
           className="px-6 py-2 rounded-lg text-sm font-medium transition shadow-md bg-emerald-600 text-white hover:bg-emerald-700"
         >

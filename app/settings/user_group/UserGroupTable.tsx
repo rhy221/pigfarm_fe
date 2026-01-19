@@ -11,11 +11,10 @@ interface UserGroupTableProps {
   toggleRow: (index: number) => void;
   toggleAll: () => void;
   allChecked: boolean;
+  onUpdate: (id: string, updateData: any) => Promise<void>;
 }
 
-type EditingCell =
-  | { row: number; field: "name" }
-  | null;
+type EditingCell = { row: number; field: "name" } | null;
 
 const UserGroupTable: React.FC<UserGroupTableProps> = ({
   groups,
@@ -25,8 +24,23 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
   toggleRow,
   toggleAll,
   allChecked,
+  onUpdate,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
+
+  const handleFinishEditing = async (index: number, value: string) => {
+    const row = groups[index];
+    const trimmedValue = value.trim();
+
+    if (trimmedValue && trimmedValue !== row.name) {
+      try {
+        await onUpdate(row.id!, { name: trimmedValue });
+      } catch (error) {
+        console.error("Lỗi cập nhật:", error);
+      }
+    }
+    setEditingCell(null);
+  };
 
   const updateValue = (index: number, value: string) => {
     const newEdited = [...editedGroups];
@@ -37,7 +51,7 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
 
   return (
     <div className="overflow-x-auto border border-emerald-100 rounded-lg bg-white shadow-sm max-w-4xl mx-auto">
-      <table className="w-full table-fixed text-sm"> 
+      <table className="w-full table-fixed text-sm">
         <thead className="bg-emerald-50 text-emerald-700">
           <tr className="divide-x divide-emerald-100">
             <th className="w-[80px] px-4 py-3 text-center text-sm font-semibold uppercase">
@@ -63,7 +77,7 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
 
             return (
               <tr
-                key={row.stt}
+                key={row.id || index}
                 className={`transition-colors hover:bg-gray-100 ${
                   index % 2 === 0 ? "bg-white" : "bg-emerald-50/10"
                 }`}
@@ -78,16 +92,18 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
                       autoFocus
                       type="text"
                       value={current.name}
-                      onChange={(e) =>
-                        updateValue(index, e.target.value)
-                      }
-                      onBlur={() => setEditingCell(null)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && setEditingCell(null)
-                      }
+                      onChange={(e) => updateValue(index, e.target.value)}
+                      onBlur={(e) => handleFinishEditing(index, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleFinishEditing(index, e.currentTarget.value);
+                        }
+                        if (e.key === "Escape") {
+                          setEditingCell(null);                         
+                        }
+                      }}
                       className="w-full border border-emerald-200 rounded-md px-2 py-1 text-sm text-center
-                                 bg-white focus:outline-none focus:ring-2
-                                 focus:ring-emerald-500"
+                                bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   ) : (
                     <span
@@ -95,7 +111,7 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
                         setEditingCell({ row: index, field: "name" })
                       }
                       className="block cursor-pointer rounded-md px-2 py-1
-                                 hover:bg-emerald-50 hover:text-emerald-700"
+                                   hover:bg-emerald-50 hover:text-emerald-700"
                     >
                       {current.name}
                     </span>

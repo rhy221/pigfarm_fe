@@ -4,6 +4,7 @@ import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { ExportProposal, ExportReceipt, ExportDetailItem } from "./type";
 import ExportDetailModal from "./ExportDetailModal";
+import { json } from "stream/consumers";
 
 const ExportManagement: React.FC = () => {
   const [selectedReceipt, setSelectedReceipt] = useState<ExportReceipt | null>(null);
@@ -28,59 +29,89 @@ const ExportManagement: React.FC = () => {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`)
       ]);
 
-      const proposalsData = await resProposal.json();
-      const receiptsData = await resReceipts.json();
+      const proposalJson = await resProposal.json();
+      const receiptJson = await resReceipts.json();
 
-      setProposals(
-        proposalsData.map((p: any, index: number) => ({
-          stt: index + 1,
-          chuong: p.pen_name,
-          soLuong: p.quantity, 
-          giong: p.breed,
-          tongTrongLuong: p.total_weight,
-          donGia: p.current_price || 0,
-          thanhTienDuKien: p.total_weight * (p.current_price || 0),
-          ngayXuatDuKien: p.expected_date ?? null,
-          arrival_date: p.arrival_date ?? null
-        }))
-      );
+      const proposalsData = Array.isArray(proposalJson)
+      ? proposalJson
+      : proposalJson.data ?? [];
 
-      setReceipts(
-        receiptsData.map((r: any, index: number) => ({
-          stt: index + 1,
-          id: r.id,
-          dot: r.receipt_code,
-          khachHang: r.customer_name,
-          tongTien: Number(r.total_amount),
-          ngayXuat: r.export_date,
-          tinhTrangThanhToan: r.payment_status
-        }))
-      );
-    } catch (error) {
-      console.error("Lỗi fetch data:", error);
-    }
-  };
+      const receiptsData = Array.isArray(receiptJson)
+        ? receiptJson
+        : receiptJson.data ?? [];
+
+        setProposals(
+          proposalsData            
+            .filter((p: any) => {
+              const isIsolationName = p.pen_name?.toLowerCase().includes("cách ly");
+              const isIsolationCode = p.pen_name?.startsWith("C"); 
+              
+              return !isIsolationName && !isIsolationCode;
+            })
+            .map((p: any, index: number) => ({
+              stt: index + 1,
+              chuong: p.pen_name,
+              soLuong: p.quantity,
+              giong: p.breed,
+              tongTrongLuong: Number(p.total_weight) || 0,
+              donGia: Number(p.current_price) || 0,
+              thanhTienDuKien:
+                (Number(p.total_weight) || 0) * (Number(p.current_price) || 0),
+              ngayXuatDuKien: p.expected_date ?? null,
+              arrival_date: p.arrival_date ?? null
+            }))
+        );
+
+          setReceipts(
+            receiptsData.map((r: any, index: number) => ({
+              stt: index + 1,
+              id: r.id,
+              dot: r.receipt_code,
+              khachHang: r.customer_name,
+              tongTien: Number(r.total_amount) || 0,
+              ngayXuat: r.export_date,
+              tinhTrangThanhToan: r.pig_shipping_statuses?.name || "Chưa xác định"
+            }))
+          );
+        } catch (error) {
+          console.error("Lỗi fetch data:", error);
+        }
+      };
+
 
   const handleOpenDetail = async (receipt: ExportReceipt) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${receipt.id}`);
-      const data = await res.json();
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/sales/${receipt.id}`
+      );
+      const json = await res.json();
 
-      setSelectedReceipt(receipt);
+      setSelectedReceipt(json); 
+
+      const details =
+        json?.pig_shipping_details ??
+        json?.data?.pig_shipping_details ??
+        json?.details ?? 
+        [];
+
       setDetailItems(
-        data.pig_shipping_details.map((d: any, index: number) => ({
+        details.map((d: any, index: number) => ({
           stt: index + 1,
           id: d.id,
-          chuong: d.pens.pen_name,
-          tongTrongLuong: d.total_weight,
-          donGia: Number(d.price_unit),
-          pig_ids: d.shipped_pig_items.map((i: any) => i.pig_id)
+          chuong: d.chuong ?? d.pens?.pen_name ?? "—",
+          tongTrongLuong: Number(d.tongTrongLuong ?? d.total_weight) || 0,
+          donGia: Number(d.donGia ?? d.price_unit) || 0,
+          pig_ids: Array.isArray(d.shipped_pig_items)
+            ? d.shipped_pig_items.map((i: any) => i.pig_id)
+            : []
         }))
       );
     } catch (error) {
       console.error("Lỗi lấy chi tiết:", error);
+      setDetailItems([]); 
     }
   };
+
 
   const handleWeightChange = (index: number, weight: number) => {
     const newItems = [...detailItems];

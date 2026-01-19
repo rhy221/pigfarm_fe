@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ChemicalTypeTable from "./ChemicalTypeTable";
 import AddNewChemicalTypeModal from "./AddNewChemicalTypeModal";
 
 export interface ChemicalType {
+  id?: string;
   stt: number;
   name: string;
+  hasHistory: boolean;
 }
 
 interface ChemicalTypeContentProps {
@@ -22,39 +24,101 @@ const ChemicalTypeContent: React.FC<ChemicalTypeContentProps> = ({
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [chemicalTypes, setChemicalTypes] = useState<ChemicalType[]>([
-    { stt: 1, name: "Thuốc sát trùng" },
-    { stt: 2, name: "Kháng sinh" },
-    { stt: 3, name: "Vitamin" },
-  ]);
+  const [chemicalTypes, setChemicalTypes] = useState<ChemicalType[]>([]);
+  const [editedChemicalTypes, setEditedChemicalTypes] = useState<ChemicalType[]>([]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>([]);
 
-  const [editedChemicalTypes, setEditedChemicalTypes] = useState<ChemicalType[]>([...chemicalTypes]);
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(chemicalTypes.map(() => false));
+  const fetchChemicalTypes = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chemicals`);
+      const data = await res.json();
+      const rawData = Array.isArray(data) ? data : (data.data || []);
+      const mappedData = rawData.map((c: any, index: number) => ({
+        id: c.id,
+        stt: index + 1,
+        name: c.name,
+        hasHistory: c.hasHistory || false,
+      }));
+      setChemicalTypes(mappedData);
+      setEditedChemicalTypes(mappedData);
+      setCheckedRows(mappedData.map(() => false));
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchChemicalTypes();
+  }, []);
+
+  const handleUpdate = async (id: string, name: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chemicals/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (res.ok) await fetchChemicalTypes();
+    } catch (error) {
+      console.error("Update error:", error);
+    }
+  };
+
+  const addChemicalType = async (name: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chemicals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (res.ok) {
+        await fetchChemicalTypes();
+        if (setIsAdding) setIsAdding(false);
+      }
+    } catch (error) {
+      console.error("Add error:", error);
+    }
+  };
+
+  const deleteSelected = async () => {
+    try {
+      const idsToDelete = chemicalTypes
+        .filter((_, i) => checkedRows[i])
+        .map((c) => c.id);
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chemicals`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+      
+      if (res.ok) {
+        await fetchChemicalTypes();
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
+  };
+
+  const selectableIndices = chemicalTypes
+    .map((c, i) => (!c.hasHistory ? i : -1))
+    .filter((i) => i !== -1);
 
   const hasSelected = checkedRows.some((val) => val === true);
-  const allChecked = chemicalTypes.length > 0 && checkedRows.every(Boolean);
+  const allChecked = selectableIndices.length > 0 && 
+                     selectableIndices.every((i) => checkedRows[i]);
 
   const toggleAll = () => {
     const nextValue = !allChecked;
-    setCheckedRows(chemicalTypes.map(() => nextValue));
+    setCheckedRows(chemicalTypes.map((c) => (c.hasHistory ? false : nextValue)));
   };
 
   const toggleRow = (index: number) => {
+    if (chemicalTypes[index].hasHistory) return;
     const newChecked = [...checkedRows];
     newChecked[index] = !newChecked[index];
     setCheckedRows(newChecked);
-  };
-
-  const addChemicalType = (name: string) => {
-    setChemicalTypes([...chemicalTypes, { stt: chemicalTypes.length + 1, name }]);
-    setCheckedRows([...checkedRows, false]); 
-  };
-
-  const deleteSelected = () => {
-    const newTypes = chemicalTypes.filter((_, index) => !checkedRows[index]);
-    setChemicalTypes(newTypes.map((b, idx) => ({ ...b, stt: idx + 1 })));
-    setCheckedRows(newTypes.map(() => false));
-    setShowDeleteConfirm(false);
   };
 
   return (
@@ -68,12 +132,16 @@ const ChemicalTypeContent: React.FC<ChemicalTypeContentProps> = ({
           toggleRow={toggleRow}
           toggleAll={toggleAll}
           allChecked={allChecked}
+          onUpdate={handleUpdate}
         />
       </div>
 
       {isAdding && setIsAdding && (
         <div className="w-80 flex-shrink-0">
-          <AddNewChemicalTypeModal onClose={() => setIsAdding(false)} onSave={addChemicalType} />
+          <AddNewChemicalTypeModal 
+            onClose={() => setIsAdding(false)} 
+            onSave={fetchChemicalTypes} 
+          />
         </div>
       )}
 

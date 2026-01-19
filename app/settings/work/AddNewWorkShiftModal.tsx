@@ -4,7 +4,7 @@ import React, { useState } from "react";
 
 interface AddNewWorkShiftModalProps {
   onClose: () => void;
-  onSave: (name: string, startTime: string, endTime: string) => void;
+  onSave: () => void;
 }
 
 const AddNewWorkShiftModal: React.FC<AddNewWorkShiftModalProps> = ({ onClose, onSave }) => {
@@ -12,20 +12,41 @@ const AddNewWorkShiftModal: React.FC<AddNewWorkShiftModalProps> = ({ onClose, on
   const [startTime, setStartTime] = useState("06:00");
   const [endTime, setEndTime] = useState("14:00");
 
-  const handleSave = () => {
-    if (name.trim() === "") return;
-    onSave(name.trim(), startTime, endTime);
-    setName("");
-    onClose();
+  const handleSave = async () => {
+    const payload = {
+      session: name,          
+      start_time: startTime,   
+      end_time: endTime,       
+    };
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/work-shifts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert(errorData.message || "Lỗi khi lưu!");
+        return;
+      }
+
+      onSave(); 
+    } catch (error) {
+      console.error("Lỗi:", error);
+    }
   };
 
   return (
     <div className="bg-white border rounded-lg shadow-lg p-6">
       <h3 className="text-lg py-4 font-bold text-emerald-700">Thêm ca làm mới</h3>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Tên ca làm</label>
       <input
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleSave()}
         placeholder="Ca làm"
         className="w-full border border-gray-300 rounded-lg p-2 mb-4 text-sm"
       />

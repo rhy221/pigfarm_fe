@@ -1,14 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import WorkShiftTable from "./WorkShiftTable";
 import AddNewWorkShiftModal from "./AddNewWorkShiftModal";
 
 export interface WorkShift {
+  id?: string;
   stt: number;
   name: string;
   startTime: string;
   endTime: string;
+  hasAssignments: boolean;
 }
 
 interface WorkShiftContentProps {
@@ -24,39 +26,93 @@ const WorkShiftContent: React.FC<WorkShiftContentProps> = ({
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [shifts, setShifts] = useState<WorkShift[]>([
-    { stt: 1, name: "Ca sáng", startTime: "06:00", endTime: "14:00" },
-    { stt: 2, name: "Ca chiều", startTime: "14:00", endTime: "22:00" },
-    { stt: 3, name: "Ca đêm", startTime: "22:00", endTime: "06:00" },
-  ]);
+  const [shifts, setShifts] = useState<WorkShift[]>([]);
+  const [editedShifts, setEditedShifts] = useState<WorkShift[]>([]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>([]);
 
-  const [editedShifts, setEditedShifts] = useState<WorkShift[]>([...shifts]);
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(shifts.map(() => false));
+  const fetchShifts = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/work-shifts`);
+      const data = await res.json();
+      const rawData = Array.isArray(data) ? data : (data.data || []);
+      const mappedData = rawData.map((s: any, index: number) => {
+        const formatTime = (timeStr: string) => {
+          if (!timeStr) return "00:00";
+          if (timeStr.includes('T')) return timeStr.slice(11, 16);
+          return timeStr;
+        };
+
+        return {
+          id: s.id,
+          stt: index + 1,
+          name: s.session,
+          startTime: formatTime(s.start_time),
+          endTime: formatTime(s.end_time),
+          hasAssignments: s.hasAssignments || false,
+        };
+      });
+      setShifts(mappedData);
+      setEditedShifts(mappedData);
+      setCheckedRows(mappedData.map(() => false));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchShifts();
+  }, []);
+
+  const handleUpdate = async (id: string, updateData: any) => {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/work-shifts/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updateData),
+    });
+    
+    if (res.ok) {
+      await fetchShifts(); 
+    }
+  };
+
+  const addShift = async () => {
+    await fetchShifts();
+  };
+
+  const deleteSelected = async () => {
+    try {
+      const idsToDelete = shifts.filter((_, i) => checkedRows[i]).map((s) => s.id);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/work-shifts`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+      if (res.ok) {
+        await fetchShifts();
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const selectableIndices = shifts
+    .map((s, i) => (!s.hasAssignments ? i : -1))
+    .filter((i) => i !== -1);
 
   const hasSelected = checkedRows.some((val) => val === true);
-  const allChecked = shifts.length > 0 && checkedRows.every(Boolean);
+  const allChecked = selectableIndices.length > 0 && selectableIndices.every((i) => checkedRows[i]);
 
   const toggleAll = () => {
     const nextValue = !allChecked;
-    setCheckedRows(shifts.map(() => nextValue));
+    setCheckedRows(shifts.map((s) => (s.hasAssignments ? false : nextValue)));
   };
 
   const toggleRow = (index: number) => {
+    if (shifts[index].hasAssignments) return;
     const newChecked = [...checkedRows];
     newChecked[index] = !newChecked[index];
     setCheckedRows(newChecked);
-  };
-
-  const addShift = (name: string, startTime: string, endTime: string) => {
-    setShifts([...shifts, { stt: shifts.length + 1, name, startTime, endTime }]);
-    setCheckedRows([...checkedRows, false]);
-  };
-
-  const deleteSelected = () => {
-    const newShifts = shifts.filter((_, index) => !checkedRows[index]);
-    setShifts(newShifts.map((s, idx) => ({ ...s, stt: idx + 1 })));
-    setCheckedRows(newShifts.map(() => false)); 
-    setShowDeleteConfirm(false);
   };
 
   return (
@@ -70,6 +126,7 @@ const WorkShiftContent: React.FC<WorkShiftContentProps> = ({
           toggleRow={toggleRow}
           toggleAll={toggleAll}
           allChecked={allChecked}
+          onUpdate={handleUpdate}
         />
       </div>
 

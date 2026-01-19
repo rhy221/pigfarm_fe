@@ -11,6 +11,7 @@ interface SanitationMethodTableProps {
   toggleRow: (index: number) => void;
   toggleAll: () => void;
   allChecked: boolean;
+  onUpdate: (id: string, name: string) => Promise<void>;
 }
 
 const SanitationMethodTable: React.FC<SanitationMethodTableProps> = ({
@@ -21,12 +22,23 @@ const SanitationMethodTable: React.FC<SanitationMethodTableProps> = ({
   toggleRow,
   toggleAll,
   allChecked,
+  onUpdate,
 }) => {
   const [editingIndex, setEditingIndex] = React.useState<number | null>(null);
 
+  const handleFinishEditing = async (index: number, newValue: string) => {
+    const row = methods[index];
+    const trimmedValue = newValue.trim();
+
+    if (trimmedValue && trimmedValue !== row.name) {
+      await onUpdate(row.id!, trimmedValue);
+    }
+    setEditingIndex(null);
+  };
+
   return (
     <div className="overflow-x-auto border border-emerald-100 rounded-lg bg-white shadow-sm max-w-4xl mx-auto">
-      <table className="w-full table-fixed text-sm"> 
+      <table className="w-full table-fixed text-sm">
         <thead className="bg-emerald-50 text-emerald-700">
           <tr className="divide-x divide-emerald-100">
             <th className="w-[80px] px-4 py-3 text-center text-sm font-semibold uppercase">
@@ -51,7 +63,7 @@ const SanitationMethodTable: React.FC<SanitationMethodTableProps> = ({
         <tbody className="divide-y divide-emerald-50">
           {methods.map((row, index) => (
             <tr
-              key={row.stt}
+              key={row.id || index}
               className={`transition-colors hover:bg-gray-100 ${
                 index % 2 === 0 ? "bg-white" : "bg-emerald-50/10"
               }`}
@@ -65,16 +77,11 @@ const SanitationMethodTable: React.FC<SanitationMethodTableProps> = ({
                   <input
                     autoFocus
                     type="text"
-                    value={editedMethods[index]?.name ?? row.name}
-                    onChange={(e) => {
-                      const newEdited = [...editedMethods];
-                      if (!newEdited[index]) newEdited[index] = { ...row };
-                      newEdited[index].name = e.target.value;
-                      setEditedMethods(newEdited);
-                    }}
-                    onBlur={() => setEditingIndex(null)}
+                    defaultValue={row.name}
+                    onBlur={(e) => handleFinishEditing(index, e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") setEditingIndex(null);
+                      if (e.key === "Enter") handleFinishEditing(index, e.currentTarget.value);
+                      if (e.key === "Escape") setEditingIndex(null);
                     }}
                     className="w-full border border-emerald-200 rounded-lg p-2 text-sm text-center bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
@@ -83,19 +90,21 @@ const SanitationMethodTable: React.FC<SanitationMethodTableProps> = ({
                     onClick={() => setEditingIndex(index)}
                     className="block cursor-pointer rounded px-1 py-1 hover:bg-emerald-50 hover:text-emerald-700"
                   >
-                    {editedMethods[index]?.name ?? row.name}
+                    {row.name}
                   </span>
                 )}
               </td>
 
               <td className="px-4 py-2 text-center">
                 <div className="flex items-center justify-center">
-                  <input
-                    type="checkbox"
-                    checked={checkedRows[index] ?? false}
-                    onChange={() => toggleRow(index)}
-                    className="form-checkbox h-5 w-5 text-emerald-600 cursor-pointer"
-                  />
+                  {!row.hasHistory && (
+                    <input
+                      type="checkbox"
+                      checked={checkedRows[index] ?? false}
+                      onChange={() => toggleRow(index)}
+                      className="form-checkbox h-5 w-5 text-emerald-600 cursor-pointer"
+                    />
+                  )}
                 </div>
               </td>
             </tr>

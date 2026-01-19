@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import UserGroupTable from "./UserGroupTable";
 import AddNewUserGroupModal from "./AddNewUserGroupModal";
 
 export interface UserGroup {
+  id?: string;
   stt: number;
   name: string;
 }
@@ -22,14 +23,71 @@ const UserGroupContent: React.FC<UserGroupContentProps> = ({
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [groups, setGroups] = useState<UserGroup[]>([
-    { stt: 1, name: "Admin" },
-    { stt: 2, name: "User" },
-    { stt: 3, name: "Guest" },
-  ]);
+  const [groups, setGroups] = useState<UserGroup[]>([]);
+  const [editedGroups, setEditedGroups] = useState<UserGroup[]>([]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>([]);
 
-  const [editedGroups, setEditedGroups] = useState<UserGroup[]>([...groups]);
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(groups.map(() => false));
+  const fetchGroups = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user-groups`);
+      const data = await res.json();
+      const rawData = Array.isArray(data) ? data : (data.data || []);
+      const mappedData = rawData.map((g: any, index: number) => ({
+        id: g.id.toString(),
+        stt: index + 1,
+        name: g.name,
+      }));
+      setGroups(mappedData);
+      setEditedGroups(mappedData);
+      setCheckedRows(mappedData.map(() => false));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const handleUpdate = async (id: string, updateData: { name: string }) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user-groups/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      });
+
+      if (res.ok) {       
+      } else {
+        const err = await res.json();
+        alert(err.message || "Lỗi khi cập nhật");       
+        await fetchGroups();
+      }
+    } catch (error) {
+      console.error("Lỗi kết nối:", error);
+    }
+  };
+
+  const addGroup = async () => {
+    await fetchGroups();
+  };
+
+  const deleteSelected = async () => {
+    try {
+      const idsToDelete = groups.filter((_, i) => checkedRows[i]).map((g) => g.id);
+      await Promise.all(
+        idsToDelete.map((id) =>
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/user-groups/${id}`, {
+            method: "DELETE",
+          })
+        )
+      );
+      await fetchGroups();
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const hasSelected = checkedRows.some((val) => val === true);
   const allChecked = groups.length > 0 && checkedRows.every(Boolean);
@@ -45,18 +103,6 @@ const UserGroupContent: React.FC<UserGroupContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addGroup = (name: string) => {
-    setGroups([...groups, { stt: groups.length + 1, name }]);
-    setCheckedRows([...checkedRows, false]);
-  };
-
-  const deleteSelected = () => {
-    const newUsers = groups.filter((_, index) => !checkedRows[index]);
-    setGroups(newUsers.map((g, idx) => ({ ...g, stt: idx + 1 })));
-    setCheckedRows(newUsers.map(() => false));
-    setShowDeleteConfirm(false);
-  };
-
   return (
     <div className="flex gap-6 items-start relative">
       <div className="flex-1 min-w-0">
@@ -68,6 +114,7 @@ const UserGroupContent: React.FC<UserGroupContentProps> = ({
           toggleRow={toggleRow}
           toggleAll={toggleAll}
           allChecked={allChecked}
+          onUpdate={handleUpdate}
         />
       </div>
 

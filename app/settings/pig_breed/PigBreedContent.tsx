@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PigBreedTable from "./PigBreedTable";
 import AddNewPigBreedModal from "./AddNewPigBreedModal";
 
 export interface PigBreed {
+  id?: string;
   stt: number;
   name: string;
+  hasPigs: boolean;
 }
 
 interface PigBreedContentProps {
@@ -22,21 +24,63 @@ const PigBreedContent: React.FC<PigBreedContentProps> = ({
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [pigBreeds, setPigBreeds] = useState<PigBreed[]>([
-    { stt: 1, name: "Landrace" },
-    { stt: 2, name: "Yorkshire" },
-    { stt: 3, name: "Duroc" },
-  ]);
+  const [pigBreeds, setPigBreeds] = useState<PigBreed[]>([]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>([]);
 
-  const [editedPigBreeds, setEditedPigBreeds] = useState<PigBreed[]>([...pigBreeds]);
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(pigBreeds.map(() => false));
+  const fetchBreeds = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pig/breeds`); 
+      
+      const data = await res.json();
+      const rawData = Array.isArray(data) ? data : (data.data || []);
+      const mappedData = rawData.map((b: any, index: number) => ({
+        id: b.id,
+        stt: index + 1,
+        name: b.breed_name,
+        hasPigs: b.hasPigs,
+      }));
+      setPigBreeds(mappedData);
+      setCheckedRows(mappedData.map(() => false));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleUpdate = async (id: string, updateData: { breed_name: string }) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pig/breeds/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      });
+      if (res.ok) await fetchBreeds();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBreeds();
+  }, []);
 
   const hasSelected = checkedRows.some((val) => val === true);
-  const allChecked = pigBreeds.length > 0 && checkedRows.every(Boolean);
+
+
+  const selectableIndices = pigBreeds
+    .map((b, i) => (!b.hasPigs ? i : -1))
+    .filter((i) => i !== -1);
+
+  const allChecked =
+    selectableIndices.length > 0 && 
+    selectableIndices.every((i) => checkedRows[i]); 
 
   const toggleAll = () => {
+    if (pigBreeds.length === 0) return;
+    
     const nextValue = !allChecked;
-    setCheckedRows(pigBreeds.map(() => nextValue));
+    setCheckedRows(
+      pigBreeds.map((b) => (b.hasPigs ? false : nextValue))
+    );
   };
 
   const toggleRow = (index: number) => {
@@ -45,16 +89,34 @@ const PigBreedContent: React.FC<PigBreedContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addPigBreed = (name: string) => {
-    setPigBreeds([...pigBreeds, { stt: pigBreeds.length + 1, name }]);
-    setCheckedRows([...checkedRows, false]);
+  const addPigBreed = async (name: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pig/breeds`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ breed_name: name }),
+      });
+      if (res.ok) fetchBreeds();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const deleteSelected = () => {
-    const newBreeds = pigBreeds.filter((_, index) => !checkedRows[index]);
-    setPigBreeds(newBreeds.map((b, idx) => ({ ...b, stt: idx + 1 })));
-    setCheckedRows(newBreeds.map(() => false)); 
-    setShowDeleteConfirm(false);
+  const deleteSelected = async () => {
+    try {
+      const idsToDelete = pigBreeds.filter((_, i) => checkedRows[i]).map((b) => b.id);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pig/breeds`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+      if (res.ok) {
+        fetchBreeds();
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -62,12 +124,11 @@ const PigBreedContent: React.FC<PigBreedContentProps> = ({
       <div className="flex-1 min-w-0">
         <PigBreedTable
           pigBreeds={pigBreeds}
-          editedPigBreeds={editedPigBreeds}
-          setEditedPigBreeds={setEditedPigBreeds}
           checkedRows={checkedRows}
           toggleRow={toggleRow}
           toggleAll={toggleAll}
           allChecked={allChecked}
+          onUpdate={handleUpdate}
         />
       </div>
 
@@ -83,36 +144,19 @@ const PigBreedContent: React.FC<PigBreedContentProps> = ({
             <h3 className="text-lg font-semibold mb-4 text-center text-gray-800">
               {hasSelected ? "Xác nhận xoá" : "Thông báo"}
             </h3>
-            
             <p className="mb-6 text-center text-gray-600">
               {hasSelected 
                 ? "Bạn có chắc muốn xoá các giống heo được chọn không?" 
                 : "Vui lòng chọn giống heo từ danh sách để thực hiện thao tác xoá."}
             </p>
-
             <div className="flex justify-center gap-3">
               {hasSelected ? (
                 <>
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    onClick={deleteSelected}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
-                  >
-                    Xác nhận
-                  </button>
+                  <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium">Hủy</button>
+                  <button onClick={deleteSelected} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">Xác nhận</button>
                 </>
               ) : (
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="px-8 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition font-medium shadow-sm"
-                >
-                  Đã hiểu
-                </button>
+                <button onClick={() => setShowDeleteConfirm(false)} className="px-8 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition font-medium shadow-sm">Đã hiểu</button>
               )}
             </div>
           </div>

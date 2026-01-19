@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MaterialTypeTable from "./MaterialTypeTable";
 import AddNewMaterialTypeModal from "./AddNewMaterialTypeModal";
 
 export interface MaterialType {
+  id?: string;
   stt: number;
   name: string;
+  type: string;
+  description: string;
+  inUse: boolean;
 }
 
 interface MaterialTypeContentProps {
@@ -22,21 +26,68 @@ const MaterialTypeContent: React.FC<MaterialTypeContentProps> = ({
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [materials, setMaterials] = useState<MaterialType[]>([
-    { stt: 1, name: "Vật tư A" },
-    { stt: 2, name: "Vật tư B" },
-    { stt: 3, name: "Vật tư C" },
-  ]);
+  const [materials, setMaterials] = useState<MaterialType[]>([]);
+  const [editedMaterials, setEditedMaterials] = useState<MaterialType[]>([]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>([]);
 
-  const [editedMaterials, setEditedMaterials] = useState<MaterialType[]>([...materials]);
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(materials.map(() => false));
+  const fetchMaterials = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/warehouse-categories`);
+      const data = await res.json();
+      const rawData = Array.isArray(data) ? data : (data.data || []);
+      const mappedData = rawData.map((item: any, index: number) => ({
+        id: item.id,
+        stt: index + 1,
+        name: item.name,
+        type: item.type,
+        description: item.description || "",
+        inUse: item._count?.products > 0
+      }));
+      setMaterials(mappedData);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleUpdate = async (id: string, updateData: { name?: string; description?: string }) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/warehouse-categories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      });
+
+      if (res.ok) {
+        setMaterials((prev) =>
+          prev.map((item) => (item.id === id ? { ...item, ...updateData } : item))
+        );
+        await fetchMaterials();
+      } else {
+        const err = await res.json();
+        console.error("Lỗi cập nhật:", err);
+        fetchMaterials(); 
+      }
+    } catch (error) {
+      console.error("Lỗi kết nối:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMaterials();
+  }, []);
+
+  useEffect(() => {
+    setEditedMaterials([...materials]);
+    setCheckedRows(materials.map(() => false));
+  }, [materials]);
 
   const hasSelected = checkedRows.some((val) => val === true);
-  const allChecked = materials.length > 0 && checkedRows.every(Boolean);
+  const allChecked = materials.length > 0 && materials.every((m, i) => m.inUse || checkedRows[i]);
 
   const toggleAll = () => {
-    const nextValue = !allChecked;
-    setCheckedRows(materials.map(() => nextValue));
+    const isAllChecked = materials.length > 0 && materials.every((m, i) => m.inUse || checkedRows[i]);
+    const nextValue = !isAllChecked;
+    setCheckedRows(materials.map((m) => (m.inUse ? false : nextValue)));
   };
 
   const toggleRow = (index: number) => {
@@ -45,16 +96,46 @@ const MaterialTypeContent: React.FC<MaterialTypeContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addMaterial = (name: string) => {
-    setMaterials([...materials, { stt: materials.length + 1, name }]);
-    setCheckedRows([...checkedRows, false]); 
+  const addMaterial = async (data: any) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/warehouse-categories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        fetchMaterials();
+      } else {
+        const err = await res.json();
+        alert(err.message);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const deleteSelected = () => {
-    const newMaterials = materials.filter((_, index) => !checkedRows[index]);
-    setMaterials(newMaterials.map((m, idx) => ({ ...m, stt: idx + 1 })));
-    setCheckedRows(newMaterials.map(() => false)); 
-    setShowDeleteConfirm(false);
+  const deleteSelected = async () => {
+    try {
+      const idsToDelete = materials
+        .filter((_, index) => checkedRows[index])
+        .map((m) => m.id);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/warehouse-categories`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+
+      if (res.ok) {
+        fetchMaterials();
+        setShowDeleteConfirm(false);
+      } else {
+        const err = await res.json();
+        alert(err.message);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -68,6 +149,7 @@ const MaterialTypeContent: React.FC<MaterialTypeContentProps> = ({
           toggleRow={toggleRow}
           toggleAll={toggleAll}
           allChecked={allChecked}
+          onUpdate={handleUpdate}
         />
       </div>
 

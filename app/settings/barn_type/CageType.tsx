@@ -5,8 +5,10 @@ import CageTypeTable from "./CageTypeTable";
 import AddNewCageTypeModal from "./AddNewCageTypeModal";
 
 export interface CageType {
+  id?: string;
   stt: number;
   loaiChuong: string;
+  hasPigs: boolean;
 }
 
 interface CageTypeContentProps {
@@ -22,26 +24,65 @@ const CageTypeContent: React.FC<CageTypeContentProps> = ({
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [cageTypes, setCageTypes] = useState<CageType[]>([
-    { stt: 1, loaiChuong: "Chuồng thịt"},
-    { stt: 2, loaiChuong: "Chuồng cách ly"},
-  ]);
+  const [cageTypes, setCageTypes] = useState<CageType[]>([]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>([]);
 
-  const [editedCageTypes, setEditedCageTypes] = useState<CageType[]>([...cageTypes]);
-  useEffect(() => setEditedCageTypes([...cageTypes]), [cageTypes]);
+  const fetchTypes = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pens/types`);
+      const result = await res.json();
+      const rawData = Array.isArray(result) ? result : (result.data || []);
+      
+      const mappedData = rawData.map((t: any, index: number) => ({
+        id: t.id,
+        stt: index + 1,
+        loaiChuong: t.pen_type_name,
+        hasPigs: t._count?.pens > 0,
+      }));
+      setCageTypes(mappedData);
+    } catch (error) {
+      console.error("Lỗi tải loại chuồng:", error);
+    }
+  };
 
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(cageTypes.map(() => false));
-  
+  const handleUpdate = async (id: string, updateData: { pen_type_name: string }) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pens/types/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updateData),
+      });
+
+      if (res.ok) {
+        await fetchTypes();
+      } else {
+        const err = await res.json();
+        console.error("Lỗi cập nhật:", err);
+        fetchTypes();
+      }
+    } catch (error) {
+      console.error("Lỗi kết nối:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTypes();
+  }, []);
+
   useEffect(() => {
     setCheckedRows(cageTypes.map(() => false));
   }, [cageTypes]);
 
   const hasSelected = checkedRows.some((val) => val === true);
-  const allChecked = cageTypes.length > 0 && checkedRows.every(Boolean);
+  const allChecked = cageTypes.length > 0 && 
+                   checkedRows.length > 0 && 
+                   checkedRows.every(Boolean);
 
   const toggleAll = () => {
-    const nextValue = !allChecked;
-    setCheckedRows(cageTypes.map(() => nextValue));
+    if (cageTypes.length === 0) return;
+    const isCurrentlyAllChecked = cageTypes.every((t, i) => t.hasPigs || checkedRows[i]);
+    const nextValue = !isCurrentlyAllChecked;
+    setCheckedRows(cageTypes.map((t) => (t.hasPigs ? false : nextValue)));
   };
 
   const toggleRow = (index: number) => {
@@ -50,17 +91,53 @@ const CageTypeContent: React.FC<CageTypeContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addCageType = (loaiChuong: string) => {
-    setCageTypes([
-      ...cageTypes,
-      { stt: cageTypes.length + 1, loaiChuong },
-    ]);
+  const addCageType = async (loaiChuong: string) => {
+    const isDuplicate = cageTypes.some(t => t.loaiChuong.toLowerCase() === loaiChuong.toLowerCase());
+    if (isDuplicate) {
+      alert("Loại chuồng này đã tồn tại!");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pens/types`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pen_type_name: loaiChuong }),
+      });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.message);
+        return;
+      }
+      fetchTypes();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const deleteSelected = () => {
-    const newTypes = cageTypes.filter((_, index) => !checkedRows[index]);
-    setCageTypes(newTypes.map((ct, idx) => ({ ...ct, stt: idx + 1 })));
-    setShowDeleteConfirm(false);
+  const deleteSelected = async () => {
+    try {
+      const idsToDelete = cageTypes
+        .filter((_, index) => checkedRows[index])
+        .map((ct) => ct.id);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/pens/types`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.message || "Không thể xoá loại chuồng đang được sử dụng");
+      } else {
+        fetchTypes();
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error("Lỗi xoá loại chuồng:", error);
+    }
   };
 
   return (
@@ -68,12 +145,11 @@ const CageTypeContent: React.FC<CageTypeContentProps> = ({
       <div className="flex-1 min-w-0">
         <CageTypeTable
           cageTypes={cageTypes}
-          editedCageTypes={editedCageTypes}
-          setEditedCageTypes={setEditedCageTypes}
           checkedRows={checkedRows}
           toggleRow={toggleRow}
           toggleAll={toggleAll}
           allChecked={allChecked}
+          onUpdate={handleUpdate}
         />
       </div>
 

@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DiseaseTable from "./DiseaseTable";
 import AddNewDiseaseModal from "./AddNewDiseaseModal";
 
 export interface Disease {
+  id?: string;
   stt: number;
   name: string;
+  hasHistory: boolean;
 }
 
 interface DiseaseContentProps {
@@ -22,14 +24,52 @@ const DiseaseContent: React.FC<DiseaseContentProps> = ({
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [diseases, setDiseases] = useState<Disease[]>([
-    { stt: 1, name: "Bệnh A" },
-    { stt: 2, name: "Bệnh B" },
-    { stt: 3, name: "Bệnh C" },
-  ]);
+  const [diseases, setDiseases] = useState<Disease[]>([]);
+  const [editedDiseases, setEditedDiseases] = useState<Disease[]>([]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>([]);
 
-  const [editedDiseases, setEditedDiseases] = useState<Disease[]>([...diseases]);
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(diseases.map(() => false));
+  const fetchDiseases = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/diseases`);
+      const data = await res.json();
+      const rawData = Array.isArray(data) ? data : (data.data || []);
+      const mappedData = rawData.map((d: any, index: number) => ({
+        id: d.id,
+        stt: index + 1,
+        name: d.name,
+        hasHistory: d._count?.disease_treatments > 0, 
+      }));
+      setDiseases(mappedData);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleUpdate = async (id: string, name: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/diseases/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (res.ok) {
+        await fetchDiseases();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchDiseases();
+  }, []);
+
+  useEffect(() => {
+    if (editedDiseases.length === 0) {
+      setEditedDiseases([...diseases]);
+    }
+    setCheckedRows(diseases.map(() => false));
+  }, [diseases]);
 
   const hasSelected = checkedRows.some((val) => val === true);
   const allChecked = diseases.length > 0 && checkedRows.every(Boolean);
@@ -45,16 +85,52 @@ const DiseaseContent: React.FC<DiseaseContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addDisease = (name: string) => {
-    setDiseases([...diseases, { stt: diseases.length + 1, name }]);
-    setCheckedRows([...checkedRows, false]); 
+  const addDisease = async (name: string) => {
+    const isDuplicate = diseases.some(d => d.name.toLowerCase() === name.toLowerCase());
+    if (isDuplicate) {
+      alert("Loại bệnh này đã tồn tại!");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/diseases`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (res.ok) {
+        fetchDiseases();
+      } else {
+        const err = await res.json();
+        alert(err.message);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const deleteSelected = () => {
-    const newDiseases = diseases.filter((_, index) => !checkedRows[index]);
-    setDiseases(newDiseases.map((d, idx) => ({ ...d, stt: idx + 1 })));
-    setCheckedRows(newDiseases.map(() => false)); 
-    setShowDeleteConfirm(false);
+  const deleteSelected = async () => {
+    try {
+      const idsToDelete = diseases
+        .filter((_, index) => checkedRows[index])
+        .map((d) => d.id);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/diseases`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+
+      if (res.ok) {
+        fetchDiseases();
+        setShowDeleteConfirm(false);
+      } else {
+        const err = await res.json();
+        alert(err.message);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -68,6 +144,7 @@ const DiseaseContent: React.FC<DiseaseContentProps> = ({
           toggleRow={toggleRow}
           toggleAll={toggleAll}
           allChecked={allChecked}
+          onUpdate={handleUpdate}
         />
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, Search, ChevronRight, ChevronLeft as ChevronLeftIcon, Loader2 } from "lucide-react";
 import TransferPigModal from "./TransferPigModal"; 
 import DeathReportModal from "./DeathReportModal";
@@ -22,18 +22,22 @@ const TreatmentDetail: React.FC<TreatmentDetailProps> = ({ data, onBack }) => {
 
   const [treatmentSteps, setTreatmentSteps] = useState<any[]>([]);
   const [pigs, setPigs] = useState<any[]>([]);
+  const [currentSymptom, setCurrentSymptom] = useState("");
+
+  const [editingCell, setEditingCell] = useState<{ id: string, field: string } | null>(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
       if (!data?.id) return;
       try {
-        const res = await fetch(`http://localhost:3000/health/${data.id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/health/${data.id}`);
         const result = await res.json();
         setTreatmentData(result);
+        setCurrentSymptom(result.symptom || "");
         setTreatmentSteps(result.treatment_logs || []);
         setPigs(result.pigs_in_treatment.map((pit: any) => ({
           id: pit.id,
-          code: pit.pigs?.ear_tag_number || "N/A",
+          code: pit.pig_id || "N/A",
           checked: false,
           status: pit.status
         })).filter((p: any) => p.status === 'SICK'));
@@ -55,7 +59,7 @@ const TreatmentDetail: React.FC<TreatmentDetailProps> = ({ data, onBack }) => {
   const handleConfirmDeath = async () => {
     try {
       const ids = selectedPigs.map(p => p.id);
-      const res = await fetch("http://localhost:3000/health/report-death", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/health/report-death`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pig_ids: ids }),
@@ -69,41 +73,74 @@ const TreatmentDetail: React.FC<TreatmentDetailProps> = ({ data, onBack }) => {
     }
   };
 
-  const handleConfirmTransfer = async () => {
+  const handleConfirmTransfer = async (targetBarnId: string) => {
     try {
-      const ids = selectedPigs.map(p => p.id);
-      const res = await fetch("http://localhost:3000/health/transfer-recovered", {
+      const ids = selectedPigs.map(p => p.id); 
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/health/transfer-recovered`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pig_ids: ids }),
+        body: JSON.stringify({ 
+          pig_ids: ids, 
+          target_pen_id: targetBarnId
+        }),
       });
+
       if (res.ok) {
         setPigs(pigs.filter(p => !ids.includes(p.id)));
         setIsModalOpen(false);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Lỗi:", error);
     }
   };
 
   const handleSaveLogs = async () => {
     try {
-      const newLogs = treatmentSteps.filter(step => !step.created_at);
-      for (const log of newLogs) {
-        await fetch(`http://localhost:3000/health/${data.id}/logs`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            date: new Date().toISOString(),
-            medicine: log.medicine,
-            dosage: log.dosage,
-            condition: log.condition
-          }),
-        });
+      setLoading(true);
+
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/health/${data.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symptom: currentSymptom }),
+      });
+
+      for (const log of treatmentSteps) {
+        let dateValue = log.date;
+        if (dateValue.includes('-') && dateValue.split('-')[0].length === 2) {
+          const [d, m, y] = dateValue.split('-');
+          dateValue = `${y}-${m}-${d}`;
+        }
+
+        if (!log.created_at) {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/health/${data.id}/logs`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              date: new Date(dateValue).toISOString(),
+              medicine: log.medicine,
+              dosage: log.dosage,
+              condition: log.condition
+            }),
+          });
+        } else {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL}/health/logs/${log.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              medicine: log.medicine,
+              dosage: log.dosage,
+              condition: log.condition,
+              date: new Date(dateValue).toISOString() 
+            }),
+          });
+        }
       }
       onBack();
     } catch (error) {
-      console.error(error);
+      console.error("Lỗi lưu DB:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -116,13 +153,20 @@ const TreatmentDetail: React.FC<TreatmentDetailProps> = ({ data, onBack }) => {
     setPigs(pigs.map(p => p.id === id ? { ...p, checked } : p));
   };
 
-  const addTreatmentStep = () => {
-    const today = new Date().toLocaleDateString('vi-VN');
-    setTreatmentSteps([...treatmentSteps, { id: Date.now().toString(), date: today, medicine: "", dosage: "", condition: "" }]);
+ const addTreatmentStep = () => {
+    const today = new Date().toISOString().split('T')[0]; 
+    const newId = Date.now().toString();
+    setTreatmentSteps([...treatmentSteps, { id: newId, date: today, medicine: "", dosage: "", condition: "" }]);
+    setEditingCell({ id: newId, field: "medicine" });
   };
 
   const updateTreatmentStep = (id: string, field: string, value: string) => {
     setTreatmentSteps(prev => prev.map(step => step.id === id ? { ...step, [field]: value } : step));
+  };
+
+  const handleAutoResize = (e: any) => {
+    e.target.style.height = "auto";
+    e.target.style.height = e.target.scrollHeight + "px";
   };
 
   if (loading) return <div className="p-8 flex items-center justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>;
@@ -170,6 +214,12 @@ const TreatmentDetail: React.FC<TreatmentDetailProps> = ({ data, onBack }) => {
               <div className="text-sm text-gray-800">{treatmentData?.pens?.pen_name}</div>
             </div>
             <div className="flex items-center">
+              <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Ngày phát hiện</label>
+              <div className="text-sm text-gray-800">
+                {treatmentData?.created_at ? new Date(treatmentData.created_at).toLocaleDateString("vi-VN") : "N/A"}
+              </div>
+            </div>
+            <div className="flex items-center">
               <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Số lượng</label>
               <div className="text-sm text-gray-800">{pigs.length} con</div>
             </div>
@@ -178,7 +228,7 @@ const TreatmentDetail: React.FC<TreatmentDetailProps> = ({ data, onBack }) => {
               <div className="text-sm text-gray-800">{treatmentData?.diseases?.name}</div>
             </div>
             <div className="flex items-baseline">
-              <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Triệu chứng</label>
+              <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Triệu chứng hiện tại</label>
               <div className="flex-1 text-sm text-gray-800 ">{treatmentData?.symptom}</div>
             </div>
           </div>
@@ -238,10 +288,18 @@ const TreatmentDetail: React.FC<TreatmentDetailProps> = ({ data, onBack }) => {
                     {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, pigs.length)} / {pigs.length}
                   </span>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 transition">
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                      disabled={currentPage === 1} 
+                      className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 transition"
+                    >
                       <ChevronLeftIcon className="h-5 w-5 text-gray-600" />
                     </button>
-                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 transition">
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                      disabled={currentPage === totalPages} 
+                      className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 transition"
+                    >
                       <ChevronRight className="h-5 w-5 text-gray-600" />
                     </button>
                   </div>
@@ -262,55 +320,96 @@ const TreatmentDetail: React.FC<TreatmentDetailProps> = ({ data, onBack }) => {
           </div>
         </div>
         <div className="overflow-x-auto border border-emerald-100 rounded-xl bg-white shadow-sm">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
             <thead className="bg-emerald-50 text-emerald-700">
               <tr>
-                <th className="px-6 py-4 text-center font-semibold uppercase tracking-wider text-m">STT</th>
-                <th className="px-6 py-4 text-center font-semibold tracking-wider text-xm">Ngày</th>
-                <th className="px-6 py-4 text-center font-semibold tracking-wider text-xm">Thuốc sử dụng</th>
-                <th className="px-6 py-4 text-center font-semibold tracking-wider text-xm">Liều lượng</th>
-                <th className="px-6 py-4 text-center font-semibold tracking-wider text-xm">Tình trạng</th>
+                <th className="w-16 px-4 py-4 text-center font-semibold uppercase">STT</th>
+                <th className="w-32 px-4 py-4 text-center font-semibold">Ngày</th>
+                <th className="px-4 py-4 text-center font-semibold">Thuốc sử dụng</th>
+                <th className="w-40 px-4 py-4 text-center font-semibold">Liều lượng</th>
+                <th className="px-4 py-4 text-center font-semibold">Tình trạng</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {treatmentSteps.map((step, index) => (
                 <tr key={step.id} className="hover:bg-gray-100/50 transition">
-                  <td className="px-6 py-4 text-center text-gray-500">{index + 1}</td>
-                  <td className="px-6 py-4 text-center">
-                    <input 
-                      type="text" 
-                      disabled={!!step.created_at}
-                      value={step.created_at ? new Date(step.date).toLocaleDateString('vi-VN') : step.date} 
-                      onChange={(e) => updateTreatmentStep(step.id, 'date', e.target.value)}
-                      className="bg-transparent text-center w-full outline-none"
-                    />
+                  <td className="px-4 py-4 text-center text-gray-500 align-top">{index + 1}</td>
+                  
+                  <td className="px-4 py-4 text-center align-top" onDoubleClick={() => setEditingCell({ id: step.id, field: "date" })}>
+                    {editingCell?.id === step.id && editingCell?.field === "date" ? (
+                      <input 
+                        autoFocus
+                        type="date" 
+                        value={step.date && step.date.includes('T') ? step.date.split('T')[0] : step.date} 
+                        onChange={(e) => updateTreatmentStep(step.id, 'date', e.target.value)}
+                        onBlur={() => setEditingCell(null)}
+                        className="bg-white border border-blue-400 rounded-lg px-2 py-1 text-sm outline-none focus:ring-2 ring-blue-100 w-full"
+                      />
+                    ) : (
+                      <div className="cursor-pointer py-1 text-gray-800">
+                        {step.date ? (() => {
+                          const d = new Date(step.date);
+                          const day = String(d.getDate()).padStart(2, '0');
+                          const month = String(d.getMonth() + 1).padStart(2, '0');
+                          const year = d.getFullYear();
+                          return `${day}-${month}-${year}`; 
+                        })() : "N/A"}
+                      </div>
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <input 
-                      type="text" 
-                      disabled={!!step.created_at}
-                      value={step.medicine || ""} 
-                      onChange={(e) => updateTreatmentStep(step.id, 'medicine', e.target.value)}
-                      className="bg-transparent text-center font-bold text-gray-800 w-full outline-none"
-                    />
+
+                  <td className="px-4 py-4 text-center align-top" onDoubleClick={() => setEditingCell({ id: step.id, field: "medicine" })}>
+                    {editingCell?.id === step.id && editingCell?.field === "medicine" ? (
+                      <textarea 
+                        autoFocus
+                        rows={1}
+                        value={step.medicine || ""} 
+                        onChange={(e) => updateTreatmentStep(step.id, 'medicine', e.target.value)}
+                        onInput={handleAutoResize}
+                        onBlur={() => setEditingCell(null)}
+                        className="bg-white border border-emerald-500 rounded px-1 text-center font-bold text-gray-800 w-full outline-none resize-none overflow-hidden h-auto block break-words whitespace-pre-wrap leading-relaxed"
+                      />
+                    ) : (
+                      <div className="cursor-pointer font-bold text-gray-800 break-words whitespace-pre-wrap">
+                        {step.medicine || "..."}
+                      </div>
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <input 
-                      type="text" 
-                      disabled={!!step.created_at}
-                      value={step.dosage || ""} 
-                      onChange={(e) => updateTreatmentStep(step.id, 'dosage', e.target.value)}
-                      className="bg-transparent text-center text-gray-600 w-full outline-none"
-                    />
+
+                  <td className="px-4 py-4 text-center align-top" onDoubleClick={() => setEditingCell({ id: step.id, field: "dosage" })}>
+                    {editingCell?.id === step.id && editingCell?.field === "dosage" ? (
+                      <textarea 
+                        autoFocus
+                        rows={1}
+                        value={step.dosage || ""} 
+                        onChange={(e) => updateTreatmentStep(step.id, 'dosage', e.target.value)}
+                        onInput={handleAutoResize}
+                        onBlur={() => setEditingCell(null)}
+                        className="bg-white border border-emerald-500 rounded px-1 text-center text-gray-600 w-full outline-none resize-none overflow-hidden h-auto block break-words whitespace-pre-wrap leading-relaxed"
+                      />
+                    ) : (
+                      <div className="cursor-pointer text-gray-600 break-words whitespace-pre-wrap">
+                        {step.dosage || "..."}
+                      </div>
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <input 
-                      type="text" 
-                      disabled={!!step.created_at}
-                      value={step.condition || step.status || ""} 
-                      onChange={(e) => updateTreatmentStep(step.id, 'condition', e.target.value)}
-                      className="bg-transparent text-center text-gray-600 w-full outline-none"
-                    />
+
+                  <td className="px-4 py-4 text-center align-top" onDoubleClick={() => setEditingCell({ id: step.id, field: "condition" })}>
+                    {editingCell?.id === step.id && editingCell?.field === "condition" ? (
+                      <textarea 
+                        autoFocus
+                        rows={1}
+                        value={step.condition || step.status || ""} 
+                        onChange={(e) => updateTreatmentStep(step.id, 'condition', e.target.value)}
+                        onInput={handleAutoResize}
+                        onBlur={() => setEditingCell(null)}
+                        className="bg-white border border-emerald-500 rounded px-1 text-center text-gray-600 w-full outline-none resize-none overflow-hidden h-auto block break-words whitespace-pre-wrap leading-relaxed"
+                      />
+                    ) : (
+                      <div className="cursor-pointer text-gray-600 break-words whitespace-pre-wrap">
+                        {step.condition || step.status || "..."}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

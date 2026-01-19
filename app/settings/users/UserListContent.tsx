@@ -1,19 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import UserListTable from "./UserListTable";
 import AddNewUserModal from "./AddNewUserModal";
 
+interface UserGroup {
+  id: number | bigint;
+  name: string;
+}
+
 export interface User {
-  stt: number;
-  username: string;
-  group: string;
+  id: string;
+  full_name: string;
+  role_id: number | bigint;
   email: string;
-  password: string;
+  password_hash: string;
+  phone: string;
+  is_active: boolean;
+  user_group?: {
+    id: number | bigint;
+    name: string;
+  };
 }
 
 interface UserListContentProps {
-  userGroups: string[]; 
   isAdding?: boolean;
   setIsAdding?: (status: boolean) => void;
   showDeleteConfirm: boolean;
@@ -21,18 +31,40 @@ interface UserListContentProps {
 }
 
 const UserListContent: React.FC<UserListContentProps> = ({
-  userGroups,
   isAdding = false,
   setIsAdding,
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [users, setUsers] = useState<User[]>([
-    { stt: 1, username: "admin", group: userGroups[0] || "Admin", email: "admin@example.com", password: "123456" },
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
 
-  const [editedUsers, setEditedUsers] = useState<User[]>([...users]);
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(users.map(() => false));
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+  const fetchData = async () => {
+    try {
+      const [usersRes, groupsRes] = await Promise.all([
+        fetch(`${API_URL}/users`),
+        fetch(`${API_URL}/users/groups`)
+      ]);
+      const usersData = await usersRes.json();
+      const groupsData = await groupsRes.json();
+      setUsers(usersData);
+      setUserGroups(groupsData);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const [checkedRows, setCheckedRows] = useState<boolean[]>([]);
+
+  useEffect(() => {
+    setCheckedRows(new Array(users.length).fill(false));
+  }, [users]);
 
   const hasSelected = checkedRows.some((val) => val === true);
   const allChecked = users.length > 0 && checkedRows.every(Boolean);
@@ -48,17 +80,48 @@ const UserListContent: React.FC<UserListContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addUser = (username: string, group: string, email: string, password: string) => {
-    const newUser = { stt: users.length + 1, username, group, email, password };
-    setUsers([...users, newUser]);
-    setCheckedRows([...checkedRows, false]);
+  const addUser = async (full_name: string, role_id: number | bigint, email: string, password_hash: string, phone: string) => {
+    try {
+      const response = await fetch(`${API_URL}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name,
+          role_id: Number(role_id),
+          email,
+          password_hash,
+          phone,
+        }),
+      });
+
+      if (response.ok) {
+        fetchData();
+        if (setIsAdding) setIsAdding(false);
+      }
+    } catch (error) {
+      console.error("Error adding user:", error);
+    }
   };
 
-  const deleteSelected = () => {
-    const newUsers = users.filter((_, index) => !checkedRows[index]);
-    setUsers(newUsers.map((u, idx) => ({ ...u, stt: idx + 1 })));
-    setCheckedRows(newUsers.map(() => false));
-    setShowDeleteConfirm(false);
+  const deleteSelected = async () => {
+    const idsToDelete = users
+      .filter((_, index) => checkedRows[index])
+      .map((u) => u.id);
+
+    try {
+      const response = await fetch(`${API_URL}/users/batch`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+
+      if (response.ok) {
+        fetchData();
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error("Error deleting users:", error);
+    }
   };
 
   return (
@@ -66,8 +129,7 @@ const UserListContent: React.FC<UserListContentProps> = ({
       <div className="flex-1 min-w-0">
         <UserListTable
           users={users}
-          editedUsers={editedUsers}
-          setEditedUsers={setEditedUsers}
+          setUsers={setUsers}
           checkedRows={checkedRows}
           toggleRow={toggleRow}
           toggleAll={toggleAll}

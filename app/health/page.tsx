@@ -24,8 +24,8 @@ const SickPigManagement: React.FC = () => {
     const fetchData = async () => {
       try {
         const [resActive, resHistory] = await Promise.all([
-          fetch("http://localhost:3000/health/active"),
-          fetch("http://localhost:3000/health/history")
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/health/active`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/health/history`)
         ]);
         setActiveRecords(await resActive.json());
         setHistoryRecords(await resHistory.json());

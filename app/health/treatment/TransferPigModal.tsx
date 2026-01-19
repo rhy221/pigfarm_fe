@@ -20,12 +20,18 @@ const TransferPigModal: React.FC<TransferPigModalProps> = ({ isOpen, onClose, on
     if (isOpen) {
       const fetchBarnData = async () => {
         try {
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+          
           const [resTypes, resPens] = await Promise.all([
-            fetch("http://localhost:3000/pen-types"), 
-            fetch("http://localhost:3000/pens")      
+            fetch(`${baseUrl}/health/pen-types`), 
+            fetch(`${baseUrl}/health/pens`)      
           ]);
-          const types = await resTypes.json();
-          const pens = await resPens.json();
+
+          const typesJson = await resTypes.json();
+          const pensJson = await resPens.json();
+
+          const types = Array.isArray(typesJson) ? typesJson : (typesJson.data || []);
+          const pens = Array.isArray(pensJson) ? pensJson : (pensJson.data || []);
 
           setBarnTypes(types);
           setAllBarns(pens);
@@ -39,10 +45,17 @@ const TransferPigModal: React.FC<TransferPigModalProps> = ({ isOpen, onClose, on
   }, [isOpen]);
 
   const filteredBarns = useMemo(() => {
-    const list = allBarns.filter(barn => barn.pen_type_id === selectedTypeId);
-    if (list.length > 0) setSelectedBarnId(list[0].id);
-    return list;
+    if (!Array.isArray(allBarns)) return [];
+    return allBarns.filter(barn => barn.pen_type_id === selectedTypeId);
   }, [selectedTypeId, allBarns]);
+
+  useEffect(() => {
+    if (filteredBarns.length > 0) {
+      setSelectedBarnId(filteredBarns[0].id);
+    } else {
+      setSelectedBarnId("");
+    }
+  }, [filteredBarns]);
 
   if (!isOpen) return null;
 

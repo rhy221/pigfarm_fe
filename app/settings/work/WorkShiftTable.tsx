@@ -11,10 +11,13 @@ interface WorkShiftTableProps {
   toggleRow: (index: number) => void;
   toggleAll: () => void;
   allChecked: boolean;
+  onUpdate: (id: string, updateData: any) => Promise<void>;
 }
 
+type EditableField = "name" | "startTime" | "endTime";
+
 type EditingCell =
-  | { row: number; field: "name" | "startTime" | "endTime" }
+  | { row: number; field: EditableField }
   | null;
 
 const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
@@ -25,8 +28,33 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
   toggleRow,
   toggleAll,
   allChecked,
+  onUpdate,
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
+
+  const handleFinishEditing = async (index: number, field: EditableField, value: string) => {
+    const row = shifts[index];
+    const trimmedValue = value.trim();
+
+    const fieldMapping = {
+      name: "session",
+      startTime: "start_time",
+      endTime: "end_time",
+    };
+
+    const oldValue = String(row[field as keyof WorkShift]); 
+
+    if (trimmedValue && trimmedValue !== oldValue) {
+      const dbField = fieldMapping[field];
+      try {
+        setEditingCell(null);
+        await onUpdate(row.id!, { [dbField]: trimmedValue });
+      } catch (error) {
+        console.error("Lỗi cập nhật:", error);
+      }
+    }
+    setEditingCell(null);
+  };
 
   const updateValue = (
     index: number,
@@ -73,7 +101,7 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
 
             return (
               <tr
-                key={row.stt}
+                key={row.id || index}
                 className="hover:bg-gray-100 transition-colors divide-x divide-emerald-50"
               >
                 <td className="px-3 py-3 text-center align-middle font-medium text-gray-500">
@@ -81,26 +109,25 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                 </td>
 
                 <td className="px-3 py-3 text-center align-middle">
-                  {editingCell?.row === index &&
-                  editingCell.field === "name" ? (
+                  {editingCell?.row === index && editingCell.field === "name" ? (
                     <input
                       autoFocus
                       type="text"
                       value={current.name}
-                      onChange={(e) =>
-                        updateValue(index, "name", e.target.value)
-                      }
-                      onBlur={() => setEditingCell(null)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && setEditingCell(null)
-                      }
+                      onChange={(e) => updateValue(index, "name", e.target.value)}
+                      onBlur={(e) => handleFinishEditing(index, "name", e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.currentTarget.onblur = null;
+                          handleFinishEditing(index, "name", e.currentTarget.value);
+                        }
+                        if (e.key === "Escape") setEditingCell(null);
+                      }}
                       className="w-full border border-emerald-200 rounded-md px-2 py-1 text-sm text-center focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   ) : (
                     <span
-                      onClick={() =>
-                        setEditingCell({ row: index, field: "name" })
-                      }
+                      onClick={() => setEditingCell({ row: index, field: "name" })}
                       className="block cursor-pointer rounded-md px-2 py-1 hover:bg-emerald-50 text-emerald-900 font-medium"
                     >
                       {current.name}
@@ -109,26 +136,25 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                 </td>
 
                 <td className="px-3 py-3 text-center align-middle">
-                  {editingCell?.row === index &&
-                  editingCell.field === "startTime" ? (
+                  {editingCell?.row === index && editingCell.field === "startTime" ? (
                     <input
                       autoFocus
                       type="time"
                       value={current.startTime}
-                      onChange={(e) =>
-                        updateValue(index, "startTime", e.target.value)
-                      }
-                      onBlur={() => setEditingCell(null)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && setEditingCell(null)
-                      }
+                      onChange={(e) => updateValue(index, "startTime", e.target.value)}
+                      onBlur={(e) => handleFinishEditing(index, "startTime", e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.currentTarget.onblur = null;
+                          handleFinishEditing(index, "startTime", e.currentTarget.value);
+                        }
+                        if (e.key === "Escape") setEditingCell(null);
+                      }}
                       className="w-full border border-emerald-200 rounded-md px-1 py-1 text-sm text-center focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   ) : (
                     <span
-                      onClick={() =>
-                        setEditingCell({ row: index, field: "startTime" })
-                      }
+                      onClick={() => setEditingCell({ row: index, field: "startTime" })}
                       className="inline-block w-full cursor-pointer rounded-md px-1 py-1 hover:bg-emerald-50"
                     >
                       {current.startTime}
@@ -137,26 +163,25 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                 </td>
 
                 <td className="px-3 py-3 text-center align-middle">
-                  {editingCell?.row === index &&
-                  editingCell.field === "endTime" ? (
+                  {editingCell?.row === index && editingCell.field === "endTime" ? (
                     <input
                       autoFocus
                       type="time"
                       value={current.endTime}
-                      onChange={(e) =>
-                        updateValue(index, "endTime", e.target.value)
-                      }
-                      onBlur={() => setEditingCell(null)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && setEditingCell(null)
-                      }
+                      onChange={(e) => updateValue(index, "endTime", e.target.value)}
+                      onBlur={(e) => handleFinishEditing(index, "endTime", e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.currentTarget.onblur = null;
+                          handleFinishEditing(index, "endTime", e.currentTarget.value);
+                        }
+                        if (e.key === "Escape") setEditingCell(null);
+                      }}
                       className="w-full border border-emerald-200 rounded-md px-1 py-1 text-sm text-center focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                   ) : (
                     <span
-                      onClick={() =>
-                        setEditingCell({ row: index, field: "endTime" })
-                      }
+                      onClick={() => setEditingCell({ row: index, field: "endTime" })}
                       className="inline-block w-full cursor-pointer rounded-md px-1 py-1 hover:bg-emerald-50"
                     >
                       {current.endTime}
@@ -165,12 +190,14 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                 </td>
 
                 <td className="px-3 py-3 text-center align-middle">
-                  <input
-                    type="checkbox"
-                    checked={checkedRows[index] ?? false}
-                    onChange={() => toggleRow(index)}
-                    className="h-5 w-5 text-emerald-600 align-middle cursor-pointer"
-                  />
+                  {!row.hasAssignments && (
+                    <input
+                      type="checkbox"
+                      checked={checkedRows[index] ?? false}
+                      onChange={() => toggleRow(index)}
+                      className="h-5 w-5 text-emerald-600 align-middle cursor-pointer"
+                    />
+                  )}
                 </td>
               </tr>
             );

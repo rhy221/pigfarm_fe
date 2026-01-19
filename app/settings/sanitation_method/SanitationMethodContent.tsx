@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SanitationMethodTable from "./SanitationMethodTable";
 import AddNewSanitationMethodModal from "./AddNewSanitationMethodModal";
 
 export interface SanitationMethod {
+  id?: string;
   stt: number;
   name: string;
+  hasHistory: boolean;
 }
 
 interface SanitationMethodContentProps {
@@ -22,39 +24,84 @@ const SanitationMethodContent: React.FC<SanitationMethodContentProps> = ({
   showDeleteConfirm,
   setShowDeleteConfirm,
 }) => {
-  const [methods, setMethods] = useState<SanitationMethod[]>([
-    { stt: 1, name: "Tẩy trùng bằng nước" },
-    { stt: 2, name: "Khử trùng bằng hóa chất" },
-    { stt: 3, name: "Vệ sinh khô" },
-  ]);
+  const [methods, setMethods] = useState<SanitationMethod[]>([]);
+  const [editedMethods, setEditedMethods] = useState<SanitationMethod[]>([]);
+  const [checkedRows, setCheckedRows] = useState<boolean[]>([]);
 
-  const [editedMethods, setEditedMethods] = useState<SanitationMethod[]>([...methods]);
-  const [checkedRows, setCheckedRows] = useState<boolean[]>(methods.map(() => false));
+  const fetchMethods = async () => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cleaning-methods`);
+      const data = await res.json();
+      const rawData = Array.isArray(data) ? data : (data.data || []);
+      const mappedData = rawData.map((m: any, index: number) => ({
+        id: m.id,
+        stt: index + 1,
+        name: m.name,
+        hasHistory: m.hasHistory || false,
+      }));
+      setMethods(mappedData);
+      setEditedMethods(mappedData);
+      setCheckedRows(mappedData.map(() => false));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMethods();
+  }, []);
+
+  const handleUpdate = async (id: string, name: string) => {
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cleaning-methods/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (res.ok) await fetchMethods();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const addMethod = async () => {
+    await fetchMethods();
+  };
+
+  const deleteSelected = async () => {
+    try {
+      const idsToDelete = methods.filter((_, i) => checkedRows[i]).map((m) => m.id);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cleaning-methods`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: idsToDelete }),
+      });
+      if (res.ok) {
+        await fetchMethods();
+        setShowDeleteConfirm(false);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const selectableIndices = methods
+    .map((m, i) => (!m.hasHistory ? i : -1))
+    .filter((i) => i !== -1);
 
   const hasSelected = checkedRows.some((val) => val === true);
-  const allChecked = methods.length > 0 && checkedRows.every(Boolean);
+  const allChecked = selectableIndices.length > 0 && selectableIndices.every((i) => checkedRows[i]);
 
   const toggleAll = () => {
     const nextValue = !allChecked;
-    setCheckedRows(methods.map(() => nextValue));
+    setCheckedRows(methods.map((m) => (m.hasHistory ? false : nextValue)));
   };
 
   const toggleRow = (index: number) => {
+    if (methods[index].hasHistory) return;
     const newChecked = [...checkedRows];
     newChecked[index] = !newChecked[index];
     setCheckedRows(newChecked);
-  };
-
-  const addMethod = (name: string) => {
-    setMethods([...methods, { stt: methods.length + 1, name }]);
-    setCheckedRows([...checkedRows, false]); 
-  };
-
-  const deleteSelected = () => {
-    const newMethods = methods.filter((_, index) => !checkedRows[index]);
-    setMethods(newMethods.map((b, idx) => ({ ...b, stt: idx + 1 })));
-    setCheckedRows(newMethods.map(() => false));
-    setShowDeleteConfirm(false);
   };
 
   return (
@@ -68,6 +115,7 @@ const SanitationMethodContent: React.FC<SanitationMethodContentProps> = ({
           toggleRow={toggleRow}
           toggleAll={toggleAll}
           allChecked={allChecked}
+          onUpdate={handleUpdate}
         />
       </div>
 

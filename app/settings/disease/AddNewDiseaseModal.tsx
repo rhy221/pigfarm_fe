@@ -21,13 +21,18 @@ const AddNewDiseaseModal: React.FC<AddNewDiseaseModalProps> = ({ onClose, onSave
   return (
     <div className="bg-white border rounded-lg shadow-lg p-4">
       <h3 className="text-lg py-4 font-bold text-emerald-700">Thêm loại bệnh mới</h3>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Tên loại bệnh"
-        className="w-full border border-gray-300 rounded-lg p-2 mb-3 text-sm"
-      />
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Tên loại bệnh</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Tên loại bệnh"
+          className="w-full border border-gray-300 rounded-lg p-2 mb-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+      </div>
+
       <div className="flex justify-end gap-2">
         <button
           onClick={onClose}

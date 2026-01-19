@@ -131,7 +131,7 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
                 <tr>
                   <th className="px-6 py-3 font-bold text-emerald-700 text-center w-16">STT</th>
                   <th className="px-6 py-3 font-bold text-emerald-700 text-center">Chuồng</th>
-                  <th className="px-6 py-3 font-bold text-emerald-700 text-center">Tổng TL (kg)</th>
+                  <th className="px-6 py-3 font-bold text-emerald-700 text-center">Tổng trọng lượng (kg)</th>
                   <th className="px-6 py-3 font-bold text-emerald-700 text-center">Đơn giá (VNĐ)</th>
                   <th className="px-6 py-3 font-bold text-emerald-700 text-center">Thành tiền</th>
                 </tr>

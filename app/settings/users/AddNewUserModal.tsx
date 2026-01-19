@@ -1,26 +1,61 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-interface AddNewUserModalProps {
-  userGroups: string[];
-  onClose: () => void;
-  onSave: (username: string, group: string, email: string, password: string) => void;
+interface UserGroup {
+  id: number | bigint;
+  name: string;
 }
 
-const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups, onClose, onSave }) => {
-  const [username, setUsername] = useState("");
-  const [group, setGroup] = useState(userGroups[0] || "");
+interface AddNewUserModalProps {
+  userGroups: UserGroup[];
+  onClose: () => void;
+  onSave: (fullName: string, roleId: number | bigint, email: string, password_hash: string, phone: string) => void;
+}
+
+const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups = [], onClose, onSave }) => {
+  const [fullName, setFullName] = useState("");
+  const [roleId, setRoleId] = useState<string>("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+
+  useEffect(() => {
+    if (userGroups.length > 0 && !roleId && userGroups[0]?.id !== undefined) {
+      setRoleId(userGroups[0].id.toString());
+    }
+  }, [userGroups, roleId]);
 
   const handleSave = () => {
-    if (!username.trim() || !group.trim() || !email.trim()) return;
-    onSave(username.trim(), group, email.trim(), password);
-    setUsername("");
+    if (!fullName.trim() || !roleId || !email.trim() || !password.trim()) {
+      alert("Vui lòng nhập đầy đủ thông tin bắt buộc.");
+      return;
+    }
+
+    if (!email.toLowerCase().endsWith("@gmail.com")) {
+      alert("Email phải có đuôi là @gmail.com");
+      return;
+    }
+    
+    onSave(fullName.trim(), BigInt(roleId), email.trim(), password, phone.trim());
+    
+    setFullName("");
     setEmail("");
     setPassword("");
+    setPhone("");
     onClose();
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;   
+    const onlyNums = value.replace(/\D/g, "");
+    setPhone(onlyNums);
+  };
+
+  const handleFullNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const onlyChars = value.replace(/[0-9]/g, "");
+    setFullName(onlyChars);
   };
 
   return (
@@ -28,11 +63,11 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups, onClose, 
       <h3 className="text-lg py-4 font-bold text-emerald-700">Thêm người dùng mới</h3>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-1">Tên người dùng</label>
+        <label className="block text-sm font-medium mb-1">Họ và tên</label>
         <input
           type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={fullName}
+          onChange={handleFullNameChange}
           className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
         />
       </div>
@@ -40,13 +75,22 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups, onClose, 
       <div className="mb-4">
         <label className="block text-sm font-medium mb-1">Nhóm người dùng</label>
         <select
-          value={group}
-          onChange={(e) => setGroup(e.target.value)}
+          value={roleId}
+          onChange={(e) => setRoleId(e.target.value)}
           className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
-        >
-          {userGroups.map((g, idx) => (
-            <option key={idx} value={g}>{g}</option>
-          ))}
+        >         
+          {userGroups && userGroups.length > 0 ? (
+            userGroups.map((group) => {
+              if (!group || group.id === undefined) return null;
+              return (
+                <option key={group.id.toString()} value={group.id.toString()}>
+                  {group.name}
+                </option>
+              );
+            })
+          ) : (
+            <option value="">Không có nhóm</option>
+          )}
         </select>
       </div>
 
@@ -54,8 +98,19 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups, onClose, 
         <label className="block text-sm font-medium mb-1">Email</label>
         <input
           type="email"
+          placeholder="@gmail.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-1">Số điện thoại</label>
+        <input
+          type="text"
+          value={phone}
+          onChange={handlePhoneChange}
           className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
         />
       </div>

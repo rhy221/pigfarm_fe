@@ -1,17 +1,17 @@
 // =====================================================
-// NEW STOCK ISSUE PAGE - app/(dashboard)/inventory/issues/new/page.tsx
+// EDIT STOCK ISSUE PAGE - app/inventory/issues/[id]/edit/page.tsx
 // =====================================================
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { CalendarIcon, Plus, Trash2, Save, ArrowLeft, Check } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,13 +23,20 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { useWarehouses, useInventory, useCreateStockIssue, useConfirmStockIssue, useInventoryBatches } from '@/hooks/use-inventory';
+import {
+  useStockIssue,
+  useWarehouses,
+  useInventory,
+  useUpdateStockReceipt,
+  useInventoryBatches,
+} from '@/hooks/use-inventory';
 import { formatCurrency, formatNumber, cn } from '@/lib/utils';
 import { IssueType } from '@/types/inventory';
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
+import { api } from '@/lib/api-client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Component để chọn batch cho từng item
 function BatchSelectCell({
@@ -66,14 +73,19 @@ function BatchSelectCell({
   }
 
   const activeBatches = batches?.filter((b) => b.status === 'active' && b.quantity > 0) || [];
-
+  // console.log(value ? value : "undefine");
+  // console.log(activeBatches);
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value === "" || !value ? "none" : value}
+  onValueChange={(val) => {
+    // Khi người dùng chọn "none", ta trả về chuỗi rỗng cho Form
+    onChange(val === "none" ? "" : val);
+  }}>
       <SelectTrigger className="w-[140px]">
         <SelectValue placeholder="Chọn lô" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value=" ">-- Không chọn --</SelectItem>
+        <SelectItem value="none">-- Không chọn --</SelectItem>
         {activeBatches.map((batch) => (
           <SelectItem key={batch.id} value={batch.id}>
             {batch.batchNumber || 'Lô mặc định'} ({formatNumber(batch.quantity)})
@@ -89,8 +101,6 @@ function BatchSelectCell({
   );
 }
 
-const FARM_ID = 'demo-farm-id';
-
 const stockIssueFormSchema = z.object({
   warehouseId: z.string().min(1, 'Vui lòng chọn kho'),
   issueDate: z.date({ error: 'Vui lòng chọn ngày xuất' }),
@@ -98,6 +108,7 @@ const stockIssueFormSchema = z.object({
   purpose: z.string().optional(),
   notes: z.string().optional(),
   items: z.array(z.object({
+    id: z.string().optional(),
     productId: z.string().min(1, 'Vui lòng chọn sản phẩm'),
     productName: z.string().optional(),
     unitName: z.string().optional(),
@@ -112,11 +123,24 @@ const stockIssueFormSchema = z.object({
 
 type StockIssueFormValues = z.infer<typeof stockIssueFormSchema>;
 
-export default function NewStockIssuePage() {
-  const router = useRouter();
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const [createdIssueId, setCreatedIssueId] = useState<string | null>(null);
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
+const issueTypeOptions = [
+  { value: IssueType.USAGE, label: 'Sử dụng cho đàn heo' },
+  { value: IssueType.SALE, label: 'Bán hàng' },
+  { value: IssueType.TRANSFER, label: 'Chuyển kho' },
+  { value: IssueType.DISPOSAL, label: 'Hủy bỏ (hư hỏng, hết hạn)' },
+  { value: IssueType.RETURN, label: 'Trả hàng NCC' },
+];
+
+export default function EditStockIssuePage({ params }: PageProps) {
+  const { id } = use(params);
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const { data: issue, isLoading: isLoadingIssue } = useStockIssue(id);
   const { data: warehouses } = useWarehouses();
 
   const form = useForm<StockIssueFormValues>({
@@ -133,7 +157,6 @@ export default function NewStockIssuePage() {
 
   const selectedWarehouseId = form.watch('warehouseId');
   const { data: inventoryData } = useInventory({
-    // farmId: FARM_ID,
     warehouseId: selectedWarehouseId || undefined,
     limit: 1000,
   });
@@ -143,8 +166,43 @@ export default function NewStockIssuePage() {
     name: 'items',
   });
 
-  const createIssue = useCreateStockIssue();
-  const confirmIssue = useConfirmStockIssue();
+  // Custom update mutation for stock issue
+  const updateIssue = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      api.put(`/api/inventory/issues/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+    },
+  });
+
+  // Load issue data into form
+  useEffect(() => {
+    if (issue && inventoryData?.data) {
+      form.reset({
+        warehouseId: issue.warehouseId,
+        issueDate: new Date(issue.issueDate),
+        issueType: issue.issueType as IssueType,
+        purpose: issue.purpose || '',
+        notes: issue.notes || '',
+        items: issue.stockIssueItems?.map((item: any) => {
+          // Find inventoryId from inventoryData
+          const inv = inventoryData.data?.find((i) => i.productId === item.productId);
+          return {
+            id: item.id,
+            productId: item.productId,
+            productName: item.products?.name || '',
+            unitName: item.products?.units?.abbreviation || '',
+            inventoryId: inv?.id || '',
+            availableQty: Number(item.quantity), // Current qty in this issue
+            unitCost: Number(item.unitCost) || 0,
+            quantity: Number(item.quantity),
+            batchId: item.batchId || '',
+            notes: item.notes || '',
+          };
+        }) || [],
+      });
+    }
+  }, [issue, inventoryData, form]);
 
   const items = form.watch('items');
 
@@ -181,102 +239,91 @@ export default function NewStockIssuePage() {
     }
   };
 
-//   const watchedItems = form.watch("items");
-
-// useEffect(() => {
-//   console.log("Dữ liệu Items hiện tại trong Form:", watchedItems);
-// }, [watchedItems]);
-const errors = form.formState.errors;
-
-useEffect(() => {
-  if (Object.keys(errors).length > 0) {
-    console.log("Validation Errors:", errors);
-  }
-}, [errors]);
   const onSubmit = async (data: StockIssueFormValues) => {
-        console.log("fdfd");
-
     // Validate quantities
     for (const item of data.items) {
-      if (item.quantity > (item.availableQty || 0)) {
-        toast('Lỗi',{
+      if (!item.id && item.quantity > (item.availableQty || 0)) {
+        toast('Lỗi', {
           description: `Sản phẩm "${item.productName}" không đủ tồn kho (còn ${item.availableQty})`,
-          // variant: 'destructive',
         });
         return;
       }
     }
+
     try {
-      const result = await createIssue.mutateAsync({
-        // farmId: FARM_ID,
-        warehouseId: data.warehouseId,
-        issueDate: format(data.issueDate, 'yyyy-MM-dd'),
-        issueType: data.issueType,
-        purpose: data.purpose,
-        notes: data.notes,
-        items: data.items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          batchId: item.batchId || undefined,
-          notes: item.notes,
-        })),
+      await updateIssue.mutateAsync({
+        id,
+        data: {
+          warehouseId: data.warehouseId,
+          issueDate: format(data.issueDate, 'yyyy-MM-dd'),
+          issueType: data.issueType,
+          purpose: data.purpose,
+          notes: data.notes,
+          items: data.items.map((item) => ({
+            id: item.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            batchId: item.batchId || undefined,
+            notes: item.notes,
+          })),
+        },
       });
 
-      setCreatedIssueId(result.id);
       toast('Thành công', {
-        description: 'Đã tạo phiếu xuất kho. Bạn có muốn xác nhận ngay?',
+        description: 'Đã cập nhật phiếu xuất kho',
       });
-      setIsConfirmDialogOpen(true);
+
+      router.push(`/inventory/issues/${id}`);
     } catch (error: any) {
       toast('Lỗi', {
-        description: error.message || 'Không thể tạo phiếu xuất kho',
-        // variant: 'destructive',
+        description: error.message || 'Không thể cập nhật phiếu xuất kho',
       });
     }
   };
 
-  const handleConfirmIssue = async () => {
-    if (!createdIssueId) return;
-    try {
-      await confirmIssue.mutateAsync(createdIssueId);
-      toast('Thành công',{
-        description: 'Đã xác nhận phiếu xuất kho và cập nhật tồn kho',
-      });
-      router.push('/inventory/issues');
-    } catch (error: any) {
-      toast('Lỗi',{
-        description: error.message || 'Không thể xác nhận phiếu',
-        // variant: 'destructive',
-      });
-    }
-    setIsConfirmDialogOpen(false);
-  };
+  if (isLoadingIssue) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
-  const issueTypeOptions = [
-    { value: IssueType.USAGE, label: 'Sử dụng cho đàn heo' },
-    { value: IssueType.SALE, label: 'Bán hàng' },
-    { value: IssueType.TRANSFER, label: 'Chuyển kho' },
-    { value: IssueType.DISPOSAL, label: 'Hủy bỏ (hư hỏng, hết hạn)' },
-    { value: IssueType.RETURN, label: 'Trả hàng NCC' },
-  ];
+  if (!issue) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <h3 className="text-lg font-medium mb-2">Không tìm thấy phiếu</h3>
+        <Button onClick={() => router.push('/inventory/issues')}>
+          Quay lại danh sách
+        </Button>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-      if (warehouses && !form.getValues('warehouseId')) {
-        const defaultWarehouse = warehouses.find((wh) => wh.isDefault);
-        if (defaultWarehouse) {
-          form.reset({
-        ...form.getValues(),
-        warehouseId: defaultWarehouse.id,
-      });
-        }
-      } 
-    }, [warehouses, form]);
+  if (issue.status !== 'draft') {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <h3 className="text-lg font-medium mb-2">Không thể chỉnh sửa</h3>
+        <p className="text-muted-foreground mb-4">
+          Phiếu đã được xác nhận hoặc đã hủy, không thể chỉnh sửa
+        </p>
+        <Button onClick={() => router.push(`/inventory/issues/${id}`)}>
+          Xem chi tiết
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
-        {/* Breadcrumb */}
-        <PageBreadcrumb items={BREADCRUMB_CONFIGS.issueNew} />
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 animate-fade-in">
+        {/* Breadcrumb */}
+        <PageBreadcrumb items={[
+          ...BREADCRUMB_CONFIGS.issues,
+          { label: issue.issueCode, href: `/inventory/issues/${id}` },
+          { label: 'Chỉnh sửa', href: `/inventory/issues/${id}/edit` }
+        ]} />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -284,17 +331,17 @@ useEffect(() => {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Tạo phiếu xuất kho</h1>
-              <p className="text-muted-foreground">Xuất hàng hóa, vật tư từ kho</p>
+              <h1 className="text-2xl font-bold">Chỉnh sửa phiếu xuất</h1>
+              <p className="text-muted-foreground">{issue.issueCode}</p>
             </div>
           </div>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Hủy
             </Button>
-            <Button type="submit" disabled={createIssue.isPending}>
+            <Button type="submit" disabled={updateIssue.isPending}>
               <Save className="mr-2 h-4 w-4" />
-              {createIssue.isPending ? 'Đang lưu...' : 'Lưu phiếu'}
+              {updateIssue.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
             </Button>
           </div>
         </div>
@@ -453,7 +500,7 @@ useEffect(() => {
                       {fields.map((field, index) => {
                         const item = items[index];
                         const itemTotal = item ? calculateItemTotal(item) : 0;
-                        const isOverStock = item && item.quantity > (item.availableQty || 0);
+                        const isOverStock = item && !item.id && item.quantity > (item.availableQty || 0);
                         return (
                           <TableRow key={field.id}>
                             <TableCell>
@@ -482,7 +529,7 @@ useEffect(() => {
                               />
                             </TableCell>
                             <TableCell className="text-right">
-                              {formatNumber(item?.availableQty || 0)}{' '}
+                              {formatNumber(form.watch(`items.${index}.batchId`) ? issue?.stockIssueItems?.[index]?.inventoryBatches?.quantity || 0 : item?.availableQty || 0)}{' '}
                               <span className="text-xs text-muted-foreground">{item?.unitName}</span>
                             </TableCell>
                             <TableCell>
@@ -571,38 +618,13 @@ useEffect(() => {
             <Card>
               <CardContent className="pt-6">
                 <div className="text-sm text-muted-foreground space-y-2">
-                  <p>• Phiếu sẽ được lưu ở trạng thái nháp</p>
-                  <p>• Xác nhận phiếu để trừ tồn kho</p>
-                  <p>• Giá trị xuất tính theo giá vốn TB</p>
+                  <p>• Giá trị xuất tính theo giá vốn trung bình</p>
+                  <p>• Tồn kho sẽ được trừ sau khi xác nhận</p>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
-
-        {/* Confirm Dialog */}
-        <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Xác nhận phiếu xuất kho?</DialogTitle>
-              <DialogDescription>
-                Sau khi xác nhận, tồn kho sẽ được trừ đi. Bạn không thể sửa đổi phiếu sau khi xác nhận.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => {
-                setIsConfirmDialogOpen(false);
-                router.push('/inventory/issues');
-              }}>
-                Để sau
-              </Button>
-              <Button onClick={handleConfirmIssue} disabled={confirmIssue.isPending}>
-                <Check className="mr-2 h-4 w-4" />
-                {confirmIssue.isPending ? 'Đang xử lý...' : 'Xác nhận ngay'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </form>
     </Form>
   );

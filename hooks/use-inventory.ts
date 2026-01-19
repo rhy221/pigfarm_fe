@@ -465,7 +465,7 @@ export function useInventoryHistory(params: InventoryHistoryQueryParams) {
 
   return useQuery({
     queryKey: HISTORY_KEYS.list(params),
-    queryFn: () => api.get<PaginatedResponse<InventoryHistory>>(`/api/inventory/history?${searchParams}`),
+    queryFn: () => api.get<PaginatedResponse<InventoryHistory>>(`/api/inventory/stock/history?${searchParams}`),
     // enabled: !!params.farmId,
   });
 }

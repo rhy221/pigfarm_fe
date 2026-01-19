@@ -415,7 +415,7 @@ export default function MonthlyBillsPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{bill.category?.name || '-'}</TableCell>
+                        <TableCell>{bill.transactionCategories?.name || '-'}</TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(record?.amount || bill.defaultAmount)}
                         </TableCell>

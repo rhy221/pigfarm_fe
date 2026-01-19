@@ -1,13 +1,14 @@
 // =====================================================
-// TRANSACTION FORM COMPONENT (Phiếu Thu/Chi)
+// EDIT TRANSACTION PAGE - app/finance/transactions/[id]/edit/page.tsx
 // =====================================================
 
 'use client';
 
+import { use, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { CalendarIcon, Save, ArrowLeft, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
@@ -23,21 +24,26 @@ import { Calendar } from '@/components/ui/calendar';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { useCashAccounts, useTransactionCategories, useCreateTransaction } from '@/hooks/use-finance';
+import {
+  useTransaction,
+  useCashAccounts,
+  useTransactionCategories,
+  useUpdateTransaction,
+} from '@/hooks/use-finance';
 import { useSuppliers } from '@/hooks/use-inventory';
 import { formatCurrency, cn } from '@/lib/utils';
 import { TransactionType, ContactType } from '@/types/finance';
 import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
+import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 
 // Form schema
 const transactionFormSchema = z.object({
-  transactionType: z.nativeEnum(TransactionType),
+  transactionType: z.enum(TransactionType),
   cashAccountId: z.string().min(1, 'Vui lòng chọn tài khoản'),
   categoryId: z.string().optional(),
   transactionDate: z.date({ error: 'Vui lòng chọn ngày' }),
   amount: z.number().min(1, 'Số tiền phải lớn hơn 0'),
-  contactType: z.nativeEnum(ContactType).optional(),
+  contactType: z.enum(ContactType).optional().nullable(),
   contactId: z.string().optional(),
   contactName: z.string().optional(),
   description: z.string().optional(),
@@ -47,29 +53,26 @@ const transactionFormSchema = z.object({
 
 type TransactionFormValues = z.infer<typeof transactionFormSchema>;
 
-// interface TransactionFormProps {
-//   : string;
-// }
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
 
-export default function TransactionForm() {
+export default function EditTransactionPage({ params }: PageProps) {
+  const { id } = use(params);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathName = usePathname();
 
-  const initialType = searchParams.get('type') === 'income' 
-    ? TransactionType.INCOME 
-    : TransactionType.EXPENSE;
+  const { data: transaction, isLoading: isLoadingTransaction } = useTransaction(id);
   const { data: accounts } = useCashAccounts();
-  const { data: incomeCategories } = useTransactionCategories( TransactionType.INCOME);
-  const { data: expenseCategories } = useTransactionCategories( TransactionType.EXPENSE);
+  const { data: incomeCategories } = useTransactionCategories(TransactionType.INCOME);
+  const { data: expenseCategories } = useTransactionCategories(TransactionType.EXPENSE);
   const { data: suppliers } = useSuppliers();
 
-  const createTransaction = useCreateTransaction();
+  const updateTransaction = useUpdateTransaction();
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
     defaultValues: {
-      transactionType: initialType,
+      transactionType: TransactionType.EXPENSE,
       cashAccountId: '',
       categoryId: '',
       transactionDate: new Date(),
@@ -82,6 +85,25 @@ export default function TransactionForm() {
       isRecorded: true,
     },
   });
+
+  // Load transaction data into form
+  useEffect(() => {
+    if (transaction) {
+      form.reset({
+        transactionType: transaction.transactionType as TransactionType,
+        cashAccountId: transaction.cashAccountId,
+        categoryId: transaction.categoryId || '',
+        transactionDate: new Date(transaction.transactionDate),
+        amount: Number(transaction.amount),
+        contactType: transaction.contactType as ContactType | undefined,
+        contactId: transaction.contactId || '',
+        contactName: transaction.contactName || '',
+        description: transaction.description || '',
+        notes: transaction.notes || '',
+        isRecorded: transaction.isRecorded ?? true,
+      });
+    }
+  }, [transaction, accounts, suppliers, incomeCategories, expenseCategories, form]);
 
   const transactionType = form.watch('transactionType');
   const categories = transactionType === TransactionType.INCOME ? incomeCategories : expenseCategories;
@@ -102,49 +124,64 @@ export default function TransactionForm() {
 
   const onSubmit = async (data: TransactionFormValues) => {
     try {
-      await createTransaction.mutateAsync({
-        
-        cashAccountId: data.cashAccountId,
-        categoryId: data.categoryId || undefined,
-        transactionType: data.transactionType,
-        transactionDate: format(data.transactionDate, 'yyyy-MM-dd'),
-        amount: data.amount,
-        contactType: data.contactType,
-        contactId: data.contactId || undefined,
-        contactName: data.contactName || undefined,
-        description: data.description,
-        notes: data.notes,
-        isRecorded: data.isRecorded,
+      await updateTransaction.mutateAsync({
+        id,
+        data: {
+          cashAccountId: data.cashAccountId,
+          categoryId: data.categoryId || undefined,
+          transactionType: data.transactionType,
+          transactionDate: format(data.transactionDate, 'yyyy-MM-dd'),
+          amount: data.amount,
+          contactType: data.contactType || undefined,
+          contactId: data.contactId || undefined,
+          contactName: data.contactName || undefined,
+          description: data.description,
+          notes: data.notes,
+          isRecorded: data.isRecorded,
+        },
       });
 
       toast('Thành công', {
-        description: `Đã tạo phiếu ${data.transactionType === TransactionType.INCOME ? 'thu' : 'chi'} thành công`,
+        description: 'Đã cập nhật giao dịch',
       });
 
-      router.push('/finance');
+      router.push(`/finance/transactions/${id}`);
     } catch (error: any) {
       toast('Lỗi', {
-        description: error.message || 'Không thể tạo giao dịch',
-        // variant: 'destructive',
+        description: error.message || 'Không thể cập nhật giao dịch',
       });
     }
   };
 
-  useEffect(() => {
-        if (accounts && !form.getValues('cashAccountId')) {
-          const defaultAccount = accounts.find((ac) => ac.isDefault);
-          if (defaultAccount) {
-            form.reset({
-          ...form.getValues(),
-          cashAccountId: defaultAccount.id,
-        });
-          }
-        } 
-      }, [accounts, form]);
+  if (isLoadingTransaction) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!transaction) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <h3 className="text-lg font-medium mb-2">Không tìm thấy giao dịch</h3>
+        <Button onClick={() => router.push('/finance/transactions')}>
+          Quay lại danh sách
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Breadcrumb */}
+        <PageBreadcrumb items={[
+          ...BREADCRUMB_CONFIGS.transactions,
+          { label: transaction.transactionCode, href: `/finance/transactions/${id}` },
+          { label: 'Chỉnh sửa', href: `/finance/transactions/${id}/edit` }
+        ]} />
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button type="button" variant="ghost" size="icon" onClick={() => router.back()}>
@@ -155,24 +192,25 @@ export default function TransactionForm() {
                 {transactionType === TransactionType.INCOME ? (
                   <>
                     <ArrowUpCircle className="h-6 w-6 text-green-500" />
-                    Tạo phiếu thu
+                    Chỉnh sửa phiếu thu
                   </>
                 ) : (
                   <>
                     <ArrowDownCircle className="h-6 w-6 text-red-500" />
-                    Tạo phiếu chi
+                    Chỉnh sửa phiếu chi
                   </>
                 )}
               </h1>
+              <p className="text-muted-foreground">{transaction.transactionCode}</p>
             </div>
           </div>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => router.back()}>
               Hủy
             </Button>
-            <Button type="submit" disabled={createTransaction.isPending}>
+            <Button type="submit" disabled={updateTransaction.isPending}>
               <Save className="mr-2 h-4 w-4" />
-              {createTransaction.isPending ? 'Đang lưu...' : 'Lưu phiếu'}
+              {updateTransaction.isPending ? 'Đang lưu...' : 'Lưu thay đổi'}
             </Button>
           </div>
         </div>
@@ -186,13 +224,11 @@ export default function TransactionForm() {
                   onValueChange={(value) => form.setValue('transactionType', value as TransactionType)}
                 >
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value={TransactionType.INCOME} className="gap-2"
-                    onClick={() => router.push(`${pathName}?type=${TransactionType.INCOME}`)}>
+                    <TabsTrigger value={TransactionType.INCOME} className="gap-2">
                       <ArrowUpCircle className="h-4 w-4" />
                       Phiếu thu
                     </TabsTrigger>
-                    <TabsTrigger value={TransactionType.EXPENSE} className="gap-2"
-                    onClick={() => router.push(`${pathName}?type=${TransactionType.EXPENSE}`)}>
+                    <TabsTrigger value={TransactionType.EXPENSE} className="gap-2">
                       <ArrowDownCircle className="h-4 w-4" />
                       Phiếu chi
                     </TabsTrigger>
@@ -298,37 +334,39 @@ export default function TransactionForm() {
                   name="amount"
                   render={({ field }) => {
                     const [displayValue, setDisplayValue] = useState(
-                                        field.value ? field.value.toLocaleString('vi-VN') : ''
-                                      );
-                                      const [isFocused, setIsFocused] = useState(false);
-                    
-                    return <FormItem>
-                      <FormLabel>Số tiền *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          value={isFocused ? displayValue : (field.value ? field.value.toLocaleString('vi-VN') : '')}
-                          onChange={(e) => {
-                            const rawValue = e.target.value.replace(/[^\d]/g, '');
-                            setDisplayValue(rawValue);
-                            field.onChange(rawValue === '' ? 0 : parseInt(rawValue, 10));
-                          }}
-                          onFocus={() => {
-                            setIsFocused(true);
-                            setDisplayValue(field.value ? field.value.toString() : '');
-                          }}
-                          onBlur={() => {
-                            setIsFocused(false);
-                            field.onBlur();
-                          }}
-                          name={field.name}
-                          ref={field.ref}
-                          placeholder="Nhập số tiền"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                      field.value ? field.value.toLocaleString('vi-VN') : ''
+                    );
+                    const [isFocused, setIsFocused] = useState(false);
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Số tiền *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            value={isFocused ? displayValue : (field.value ? field.value.toLocaleString('vi-VN') : '')}
+                            onChange={(e) => {
+                              const rawValue = e.target.value.replace(/[^\d]/g, '');
+                              setDisplayValue(rawValue);
+                              field.onChange(rawValue === '' ? 0 : parseInt(rawValue, 10));
+                            }}
+                            onFocus={() => {
+                              setIsFocused(true);
+                              setDisplayValue(field.value ? field.value.toString() : '');
+                            }}
+                            onBlur={() => {
+                              setIsFocused(false);
+                              field.onBlur();
+                            }}
+                            name={field.name}
+                            ref={field.ref}
+                            placeholder="Nhập số tiền"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
                   }}
                 />
               </CardContent>
@@ -347,7 +385,7 @@ export default function TransactionForm() {
                       <FormLabel>Loại đối tượng</FormLabel>
                       <Select
                         onValueChange={(value) => handleContactTypeChange(value as ContactType)}
-                        value={field.value}
+                        value={field.value || ''}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -439,7 +477,7 @@ export default function TransactionForm() {
           </div>
 
           <div className="space-y-6">
-            {/* <Card>
+            <Card>
               <CardHeader>
                 <CardTitle>Tùy chọn</CardTitle>
               </CardHeader>
@@ -460,7 +498,7 @@ export default function TransactionForm() {
                   )}
                 />
               </CardContent>
-            </Card> */}
+            </Card>
 
             <Card>
               <CardHeader>

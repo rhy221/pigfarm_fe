@@ -134,12 +134,14 @@ const data = {
     url: "/inventory",
     icon: Warehouse,
     items: [
-      { title: 'Tồn kho', url: '/inventory' },
+      // { title: 'Tồn kho', url: '/inventory' },
       { title: 'Kho hàng', url: '/inventory/warehouses' },
       { title: 'Sản phẩm', url: '/inventory/products' },
       { title: 'Phiếu nhập', url: '/inventory/receipts' },
       { title: 'Phiếu xuất', url: '/inventory/issues' },
       { title: 'Nhà cung cấp', url: '/inventory/suppliers' },
+      { title: 'Lịch sử', url: '/inventory/history' },
+
     ]
   },
   {
@@ -154,15 +156,15 @@ const data = {
   },
   {
     title: "Chi phí",
-    url: "/costs",
+    url: "/finance",
     icon: Banknote,
     items: [
-      { title: 'Tổng quan', url: '/finance' },
+      // { title: 'Tổng quan', url: '/finance' },
       { title: 'Phiếu thu/chi', url: '/finance/transactions' },
       { title: 'Tài khoản quỹ', url: '/finance/accounts' },
       { title: 'Công nợ NCC', url: '/finance/supplier-debts' },
-      { title: 'Hóa đơn tháng', url: '/finance/monthly-bills' },
-      { title: 'Báo cáo', url: '/finance/reports' },
+      // { title: 'Hóa đơn tháng', url: '/finance/monthly-bills' },
+      // { title: 'Báo cáo', url: '/finance/reports' },
     ]
   },
   {

@@ -1,88 +1,172 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import CalendarDay from "./vaccine_calendarday"
 import VaccineSidePanel from "./vaccine_panel"
-import { events } from "@/app/vaccines/components/vacccine_calendar"
+import { fetchVaccinationCalendar } from "@/app/api/vaccines"
+import { CalendarEvent } from "@/app/vaccines/components/vacccine_calendar"
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
 export default function Calendar() {
-  // Quản lý ngày được chọn (mặc định ngày 13/03/2025 theo hình mẫu)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date(2025, 2, 13))
+  /* ================= DATE STATE ================= */
+  const today = new Date()
 
-  const daysInMonth = 31
-  const startDay = 6 // March 2025 bắt đầu từ Thứ 7
+  const [currentMonth, setCurrentMonth] = useState(
+    today.getMonth() + 1
+  )
+  const [currentYear, setCurrentYear] = useState(
+    today.getFullYear()
+  )
+
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    today
+  )
+
+  /* ================= EVENTS ================= */
+  const [events, setEvents] = useState<CalendarEvent[]>([])
+
+  useEffect(() => {
+    fetchVaccinationCalendar(currentMonth, currentYear)
+      .then(setEvents)
+      .catch(console.error)
+  }, [currentMonth, currentYear])
+
+  /* ================= CALENDAR GRID ================= */
+  const daysInMonth = new Date(
+    currentYear,
+    currentMonth,
+    0
+  ).getDate()
+
+  const startDay = new Date(
+    currentYear,
+    currentMonth - 1,
+    1
+  ).getDay()
 
   const cells: (number | undefined)[] = []
   for (let i = 0; i < startDay; i++) cells.push(undefined)
   for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
-  // Hàm xử lý khi click vào một ngày
+  /* ================= HELPERS ================= */
+  const formatDate = (y: number, m: number, d: number) =>
+    `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+
+  const selectedDateEvents = useMemo(() => {
+    if (!selectedDate) return []
+    return events.filter(
+      e =>
+        e.date ===
+        formatDate(
+          selectedDate.getFullYear(),
+          selectedDate.getMonth() + 1,
+          selectedDate.getDate()
+        )
+    )
+  }, [selectedDate, events])
+
+  /* ================= HANDLERS ================= */
   const handleDayClick = (day: number) => {
-    setSelectedDate(new Date(2025, 2, day))
+    setSelectedDate(
+      new Date(currentYear, currentMonth - 1, day)
+    )
   }
 
-  // Lọc sự kiện cho Panel bên phải dựa trên ngày được chọn
-  const selectedDateEvents = selectedDate 
-    ? events.filter(e => e.date === `2025-03-${String(selectedDate.getDate()).padStart(2, "0")}`)
-    : []
+  const prevMonth = () => {
+    if (currentMonth === 1) {
+      setCurrentMonth(12)
+      setCurrentYear(y => y - 1)
+    } else {
+      setCurrentMonth(m => m - 1)
+    }
+  }
 
+  const nextMonth = () => {
+    if (currentMonth === 12) {
+      setCurrentMonth(1)
+      setCurrentYear(y => y + 1)
+    } else {
+      setCurrentMonth(m => m + 1)
+    }
+  }
+
+  /* ================= RENDER ================= */
   return (
     <div className="flex flex-col lg:flex-row h-full gap-6 bg-background">
-      {/* PHẦN BÊN TRÁI: LỊCH (CALENDAR GRID) */}
+      {/* LEFT: CALENDAR */}
       <div className="flex-1 space-y-4">
-        {/* HEADER: Tháng/Năm và Điều hướng */}
+        {/* HEADER */}
         <div className="flex items-center justify-between px-2">
           <div className="flex items-baseline gap-2">
-            <h2 className="text-2xl font-bold text-[#53A88B]">March</h2>
-            <span className="text-2xl font-light text-slate-400">2025</span>
+            <h2 className="text-2xl font-bold text-[#53A88B]">
+              {new Date(
+                currentYear,
+                currentMonth - 1
+              ).toLocaleString("en", { month: "long" })}
+            </h2>
+            <span className="text-2xl font-light text-slate-400">
+              {currentYear}
+            </span>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <button className="p-1.5 hover:bg-slate-100 rounded-full border border-border transition-colors">
-              <ChevronLeft className="w-5 h-5 text-[#64748b]" />
+            <button
+              onClick={prevMonth}
+              className="p-1.5 hover:bg-slate-100 rounded-full border"
+            >
+              <ChevronLeft className="w-5 h-5" />
             </button>
-            <button className="p-1.5 hover:bg-slate-100 rounded-full border border-border transition-colors">
-              <ChevronRight className="w-5 h-5 text-[#64748b]" />
+            <button
+              onClick={nextMonth}
+              className="p-1.5 hover:bg-slate-100 rounded-full border"
+            >
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Cấu trúc Grid Lịch */}
-        <div className="border border-border rounded-xl overflow-hidden shadow-sm bg-white">
-          {/* Hàng Thứ cố định */}
-          <div className="grid grid-cols-7 bg-[#f8fafc] border-b border-border">
-            {WEEKDAYS.map((day) => (
-              <div 
-                key={day} 
-                className="py-3 text-center text-[11px] font-bold uppercase tracking-wider text-[#53A88B]"
+        {/* GRID */}
+        <div className="border rounded-xl overflow-hidden bg-white">
+          <div className="grid grid-cols-7 bg-slate-50 border-b">
+            {WEEKDAYS.map(day => (
+              <div
+                key={day}
+                className="py-3 text-center text-[11px] font-bold uppercase text-[#53A88B]"
               >
                 {day}
               </div>
             ))}
           </div>
 
-          {/* Grid các ngày trong tháng */}
           <div className="grid grid-cols-7">
             {cells.map((day, index) => {
               const dayEvents = day
                 ? events.filter(
-                    (e) => e.date === `2025-03-${String(day).padStart(2, "0")}`
+                    e =>
+                      e.date ===
+                      formatDate(
+                        currentYear,
+                        currentMonth,
+                        day
+                      )
                   )
                 : []
 
               return (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   onClick={() => day && handleDayClick(day)}
-                  className="contents" // Giữ nguyên layout grid của CalendarDay
+                  className="contents"
                 >
                   <CalendarDay
                     day={day}
                     events={dayEvents}
-                    isSelected={selectedDate?.getDate() === day}
+                    isSelected={
+                      selectedDate?.getDate() === day &&
+                      (selectedDate?.getMonth() ?? -1) + 1 === currentMonth
+                    }
                   />
                 </div>
               )
@@ -91,11 +175,10 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* PHẦN BÊN PHẢI: SIDE PANEL (THÔNG TIN CHI TIẾT) */}
+      {/* RIGHT: SIDE PANEL */}
       <div className="w-full lg:w-[400px]">
-        <VaccineSidePanel 
-          date={selectedDate} 
-          events={selectedDateEvents} 
+        <VaccineSidePanel
+          date={selectedDate}
         />
       </div>
     </div>

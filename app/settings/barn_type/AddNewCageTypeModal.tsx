@@ -1,0 +1,51 @@
+"use client";
+
+import React, { useState } from "react";
+
+interface AddNewCageTypeModalProps {
+  onClose: () => void;
+  onSave: (loaiChuong: string) => void; 
+}
+
+const AddNewCageTypeModal: React.FC<AddNewCageTypeModalProps> = ({ onClose, onSave }) => {
+  const [loaiChuong, setLoaiChuong] = useState("");
+
+  return (
+    <div className="p-6 bg-white rounded-xl shadow-md border border-gray-200 w-full max-w-sm">
+      <h3 className="text-lg py-4 font-bold text-emerald-700">Thêm loại chuồng</h3>
+      <div className="grid grid-cols-1 gap-4 mb-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Loại chuồng</label>
+          <input
+            type="text"
+            placeholder="Ví dụ: Chuồng thịt"
+            value={loaiChuong}
+            onChange={(e) => setLoaiChuong(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+        </div>
+      </div>
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={onClose}
+          className="px-6 py-2 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition text-gray-700"
+        >
+          Hủy
+        </button>
+        <button
+          onClick={() => {
+            if (loaiChuong.trim()) {
+              onSave(loaiChuong); 
+              onClose();
+            }
+          }}
+          className="px-6 py-2 rounded-lg text-sm font-medium transition shadow-md bg-emerald-600 text-white hover:bg-emerald-700"
+        >
+          Lưu
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default AddNewCageTypeModal;

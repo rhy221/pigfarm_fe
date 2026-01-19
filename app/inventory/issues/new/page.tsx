@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -25,28 +25,87 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { useWarehouses, useInventory, useCreateStockIssue, useConfirmStockIssue } from '@/hooks/use-inventory';
+import { useWarehouses, useInventory, useCreateStockIssue, useConfirmStockIssue, useInventoryBatches } from '@/hooks/use-inventory';
 import { formatCurrency, formatNumber, cn } from '@/lib/utils';
 import { IssueType } from '@/types/inventory';
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 
+// Component để chọn batch cho từng item
+function BatchSelectCell({
+  inventoryId,
+  value,
+  onChange,
+  disabled,
+}: {
+  inventoryId: string;
+  value: string;
+  onChange: (batchId: string) => void;
+  disabled?: boolean;
+}) {
+  const { data: batches, isLoading } = useInventoryBatches(inventoryId, { includeAll: false });
+
+  if (disabled || !inventoryId) {
+    return (
+      <Select disabled>
+        <SelectTrigger className="w-[140px]">
+          <SelectValue placeholder="Chọn SP trước" />
+        </SelectTrigger>
+      </Select>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Select disabled>
+        <SelectTrigger className="w-[140px]">
+          <SelectValue placeholder="Đang tải..." />
+        </SelectTrigger>
+      </Select>
+    );
+  }
+
+  const activeBatches = batches?.filter((b) => b.status === 'active' && b.quantity > 0) || [];
+
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-[140px]">
+        <SelectValue placeholder="Chọn lô" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value=" ">-- Không chọn --</SelectItem>
+        {activeBatches.map((batch) => (
+          <SelectItem key={batch.id} value={batch.id}>
+            {batch.batchNumber || 'Lô mặc định'} ({formatNumber(batch.quantity)})
+            {batch.expiryDate && (
+              <span className="text-xs text-muted-foreground ml-1">
+                - HSD: {format(new Date(batch.expiryDate), 'dd/MM/yy')}
+              </span>
+            )}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 const FARM_ID = 'demo-farm-id';
 
 const stockIssueFormSchema = z.object({
   warehouseId: z.string().min(1, 'Vui lòng chọn kho'),
   issueDate: z.date({ error: 'Vui lòng chọn ngày xuất' }),
-  issueType: z.nativeEnum(IssueType),
+  issueType: z.enum(IssueType),
   purpose: z.string().optional(),
   notes: z.string().optional(),
   items: z.array(z.object({
     productId: z.string().min(1, 'Vui lòng chọn sản phẩm'),
     productName: z.string().optional(),
     unitName: z.string().optional(),
-    availableQty: z.number().optional(),
-    unitCost: z.number().optional(),
+    inventoryId: z.string().optional(),
+    availableQty: z.number().nullable().optional(),
+    unitCost: z.number().nullable().optional(),
     quantity: z.number().min(0.001, 'Số lượng phải lớn hơn 0'),
+    batchId: z.string().optional(),
     notes: z.string().optional(),
   })).min(1, 'Vui lòng thêm ít nhất 1 sản phẩm'),
 });
@@ -100,9 +159,11 @@ export default function NewStockIssuePage() {
       productId: '',
       productName: '',
       unitName: '',
+      inventoryId: '',
       availableQty: 0,
       unitCost: 0,
       quantity: 1,
+      batchId: '',
       notes: '',
     });
   };
@@ -111,14 +172,30 @@ export default function NewStockIssuePage() {
     const inventoryItem = inventoryData?.data?.find((inv) => inv.productId === productId);
     if (inventoryItem) {
       form.setValue(`items.${index}.productId`, productId);
-      form.setValue(`items.${index}.productName`, inventoryItem.product?.name || '');
-      form.setValue(`items.${index}.unitName`, inventoryItem.product?.unit?.abbreviation || '');
-      form.setValue(`items.${index}.availableQty`, inventoryItem.quantity);
-      form.setValue(`items.${index}.unitCost`, inventoryItem.avgCost);
+      form.setValue(`items.${index}.productName`, inventoryItem.products?.name || '');
+      form.setValue(`items.${index}.unitName`, inventoryItem.products?.units?.abbreviation || '');
+      form.setValue(`items.${index}.inventoryId`, inventoryItem.id);
+      form.setValue(`items.${index}.availableQty`, Number(inventoryItem.quantity) ?? 0);
+      form.setValue(`items.${index}.unitCost`, Number(inventoryItem.avgCost) ?? 0);
+      form.setValue(`items.${index}.batchId`, ''); // Reset batch when product changes
     }
   };
 
+//   const watchedItems = form.watch("items");
+
+// useEffect(() => {
+//   console.log("Dữ liệu Items hiện tại trong Form:", watchedItems);
+// }, [watchedItems]);
+const errors = form.formState.errors;
+
+useEffect(() => {
+  if (Object.keys(errors).length > 0) {
+    console.log("Validation Errors:", errors);
+  }
+}, [errors]);
   const onSubmit = async (data: StockIssueFormValues) => {
+        console.log("fdfd");
+
     // Validate quantities
     for (const item of data.items) {
       if (item.quantity > (item.availableQty || 0)) {
@@ -129,7 +206,6 @@ export default function NewStockIssuePage() {
         return;
       }
     }
-
     try {
       const result = await createIssue.mutateAsync({
         // farmId: FARM_ID,
@@ -141,6 +217,7 @@ export default function NewStockIssuePage() {
         items: data.items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
+          batchId: item.batchId || undefined,
           notes: item.notes,
         })),
       });
@@ -182,6 +259,18 @@ export default function NewStockIssuePage() {
     { value: IssueType.DISPOSAL, label: 'Hủy bỏ (hư hỏng, hết hạn)' },
     { value: IssueType.RETURN, label: 'Trả hàng NCC' },
   ];
+
+  useEffect(() => {
+      if (warehouses && !form.getValues('warehouseId')) {
+        const defaultWarehouse = warehouses.find((wh) => wh.isDefault);
+        if (defaultWarehouse) {
+          form.reset({
+        ...form.getValues(),
+        warehouseId: defaultWarehouse.id,
+      });
+        }
+      } 
+    }, [warehouses, form]);
 
   return (
     <Form {...form}>
@@ -351,11 +440,12 @@ export default function NewStockIssuePage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[280px]">Sản phẩm</TableHead>
-                        <TableHead className="w-[100px] text-right">Tồn kho</TableHead>
-                        <TableHead className="w-[100px]">Số lượng</TableHead>
-                        <TableHead className="w-[120px] text-right">Đơn giá</TableHead>
-                        <TableHead className="w-[120px] text-right">Thành tiền</TableHead>
+                        <TableHead className="w-[200px]">Sản phẩm</TableHead>
+                        <TableHead className="w-[150px]">Lô hàng</TableHead>
+                        <TableHead className="w-[80px] text-right">Tồn kho</TableHead>
+                        <TableHead className="w-[80px]">Số lượng</TableHead>
+                        <TableHead className="w-[100px] text-right">Đơn giá</TableHead>
+                        <TableHead className="w-[100px] text-right">Thành tiền</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -364,7 +454,6 @@ export default function NewStockIssuePage() {
                         const item = items[index];
                         const itemTotal = item ? calculateItemTotal(item) : 0;
                         const isOverStock = item && item.quantity > (item.availableQty || 0);
-
                         return (
                           <TableRow key={field.id}>
                             <TableCell>
@@ -378,11 +467,19 @@ export default function NewStockIssuePage() {
                                 <SelectContent>
                                   {inventoryData?.data?.filter((inv) => inv.quantity > 0).map((inv) => (
                                     <SelectItem key={inv.productId} value={inv.productId}>
-                                      {inv.product?.code} - {inv.product?.name} ({formatNumber(inv.quantity)})
+                                      {inv.products?.code} - {inv.products?.name} ({formatNumber(inv.quantity)})
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
+                            </TableCell>
+                            <TableCell>
+                              <BatchSelectCell
+                                inventoryId={item?.inventoryId || ''}
+                                value={form.watch(`items.${index}.batchId`) || ''}
+                                onChange={(batchId) => form.setValue(`items.${index}.batchId`, batchId)}
+                                disabled={!item?.inventoryId}
+                              />
                             </TableCell>
                             <TableCell className="text-right">
                               {formatNumber(item?.availableQty || 0)}{' '}
@@ -391,7 +488,7 @@ export default function NewStockIssuePage() {
                             <TableCell>
                               <Input
                                 type="number"
-                                step="0.001"
+                                step="1"
                                 min="0"
                                 {...form.register(`items.${index}.quantity`, { valueAsNumber: true })}
                                 className={cn('w-24', isOverStock && 'border-red-500')}

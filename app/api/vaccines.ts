@@ -2,30 +2,20 @@ import { CalendarEvent } from "@/app/vaccines/components/vacccine_calendar"
 
 /**
  * Base API URL
- * VD: http://localhost:3001
  */
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
-
-/**
- * Map màu từ BE → FE (calendar)
- */
-const colorMap: Record<string, CalendarEvent["color"]> = {
-  "#3B82F6": "blue",
-  "#10B981": "green",
-  orange: "orange",
-  red: "pink",
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001" 
 
 /* =====================================================
  * TYPES
  * ===================================================== */
 
 export type VaccinationPen = {
-  penId?: string
+  scheduleId?: string | null 
+  templateId?: string        
+  penId?: string            
   penName: string
-  status: "pending" | "completed"
-  scheduleId?: string | null
+  status: string             
+  isReal: boolean            
 }
 
 export type VaccinationGroup = {
@@ -35,38 +25,31 @@ export type VaccinationGroup = {
   pens: VaccinationPen[]
 }
 
-export type VaccineSchedulePayload = {
-  date: string        // YYYY-MM-DD
-  time: string        // HH:mm
-  vaccineName: string
-  stage: number
-  color: string
-  penIds: string[]
-}
-
-export type Pen = {
-  id: string
+export type VaccineSuggestion = {
+  vaccineId: string
   name: string
-}
-
-export type Vaccine = {
-  id: string
-  name: string
+  daysOld: number
+  dosage: string
+  description: string;
+  color: string;
 }
 
 export type VaccineSampleItem = {
-  id: number
+  id: string
   name: string
   dose: string
-  age: string
+  age: string     
   note?: string
+  
+  vaccineId?: string 
+  stage?: number
+  daysOld?: number
 }
 
 /* =====================================================
- * FETCH CALENDAR (THEO THÁNG)
+ * 1. LỊCH TỔNG QUAN (CALENDAR)
  * GET /health/vaccination/calendar
  * ===================================================== */
-
 export async function fetchVaccinationCalendar(
   month: number,
   year: number
@@ -76,143 +59,123 @@ export async function fetchVaccinationCalendar(
       `${API_URL}/health/vaccination/calendar?month=${month}&year=${year}`,
       { cache: "no-store" }
     )
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch vaccination calendar")
-    }
+    if (!res.ok) throw new Error("Failed fetch calendar")
 
     const data: Record<string, any[]> = await res.json()
     const events: CalendarEvent[] = []
 
     Object.entries(data).forEach(([date, items]) => {
       items.forEach(item => {
+        let color: CalendarEvent["color"] = "blue"
+        if (item.status === 'completed') color = "green"
+        else if (item.type === 'forecast') color = "orange"
+        
         events.push({
           id: item.id,
           title: item.name,
-          date, // YYYY-MM-DD
-          color: colorMap[item.color] || "blue",
-        })
+          date: date, 
+          color: color,
+        } as any)
       })
     })
 
     return events
   } catch (error) {
-    console.error("fetchVaccinationCalendar error:", error)
+    console.error(error)
     return []
   }
 }
 
 /* =====================================================
- * FETCH DETAILS (SIDE PANEL – THEO NGÀY)
- * GET /health/vaccination/details?date=YYYY-MM-DD
+ * 2. CHI TIẾT NGÀY (SIDE PANEL)
+ * GET /health/vaccination/details
  * ===================================================== */
-
-export async function fetchVaccinationDetails(
-  date: string
-): Promise<VaccinationGroup[]> {
+export async function fetchVaccinationDetails(date: string): Promise<VaccinationGroup[]> {
   try {
-    const res = await fetch(
-      `${API_URL}/health/vaccination/details?date=${date}`,
-      { cache: "no-store" }
-    )
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch vaccination details")
-    }
-
+    const res = await fetch(`${API_URL}/health/vaccination/details?date=${date}`, { cache: "no-store" })
+    if (!res.ok) throw new Error("Failed fetch details")
     return await res.json()
   } catch (error) {
-    console.error("fetchVaccinationDetails error:", error)
+    console.error(error)
     return []
   }
 }
 
 /* =====================================================
- * CREATE SCHEDULE
- * POST /health/vaccination
+ * 3. ĐÁNH DẤU ĐÃ TIÊM (QUAN TRỌNG)
+ * PATCH /health/vaccination/complete
  * ===================================================== */
+export async function markVaccinated(items: any[]) {
+  const res = await fetch(`${API_URL}/health/vaccination/complete`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }), 
+  })
 
-export async function createVaccinationSchedule(
-  payload: VaccineSchedulePayload
-) {
-  const res = await fetch(`${API_URL}/health/vaccination`, {
+  if (!res.ok) throw new Error("Failed to mark completed")
+  return res.json()
+}
+
+/* =====================================================
+ * 4. TẠO LỊCH THỦ CÔNG
+ * POST /health/vaccination/manual
+ * ===================================================== */
+export async function createVaccinationSchedule(payload: any) {
+  const body = {
+    penIds: payload.penIds, 
+    scheduledDate: `${payload.date}T${payload.time}:00.000Z`, 
+    vaccineName: payload.vaccineName,
+    stage: payload.stage,
+    color: payload.color
+  }
+
+  const res = await fetch(`${API_URL}/health/vaccination/manual`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   })
 
-  if (!res.ok) {
-    throw new Error("Create vaccination schedule failed")
-  }
-
+  if (!res.ok) throw new Error("Failed create schedule")
   return res.json()
 }
 
 /* =====================================================
- * UPDATE SCHEDULE
- * PUT /health/vaccination/:id
+ * 5. MẪU TIÊM CHỦNG (TEMPLATES)
+ * GET /health/templates
  * ===================================================== */
-
-export async function updateVaccinationSchedule(
-  id: string,
-  payload: VaccineSchedulePayload
-) {
-  const res = await fetch(`${API_URL}/health/vaccination/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-
-  if (!res.ok) {
-    throw new Error("Update vaccination schedule failed")
-  }
-
-  return res.json()
+export async function fetchVaccineSamples(): Promise<VaccineSampleItem[]> {
+  const res = await fetch(`${API_URL}/health/templates`, { cache: "no-store" })
+  if (!res.ok) return []
+  
+  const data = await res.json()
+  return data.map((t: any) => ({
+    id: t.id,
+    name: t.vaccineName,
+    dose: t.dosage,
+    age: t.daysOldText,
+    note: t.notes,
+    
+    vaccineId: t.vaccineId,
+    stage: t.stage,
+    daysOld: t.daysOld
+  }))
 }
 
 /* =====================================================
- * DELETE SCHEDULE
- * DELETE /health/vaccination/:id
+ * 6. GỢI Ý TIÊM (SUGGESTIONS)
+ * GET /health/templates/suggestions
  * ===================================================== */
-
-export async function deleteVaccinationSchedule(id: string) {
-  const res = await fetch(
-    `${API_URL}/health/vaccination/${id}`,
-    { method: "DELETE" }
-  )
-
-  if (!res.ok) {
-    throw new Error("Delete vaccination schedule failed")
-  }
-}
-
-/* =====================================================
- * MARK COMPLETED
- * PATCH /health/vaccination/:id/complete
- * ===================================================== */
-
-export async function completeVaccination(id: string) {
-  const res = await fetch(
-    `${API_URL}/health/vaccination/${id}/complete`,
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-    }
-  )
-
-  if (!res.ok) {
-    throw new Error("Complete vaccination failed")
-  }
-
-  return res.json()
+export async function fetchVaccineSuggestions(): Promise<VaccineSuggestion[]> {
+  const res = await fetch(`${API_URL}/health/templates/suggestions`, { cache: "no-store" })
+  if (!res.ok) return []
+  return await res.json()
 }
 
 /* =====================================================
  * FETCH PENS (CHUỒNG)
  * GET /health/pens
  * ===================================================== */
-
-export async function fetchAvailablePens(): Promise<Pen[]> {
+export async function fetchAvailablePens(): Promise<{id: string, name: string}[]> {
   try {
     const res = await fetch(`${API_URL}/health/pens`, {
       cache: "no-store",
@@ -233,8 +196,7 @@ export async function fetchAvailablePens(): Promise<Pen[]> {
  * FETCH VACCINES (HỆ THỐNG)
  * GET /health/vaccines
  * ===================================================== */
-
-export async function fetchVaccines(): Promise<Vaccine[]> {
+export async function fetchVaccines(): Promise<{id: string, name: string}[]> {
   try {
     const res = await fetch(`${API_URL}/health/vaccines`, {
       cache: "no-store",
@@ -251,19 +213,17 @@ export async function fetchVaccines(): Promise<Vaccine[]> {
   }
 }
 
-export async function fetchVaccineSamples(): Promise<VaccineSampleItem[]> {
-  try {
-    const res = await fetch(`${API_URL}/health/vaccine-samples`, {
-      cache: "no-store",
-    })
 
-    if (!res.ok) {
-      throw new Error("Fetch vaccine samples failed")
-    }
+export async function saveVaccinationTemplates(data: any[]) {
+  const res = await fetch(`${API_URL}/health/templates`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  })
+  if (!res.ok) throw new Error("Save failed")
+  return res.json()
+}
 
-    return await res.json()
-  } catch (error) {
-    console.error("fetchVaccineSamples error:", error)
-    return []
-  }
+export async function deleteTemplateItem(id: string) {
+  await fetch(`${API_URL}/health/templates/item/${id}`, { method: "DELETE" })
 }

@@ -132,10 +132,10 @@ export default function TransactionDetailPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <Printer className="mr-2 h-4 w-4" />
             In phiếu
-          </Button>
+          </Button> */}
           <Link href={`/finance/transactions/${id}/edit`}>
             <Button variant="outline">
               <Edit className="mr-2 h-4 w-4" />

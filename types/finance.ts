@@ -181,6 +181,7 @@ export interface CreateCashAccountDto {
   accountNumber?: string;
   bankName?: string;
   openingBalance?: number;
+  currentBalance?: number;
   description?: string;
   isDefault?: boolean;
 }

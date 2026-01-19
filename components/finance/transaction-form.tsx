@@ -7,7 +7,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { CalendarIcon, Save, ArrowLeft, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
@@ -28,7 +28,7 @@ import { useSuppliers } from '@/hooks/use-inventory';
 import { formatCurrency, cn } from '@/lib/utils';
 import { TransactionType, ContactType } from '@/types/finance';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Form schema
 const transactionFormSchema = z.object({
@@ -54,11 +54,11 @@ type TransactionFormValues = z.infer<typeof transactionFormSchema>;
 export default function TransactionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathName = usePathname();
 
   const initialType = searchParams.get('type') === 'income' 
     ? TransactionType.INCOME 
     : TransactionType.EXPENSE;
-
   const { data: accounts } = useCashAccounts();
   const { data: incomeCategories } = useTransactionCategories( TransactionType.INCOME);
   const { data: expenseCategories } = useTransactionCategories( TransactionType.EXPENSE);
@@ -130,6 +130,18 @@ export default function TransactionForm() {
     }
   };
 
+  useEffect(() => {
+        if (accounts && !form.getValues('cashAccountId')) {
+          const defaultAccount = accounts.find((ac) => ac.isDefault);
+          if (defaultAccount) {
+            form.reset({
+          ...form.getValues(),
+          cashAccountId: defaultAccount.id,
+        });
+          }
+        } 
+      }, [accounts, form]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -174,11 +186,13 @@ export default function TransactionForm() {
                   onValueChange={(value) => form.setValue('transactionType', value as TransactionType)}
                 >
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value={TransactionType.INCOME} className="gap-2">
+                    <TabsTrigger value={TransactionType.INCOME} className="gap-2"
+                    onClick={() => router.push(`${pathName}?type=${TransactionType.INCOME}`)}>
                       <ArrowUpCircle className="h-4 w-4" />
                       Phiếu thu
                     </TabsTrigger>
-                    <TabsTrigger value={TransactionType.EXPENSE} className="gap-2">
+                    <TabsTrigger value={TransactionType.EXPENSE} className="gap-2"
+                    onClick={() => router.push(`${pathName}?type=${TransactionType.EXPENSE}`)}>
                       <ArrowDownCircle className="h-4 w-4" />
                       Phiếu chi
                     </TabsTrigger>
@@ -425,7 +439,7 @@ export default function TransactionForm() {
           </div>
 
           <div className="space-y-6">
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Tùy chọn</CardTitle>
               </CardHeader>
@@ -446,7 +460,7 @@ export default function TransactionForm() {
                   )}
                 />
               </CardContent>
-            </Card>
+            </Card> */}
 
             <Card>
               <CardHeader>

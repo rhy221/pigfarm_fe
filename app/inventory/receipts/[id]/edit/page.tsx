@@ -441,11 +441,12 @@ useEffect(() => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[250px]">Sản phẩm</TableHead>
-                        <TableHead className="w-[100px]">Số lượng</TableHead>
-                        <TableHead className="w-[120px]">Đơn giá</TableHead>
-                        <TableHead className="w-[100px]">CK (%)</TableHead>
-                        <TableHead className="w-[120px] text-right">Thành tiền</TableHead>
+                        <TableHead className="w-[200px]">Sản phẩm</TableHead>
+                        <TableHead className="w-[80px]">Số lượng</TableHead>
+                        <TableHead className="w-[100px]">Đơn giá</TableHead>
+                        <TableHead className="w-[70px]">CK (%)</TableHead>
+                        <TableHead className="w-[120px]">Hạn sử dụng</TableHead>
+                        <TableHead className="w-[100px] text-right">Thành tiền</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -502,6 +503,36 @@ useEffect(() => {
                                 {...form.register(`items.${index}.discountPercent`, { valueAsNumber: true })}
                                 className="w-16"
                               />
+                            </TableCell>
+                            <TableCell>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className={cn(
+                                      'w-[120px] pl-3 text-left font-normal text-xs',
+                                      !form.watch(`items.${index}.expiryDate`) && 'text-muted-foreground'
+                                    )}
+                                  >
+                                    {form.watch(`items.${index}.expiryDate`) ? (
+                                      format(form.watch(`items.${index}.expiryDate`)!, 'dd/MM/yyyy')
+                                    ) : (
+                                      <span>Chọn ngày</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-3 w-3 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={form.watch(`items.${index}.expiryDate`) || undefined}
+                                    onSelect={(date) => form.setValue(`items.${index}.expiryDate`, date)}
+                                    disabled={(date) => date < new Date()}
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
                             </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatCurrency(itemTotal)}

@@ -162,10 +162,10 @@ export default function StockReceiptDetailPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <Printer className="mr-2 h-4 w-4" />
             In phiếu
-          </Button>
+          </Button> */}
           {receipt.status === 'draft' && (
             <>
               <Link href={`/inventory/receipts/${id}/edit`}>
@@ -269,6 +269,7 @@ export default function StockReceiptDetailPage({ params }: PageProps) {
                       <TableHead className="text-right">Số lượng</TableHead>
                       <TableHead className="text-right">Đơn giá</TableHead>
                       <TableHead className="text-right">Chiết khấu</TableHead>
+                      <TableHead>Hạn sử dụng</TableHead>
                       <TableHead className="text-right">Thành tiền</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -290,6 +291,11 @@ export default function StockReceiptDetailPage({ params }: PageProps) {
                         <TableCell className="text-right">
                           {item.discountPercent ? `${item.discountPercent}%` : '-'}
                         </TableCell>
+                        <TableCell>
+                          {item.expiryDate
+                            ? format(new Date(item.expiryDate), 'dd/MM/yyyy', { locale: vi })
+                            : '-'}
+                        </TableCell>
                         <TableCell className="text-right font-medium">
                           {formatCurrency(item.totalAmount)}
                         </TableCell>
@@ -298,7 +304,7 @@ export default function StockReceiptDetailPage({ params }: PageProps) {
                   </TableBody>
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={4}>Tổng tiền hàng</TableCell>
+                      <TableCell colSpan={5}>Tổng tiền hàng</TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(receipt.totalAmount)}
                       </TableCell>

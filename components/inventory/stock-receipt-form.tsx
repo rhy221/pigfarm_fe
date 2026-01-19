@@ -110,7 +110,10 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
     if (warehouses && !form.getValues('warehouseId')) {
       const defaultWarehouse = warehouses.find((wh) => wh.isDefault);
       if (defaultWarehouse) {
-        form.setValue('warehouseId', defaultWarehouse.id);
+        form.reset({
+        ...form.getValues(),
+        warehouseId: defaultWarehouse.id,
+      });
       }
     }
   }, [warehouses, form]);

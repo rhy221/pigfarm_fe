@@ -190,11 +190,13 @@ export interface StockIssueItem {
   id: string;
   issueId: string;
   productId: string;
+  batchId?: string;
   quantity: number;
   unitCost: number;
   totalAmount: number;
   notes?: string;
   product?: Product;
+  inventoryBatches?: InventoryBatch;
 }
 
 export interface StockIssue {
@@ -287,6 +289,7 @@ export interface CreateStockReceiptDto {
 export interface StockIssueItemInput {
   productId: string;
   quantity: number;
+  batchId?: string;
   notes?: string;
 }
 
@@ -478,8 +481,8 @@ export interface InventoryHistory {
   createdBy?: string;
   createdAt: string;
   // Relations
-  warehouse?: Warehouse;
-  product?: Product;
+  warehouses?: Warehouse;
+  products?: Product;
   user?: { fullName: string };
 }
 

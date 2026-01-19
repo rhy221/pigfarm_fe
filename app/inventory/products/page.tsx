@@ -202,10 +202,10 @@ export default function ProductsPage() {
           <p className="text-muted-foreground">Quản lý danh mục sản phẩm, vật tư trong kho</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <FileDown className="mr-2 h-4 w-4" />
             Xuất Excel
-          </Button>
+          </Button> */}
           <Button onClick={openCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
             Thêm sản phẩm

@@ -164,10 +164,10 @@ export default function StockIssueDetailPage({ params }: PageProps) {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <Printer className="mr-2 h-4 w-4" />
             In phiếu
-          </Button>
+          </Button> */}
           {issue.status === 'draft' && (
             <>
               <Link href={`/inventory/issues/${id}/edit`}>
@@ -270,6 +270,7 @@ export default function StockIssueDetailPage({ params }: PageProps) {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Sản phẩm</TableHead>
+                      <TableHead>Lô hàng</TableHead>
                       <TableHead className="text-right">Số lượng</TableHead>
                       <TableHead className="text-right">Đơn giá (vốn)</TableHead>
                       <TableHead className="text-right">Thành tiền</TableHead>
@@ -283,6 +284,20 @@ export default function StockIssueDetailPage({ params }: PageProps) {
                             <p className="font-medium">{item.products?.name}</p>
                             <p className="text-sm text-muted-foreground">{item.products?.code}</p>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {item.inventoryBatches?.batchNumber || item.batchId ? (
+                            <div>
+                              <p className="font-medium">{item.inventoryBatches?.batchNumber || 'Lô mặc định'}</p>
+                              {item.inventoryBatches?.expiryDate && (
+                                <p className="text-xs text-muted-foreground">
+                                  HSD: {format(new Date(item.inventoryBatches.expiryDate), 'dd/MM/yyyy', { locale: vi })}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            '-'
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           {formatNumber(item.quantity)} {item.products?.units?.abbreviation}
@@ -298,7 +313,7 @@ export default function StockIssueDetailPage({ params }: PageProps) {
                   </TableBody>
                   <TableFooter>
                     <TableRow>
-                      <TableCell colSpan={3}>Tổng giá trị xuất</TableCell>
+                      <TableCell colSpan={4}>Tổng giá trị xuất</TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(totalAmount)}
                       </TableCell>

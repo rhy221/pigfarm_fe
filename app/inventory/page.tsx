@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Package,
   Warehouse,
@@ -77,6 +77,7 @@ export default function InventoryPage() {
   const [selectedInventory, setSelectedInventory] = useState<Inventory | null>(null);
   const [batchDetailOpen, setBatchDetailOpen] = useState(false);
 
+  const router = useRouter();
   const { data: summary, isLoading: summaryLoading } = useInventorySummary();
   const { data: expirySummary } = useExpirySummary();
   const { data: warehouses } = useWarehouses();
@@ -120,16 +121,16 @@ export default function InventoryPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <FileDown className="mr-2 h-4 w-4" />
             Xuất Excel
-          </Button>
-          <Link href="/inventory/receipts/new">
-            <Button>
+          </Button> */}
+          {/* <Link href="/inventory/receipts/new"> */}
+            <Button onClick={() => router.push("/inventory/receipts/new")}>
               <Plus className="mr-2 h-4 w-4" />
               Nhập kho
             </Button>
-          </Link>
+          {/* </Link> */}
         </div>
       </div>
 
@@ -365,15 +366,15 @@ export default function InventoryPage() {
                               <Layers className="mr-2 h-4 w-4" />
                               Xem lô hàng
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => router.push(`/inventory/history?product=${item.productId}`)}>
                               <Eye className="mr-2 h-4 w-4" />
                               Lịch sử giao dịch
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            {/* <DropdownMenuItem>
                               <Edit className="mr-2 h-4 w-4" />
                               Chỉnh sửa
-                            </DropdownMenuItem>
+                            </DropdownMenuItem> */}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

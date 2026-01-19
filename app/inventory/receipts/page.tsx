@@ -171,10 +171,10 @@ export default function StockReceiptsPage() {
           <p className="text-muted-foreground">Quản lý các phiếu nhập hàng vào kho</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <FileDown className="mr-2 h-4 w-4" />
             Xuất Excel
-          </Button>
+          </Button> */}
           <Link href="/inventory/receipts/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" />

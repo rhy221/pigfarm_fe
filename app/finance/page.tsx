@@ -105,10 +105,10 @@ export default function FinancePage() {
           <p className="text-muted-foreground">Theo dõi thu chi và sổ quỹ của trang trại</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <FileDown className="mr-2 h-4 w-4" />
             Xuất báo cáo
-          </Button>
+          </Button> */}
           <Link href="/finance/transactions/new?type=expense">
             <Button variant="outline">
               <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500" />

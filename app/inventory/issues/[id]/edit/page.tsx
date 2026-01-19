@@ -29,6 +29,7 @@ import {
   useWarehouses,
   useInventory,
   useUpdateStockReceipt,
+  useInventoryBatches,
 } from '@/hooks/use-inventory';
 import { formatCurrency, formatNumber, cn } from '@/lib/utils';
 import { IssueType } from '@/types/inventory';
@@ -36,6 +37,69 @@ import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
 import { api } from '@/lib/api-client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+// Component để chọn batch cho từng item
+function BatchSelectCell({
+  inventoryId,
+  value,
+  onChange,
+  disabled,
+}: {
+  inventoryId: string;
+  value: string;
+  onChange: (batchId: string) => void;
+  disabled?: boolean;
+}) {
+  const { data: batches, isLoading } = useInventoryBatches(inventoryId, { includeAll: false });
+
+  if (disabled || !inventoryId) {
+    return (
+      <Select disabled>
+        <SelectTrigger className="w-[140px]">
+          <SelectValue placeholder="Chọn SP trước" />
+        </SelectTrigger>
+      </Select>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Select disabled>
+        <SelectTrigger className="w-[140px]">
+          <SelectValue placeholder="Đang tải..." />
+        </SelectTrigger>
+      </Select>
+    );
+  }
+
+  const activeBatches = batches?.filter((b) => b.status === 'active' && b.quantity > 0) || [];
+  // console.log(value ? value : "undefine");
+  // console.log(activeBatches);
+  return (
+    <Select value={value === "" || !value ? "none" : value}
+  onValueChange={(val) => {
+    // Khi người dùng chọn "none", ta trả về chuỗi rỗng cho Form
+    onChange(val === "none" ? "" : val);
+  }}>
+      <SelectTrigger className="w-[140px]">
+        <SelectValue placeholder="Chọn lô" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">-- Không chọn --</SelectItem>
+        {activeBatches.map((batch) => (
+          <SelectItem key={batch.id} value={batch.id}>
+            {batch.batchNumber || 'Lô mặc định'} ({formatNumber(batch.quantity)})
+            {batch.expiryDate && (
+              <span className="text-xs text-muted-foreground ml-1">
+                - HSD: {format(new Date(batch.expiryDate), 'dd/MM/yy')}
+              </span>
+            )}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 const stockIssueFormSchema = z.object({
   warehouseId: z.string().min(1, 'Vui lòng chọn kho'),
@@ -48,9 +112,11 @@ const stockIssueFormSchema = z.object({
     productId: z.string().min(1, 'Vui lòng chọn sản phẩm'),
     productName: z.string().optional(),
     unitName: z.string().optional(),
+    inventoryId: z.string().optional(),
     availableQty: z.number().nullable().optional(),
     unitCost: z.number().nullable().optional(),
     quantity: z.number().min(0.001, 'Số lượng phải lớn hơn 0'),
+    batchId: z.string().optional(),
     notes: z.string().optional(),
   })).min(1, 'Vui lòng thêm ít nhất 1 sản phẩm'),
 });
@@ -111,26 +177,32 @@ export default function EditStockIssuePage({ params }: PageProps) {
 
   // Load issue data into form
   useEffect(() => {
-    if (issue) {
+    if (issue && inventoryData?.data) {
       form.reset({
         warehouseId: issue.warehouseId,
         issueDate: new Date(issue.issueDate),
         issueType: issue.issueType as IssueType,
         purpose: issue.purpose || '',
         notes: issue.notes || '',
-        items: issue.stockIssueItems?.map((item: any) => ({
-          id: item.id,
-          productId: item.productId,
-          productName: item.products?.name || '',
-          unitName: item.products?.units?.abbreviation || '',
-          availableQty: Number(item.quantity), // Current qty in this issue
-          unitCost: Number(item.unitCost) || 0,
-          quantity: Number(item.quantity),
-          notes: item.notes || '',
-        })) || [],
+        items: issue.stockIssueItems?.map((item: any) => {
+          // Find inventoryId from inventoryData
+          const inv = inventoryData.data?.find((i) => i.productId === item.productId);
+          return {
+            id: item.id,
+            productId: item.productId,
+            productName: item.products?.name || '',
+            unitName: item.products?.units?.abbreviation || '',
+            inventoryId: inv?.id || '',
+            availableQty: Number(item.quantity), // Current qty in this issue
+            unitCost: Number(item.unitCost) || 0,
+            quantity: Number(item.quantity),
+            batchId: item.batchId || '',
+            notes: item.notes || '',
+          };
+        }) || [],
       });
     }
-  }, [issue, form]);
+  }, [issue, inventoryData, form]);
 
   const items = form.watch('items');
 
@@ -145,9 +217,11 @@ export default function EditStockIssuePage({ params }: PageProps) {
       productId: '',
       productName: '',
       unitName: '',
+      inventoryId: '',
       availableQty: 0,
       unitCost: 0,
       quantity: 1,
+      batchId: '',
       notes: '',
     });
   };
@@ -158,8 +232,10 @@ export default function EditStockIssuePage({ params }: PageProps) {
       form.setValue(`items.${index}.productId`, productId);
       form.setValue(`items.${index}.productName`, inventoryItem.products?.name || '');
       form.setValue(`items.${index}.unitName`, inventoryItem.products?.units?.abbreviation || '');
+      form.setValue(`items.${index}.inventoryId`, inventoryItem.id);
       form.setValue(`items.${index}.availableQty`, Number(inventoryItem.quantity) ?? 0);
       form.setValue(`items.${index}.unitCost`, Number(inventoryItem.avgCost) ?? 0);
+      form.setValue(`items.${index}.batchId`, ''); // Reset batch when product changes
     }
   };
 
@@ -187,6 +263,7 @@ export default function EditStockIssuePage({ params }: PageProps) {
             id: item.id,
             productId: item.productId,
             quantity: item.quantity,
+            batchId: item.batchId || undefined,
             notes: item.notes,
           })),
         },
@@ -410,11 +487,12 @@ export default function EditStockIssuePage({ params }: PageProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[280px]">Sản phẩm</TableHead>
-                        <TableHead className="w-[100px] text-right">Tồn kho</TableHead>
-                        <TableHead className="w-[100px]">Số lượng</TableHead>
-                        <TableHead className="w-[120px] text-right">Đơn giá</TableHead>
-                        <TableHead className="w-[120px] text-right">Thành tiền</TableHead>
+                        <TableHead className="w-[200px]">Sản phẩm</TableHead>
+                        <TableHead className="w-[150px]">Lô hàng</TableHead>
+                        <TableHead className="w-[80px] text-right">Tồn kho</TableHead>
+                        <TableHead className="w-[80px]">Số lượng</TableHead>
+                        <TableHead className="w-[100px] text-right">Đơn giá</TableHead>
+                        <TableHead className="w-[100px] text-right">Thành tiền</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -442,8 +520,16 @@ export default function EditStockIssuePage({ params }: PageProps) {
                                 </SelectContent>
                               </Select>
                             </TableCell>
+                            <TableCell>
+                              <BatchSelectCell
+                                inventoryId={item?.inventoryId || ''}
+                                value={form.watch(`items.${index}.batchId`) || ''}
+                                onChange={(batchId) => form.setValue(`items.${index}.batchId`, batchId)}
+                                disabled={!item?.inventoryId}
+                              />
+                            </TableCell>
                             <TableCell className="text-right">
-                              {formatNumber(item?.availableQty || 0)}{' '}
+                              {formatNumber(form.watch(`items.${index}.batchId`) ? issue?.stockIssueItems?.[index]?.inventoryBatches?.quantity || 0 : item?.availableQty || 0)}{' '}
                               <span className="text-xs text-muted-foreground">{item?.unitName}</span>
                             </TableCell>
                             <TableCell>

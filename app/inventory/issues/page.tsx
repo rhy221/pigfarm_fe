@@ -67,6 +67,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
+import { useRouter } from 'next/navigation';
 
 
 // const  = 'demo-farm-id';
@@ -89,6 +90,7 @@ export default function StockIssuesPage() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
+  const router = useRouter();
   const { data: warehouses } = useWarehouses();
   const { data: issues, isLoading } = useStockIssues({
     // farmId: ,
@@ -161,16 +163,16 @@ export default function StockIssuesPage() {
           <p className="text-muted-foreground">Quản lý các phiếu xuất hàng từ kho</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/* <Button variant="outline">
             <FileDown className="mr-2 h-4 w-4" />
             Xuất Excel
-          </Button>
-          <Link href="/inventory/issues/new">
-            <Button>
+          </Button> */}
+          {/* <Link href="/inventory/issues/new"> */}
+            <Button onClick={() => router.push("/inventory/issues/new")}>
               <Plus className="mr-2 h-4 w-4" />
               Tạo phiếu xuất
             </Button>
-          </Link>
+          {/* </Link> */}
         </div>
       </div>
 
@@ -217,7 +219,9 @@ export default function StockIssuesPage() {
               </Popover>
             </div>
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
-              <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
+              <Select
+              // key={warehouses ? 'loaded' : 'loading'} 
+               value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
                 <SelectTrigger className="w-full md:w-[180px]">
                   <SelectValue placeholder="Kho" />
                 </SelectTrigger>
@@ -346,6 +350,14 @@ export default function StockIssuesPage() {
                             </Link>
                             {issue.status === 'draft' && (
                               <>
+                                <DropdownMenuSeparator />
+                                 {/* <Link href={`/inventory/receipts/${receipt.id}/edit`}> */}
+                                  <DropdownMenuItem
+                                  onClick={() => router.push(`/inventory/issues/${issue.id}/edit`)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Chỉnh sửa
+                                  </DropdownMenuItem>
+                                {/* </Link> */}
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => setConfirmingId(issue.id)}

@@ -1,170 +1,276 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { X, Calendar as CalendarIcon, Clock } from "lucide-react"
+import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-type ModalProps = {
-  isOpen: boolean;
-  onClose: () => void;
-};
+import {
+  fetchAvailablePens,
+  fetchVaccines,
+  createVaccinationSchedule,
+  type Pen,
+  type Vaccine,
+} from "@/app/api/vaccines"
 
-export default function AddVaccineModal({ isOpen, onClose }: ModalProps) {
-  // Logic State
+type ModalProps = {
+  isOpen: boolean
+  onClose: () => void
+  onSuccess?: () => void
+}
+
+export default function AddVaccineModal({
+  isOpen,
+  onClose,
+  onSuccess,
+}: ModalProps) {
+  /* ================= STATE ================= */
+
+  const [pens, setPens] = useState<Pen[]>([])
+  const [vaccines, setVaccines] = useState<Vaccine[]>([])
+
+  const [selectedPens, setSelectedPens] = useState<Pen[]>([])
   const [inputType, setInputType] = useState<"system" | "manual">("system")
+
+  const [date, setDate] = useState("")
+  const [time, setTime] = useState("")
+  const [vaccineName, setVaccineName] = useState("")
+  const [stage, setStage] = useState(1)
   const [selectedColor, setSelectedColor] = useState("#52d195")
-  
+
+  const [loading, setLoading] = useState(false)
+
   const colors = ["#52d195", "#e68d5c", "#f3ba5f", "#e13e51", "#2d2e2e", "#97c9c9"]
 
-  // Khóa cuộn trang khi mở modal
+  /* ================= EFFECT ================= */
+
   useEffect(() => {
-    if (isOpen) document.body.style.overflow = "hidden"
-    else document.body.style.overflow = "unset"
-    return () => { document.body.style.overflow = "unset" }
+    if (!isOpen) return
+
+    document.body.style.overflow = "hidden"
+
+    fetchAvailablePens().then(setPens)
+    fetchVaccines().then(setVaccines)
+
+    return () => {
+      document.body.style.overflow = "unset"
+    }
   }, [isOpen])
 
   if (!isOpen) return null
 
+  /* ================= HELPERS ================= */
+
+  const resetForm = () => {
+    setSelectedPens([])
+    setInputType("system")
+    setDate("")
+    setTime("")
+    setVaccineName("")
+    setStage(1)
+    setSelectedColor("#52d195")
+  }
+
+  const addPen = (pen: Pen) => {
+    if (selectedPens.some(p => p.id === pen.id)) return
+    setSelectedPens(prev => [...prev, pen])
+  }
+
+  const removePen = (id: string) => {
+    setSelectedPens(prev => prev.filter(p => p.id !== id))
+  }
+
+  /* ================= SUBMIT ================= */
+
+  const handleSubmit = async () => {
+    if (!date || !time || !vaccineName || selectedPens.length === 0) {
+      alert("Vui lòng nhập đầy đủ thông tin")
+      return
+    }
+
+    try {
+      setLoading(true)
+
+      await createVaccinationSchedule({
+        date,
+        time,
+        vaccineName,
+        stage,
+        color: selectedColor,
+        penIds: selectedPens.map(p => p.id),
+      })
+
+      resetForm()
+      onSuccess?.()
+      onClose()
+    } catch (error) {
+      alert("Tạo lịch tiêm thất bại")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /* ================= UI ================= */
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Lớp nền tối */}
-      <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-[2px] animate-in fade-in duration-300" 
-        onClick={onClose} 
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-[2px]"
+        onClick={() => {
+          resetForm()
+          onClose()
+        }}
       />
 
-      {/* Khung Modal */}
-      <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        
+      <div className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-bold text-[#1e293b]">Thêm Lịch Tiêm</h2>
-          <button onClick={onClose} className="p-1 hover:bg-slate-100 rounded-full transition-colors">
+          <h2 className="text-lg font-bold">Thêm Lịch Tiêm</h2>
+          <button
+            onClick={() => {
+              resetForm()
+              onClose()
+            }}
+          >
             <X className="w-5 h-5 text-slate-400" />
           </button>
         </div>
 
-        {/* Form Body */}
+        {/* Body */}
         <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
-          
+
           {/* Chọn chuồng */}
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">Chọn chuồng áp dụng</label>
-            <div className="border border-slate-200 rounded-lg p-2 min-h-[48px] bg-slate-50/50 flex flex-wrap gap-2 focus-within:ring-2 ring-emerald-500/10 transition-all">
-               <span className="bg-white border border-slate-200 px-2 py-1 rounded text-xs font-medium flex items-center gap-1.5 shadow-sm">
-                 Chuồng A1 <X className="w-3 h-3 cursor-pointer text-slate-400 hover:text-red-500" />
-               </span>
-               <span className="bg-white border border-slate-200 px-2 py-1 rounded text-xs font-medium flex items-center gap-1.5 shadow-sm">
-                 Chuồng C2 <X className="w-3 h-3 cursor-pointer text-slate-400 hover:text-red-500" />
-               </span>
-               <input placeholder="+ Tìm chuồng..." className="bg-transparent outline-none text-sm ml-1 flex-1 min-w-[100px]" />
+            <label className="text-sm font-bold">Chuồng áp dụng</label>
+
+            <div className="flex flex-wrap gap-2">
+              {selectedPens.map(pen => (
+                <span
+                  key={pen.id}
+                  className="bg-slate-100 px-2 py-1 rounded text-xs flex items-center gap-1"
+                >
+                  {pen.name}
+                  <X
+                    className="w-3 h-3 cursor-pointer"
+                    onClick={() => removePen(pen.id)}
+                  />
+                </span>
+              ))}
             </div>
+
+            <select
+              className="w-full border rounded p-2 text-sm"
+              defaultValue=""
+              onChange={e => {
+                const pen = pens.find(p => p.id === e.target.value)
+                if (pen) {
+                  addPen(pen)
+                  e.currentTarget.value = ""
+                }
+              }}
+            >
+              <option value="">+ Thêm chuồng</option>
+              {pens.map(pen => (
+                <option key={pen.id} value={pen.id}>
+                  {pen.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Ngày & Giờ */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Ngày tiêm</label>
-              <div className="relative">
-                <input type="date" className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 text-sm outline-none focus:bg-white transition-colors" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Giờ</label>
-              <input type="time" className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 text-sm outline-none focus:bg-white transition-colors" />
-            </div>
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="border rounded p-2"
+            />
+            <input
+              type="time"
+              value={time}
+              onChange={e => setTime(e.target.value)}
+              className="border rounded p-2"
+            />
           </div>
 
-          {/* Thông tin vắc xin */}
+          {/* Vaccine */}
           <div className="space-y-3">
-            <label className="text-sm font-bold text-slate-700">Thông tin vắc xin</label>
-            <div className="flex border border-slate-200 rounded-lg overflow-hidden p-1 bg-slate-100/50">
-              <button 
+            <div className="flex gap-2">
+              <Button
+                variant={inputType === "system" ? "default" : "ghost"}
                 onClick={() => setInputType("system")}
-                className={`flex-1 py-2 text-sm font-bold transition-all rounded-md ${
-                  inputType === "system" ? "bg-white shadow-sm text-[#53A88B] border border-slate-100" : "text-slate-500"
-                }`}
               >
-                Chọn từ hệ thống
-              </button>
-              <button 
+                Hệ thống
+              </Button>
+              <Button
+                variant={inputType === "manual" ? "default" : "ghost"}
                 onClick={() => setInputType("manual")}
-                className={`flex-1 py-2 text-sm font-bold transition-all rounded-md ${
-                  inputType === "manual" ? "bg-white shadow-sm text-[#53A88B] border border-slate-100" : "text-slate-500"
-                }`}
               >
-                Nhập thủ công
-              </button>
+                Thủ công
+              </Button>
             </div>
 
             {inputType === "system" ? (
-              <select className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 text-sm outline-none cursor-pointer focus:bg-white">
-                <option>-- Chọn loại vắc xin có sẵn --</option>
-                <option>Vaccine Dịch tả lợn</option>
-                <option>Vaccine Tai xanh (PRRS)</option>
-                <option>Vaccine Lở mồm long móng</option>
+              <select
+                className="w-full border rounded p-2"
+                value={vaccineName}
+                onChange={e => setVaccineName(e.target.value)}
+              >
+                <option value="">-- Chọn vaccine --</option>
+                {vaccines.map(v => (
+                  <option key={v.id} value={v.name}>
+                    {v.name}
+                  </option>
+                ))}
               </select>
             ) : (
-              <input 
-                type="text" 
-                placeholder="Nhập tên vắc xin..." 
-                className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 text-sm outline-none focus:bg-white"
+              <input
+                placeholder="Nhập tên vaccine"
+                className="w-full border rounded p-2"
+                value={vaccineName}
+                onChange={e => setVaccineName(e.target.value)}
               />
             )}
           </div>
 
           {/* Số mũi */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">Số mũi</label>
-            <input type="number" defaultValue={1} className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50 text-sm outline-none focus:bg-white" />
-          </div>
+          <input
+            type="number"
+            min={1}
+            value={stage}
+            onChange={e => setStage(Number(e.target.value))}
+            className="w-full border rounded p-2"
+          />
 
-          {/* Chọn màu */}
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700">Đánh dấu màu</label>
-            <div className="flex gap-3 pt-1">
-              {colors.map((color) => (
-                <button
-                  key={color}
-                  onClick={() => setSelectedColor(color)}
-                  className={`w-10 h-10 rounded-full transition-all duration-200 relative ${
-                    selectedColor === color ? "ring-4 ring-offset-2 scale-110" : "hover:scale-105"
-                  }`}
-                  style={{ 
-                    backgroundColor: color,
-                    // @ts-ignore
-                    "--tw-ring-color": `${color}40` // ring màu nhạt
-                  }}
-                >
-                  {selectedColor === color && (
-                    <div className="absolute inset-0 border-4 border-white/30 rounded-full" />
-                  )}
-                </button>
-              ))}
-            </div>
+          {/* Màu */}
+          <div className="flex gap-3">
+            {colors.map(c => (
+              <button
+                key={c}
+                type="button"
+                className={`w-8 h-8 rounded-full ${
+                  selectedColor === c ? "ring-4 ring-offset-2" : ""
+                }`}
+                style={{ backgroundColor: c }}
+                onClick={() => setSelectedColor(c)}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Footer: Sử dụng component Button mới */}
-        <div className="p-4 bg-slate-50 flex justify-end items-center gap-3 border-t">
-          {/* Nút Hủy bỏ sử dụng variant ghost hoặc link */}
-          <Button 
-            variant="ghost" 
-            onClick={onClose}
-            className="text-sm font-bold text-slate-500 hover:text-slate-700 hover:bg-transparent"
-          >
-            Huỷ bỏ
-          </Button>
-
-          {/* Nút Xác nhận sử dụng variant default kết hợp màu custom */}
-          <Button 
+        {/* Footer */}
+        <div className="p-4 flex justify-end gap-3 border-t">
+          <Button
+            variant="ghost"
             onClick={() => {
-              console.log("Xác nhận:", { inputType, selectedColor });
-              onClose();
+              resetForm()
+              onClose()
             }}
-            
           >
-            Xác nhận
+            Huỷ
+          </Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "Đang lưu..." : "Xác nhận"}
           </Button>
         </div>
       </div>

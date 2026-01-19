@@ -1,26 +1,24 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Trash2, Plus } from "lucide-react"
-
-type VaccineSampleItem = {
-  id: number
-  name: string
-  dose: string
-  age: string
-  note?: string
-}
-
-const mockSamples: VaccineSampleItem[] = [
-  { id: 1, name: "Suyễn heo - Mũi 1", dose: "1ml/con", age: "15 ngày tuổi" },
-  { id: 2, name: "Tai xanh - Mũi 1", dose: "1ml/con", age: "20 ngày tuổi" },
-  { id: 3, name: "CircoVirus - Mũi 1", dose: "1ml/con", age: "100 ngày tuổi" },
-  { id: 4, name: "Suyễn heo - Mũi 1", dose: "1ml/con", age: "180 ngày tuổi" },
-  { id: 5, name: "Tai xanh - Mũi 1", dose: "1ml/con", age: "221 ngày tuổi" },
-  { id: 6, name: "CircoVirus - Mũi 1", dose: "1ml/con", age: "300 ngày tuổi" },
-]
+import {
+  fetchVaccineSamples,
+  VaccineSampleItem,
+} from "@/app/api/vaccines"
 
 export default function VaccineSample() {
+  const [samples, setSamples] = useState<VaccineSampleItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchVaccineSamples().then(data => {
+      setSamples(data)
+      setLoading(false)
+    })
+  }, [])
+
   return (
     <div className="space-y-6">
       {/* TABLE */}
@@ -37,7 +35,23 @@ export default function VaccineSample() {
           </thead>
 
           <tbody>
-            {mockSamples.map((item) => (
+            {loading && (
+              <tr>
+                <td colSpan={5} className="text-center py-4 text-slate-400">
+                  Đang tải dữ liệu...
+                </td>
+              </tr>
+            )}
+
+            {!loading && samples.length === 0 && (
+              <tr>
+                <td colSpan={5} className="text-center py-4 text-slate-400">
+                  Chưa có mẫu vắc-xin
+                </td>
+              </tr>
+            )}
+
+            {samples.map(item => (
               <tr
                 key={item.id}
                 className="border-b last:border-b-0 hover:bg-slate-50"
@@ -77,7 +91,7 @@ export default function VaccineSample() {
         </div>
       </div>
 
-      {/* GỢI Ý TIÊM */}
+      {/* GỢI Ý TIÊM – để mock trước */}
       <div className="border-2 border-orange-400 rounded-xl p-4 space-y-4">
         <div className="flex items-center gap-2 text-orange-500 font-semibold">
           ☀️ Gợi ý tiêm

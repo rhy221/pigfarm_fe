@@ -168,11 +168,6 @@ const data = {
     ]
   },
   {
-    title: "Môi trường",
-    url: "/environment",
-    icon: Sprout,
-  },
-  {
     title: "Phân công",
     url: "/tasks",
     icon: Users,
@@ -184,7 +179,7 @@ const data = {
   },
   {
     title: "Hệ thống và phân quyền",
-    url: "#",
+    url: "/settings",
     icon: Settings,
   },
   {

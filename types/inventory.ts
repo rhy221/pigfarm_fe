@@ -82,7 +82,7 @@ export interface Warehouse {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  _count?: {
+  Count?: {
     inventory?: number;
   };
 }

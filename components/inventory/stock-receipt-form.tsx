@@ -114,9 +114,12 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
         ...form.getValues(),
         warehouseId: defaultWarehouse.id,
       });
+              console.log(form.getValues('warehouseId') || "undefine")
+
       }
+
     }
-  }, [warehouses, form]);
+  }, [form, warehouses]);
 
   // Calculate totals
   const items = form.watch('items');

@@ -254,7 +254,7 @@ export default function WarehousesPage() {
                 <div className="flex items-center justify-between pt-3 border-t">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Package className="h-4 w-4" />
-                    <span>{warehouse._count?.inventory || 0} sản phẩm</span>
+                    <span>{warehouse.Count?.inventory || 0} sản phẩm</span>
                   </div>
                 </div>
               </CardContent>

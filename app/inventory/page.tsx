@@ -98,6 +98,7 @@ export default function InventoryPage() {
   };
 
   const getStockStatusBadge = (quantity: number, minQuantity: number) => {
+
     if (quantity <= 0) {
       return <Badge className="badge-danger">Hết hàng</Badge>;
     }
@@ -346,8 +347,8 @@ export default function InventoryPage() {
                       </TableCell>
                       <TableCell>
                         {getStockStatusBadge(
-                          item.quantity,
-                          item.products?.minQuantity || 0
+                          Number(item.quantity),
+                          Number(item.products?.minQuantity || 0)
                         )}
                       </TableCell>
                       <TableCell>
@@ -368,7 +369,7 @@ export default function InventoryPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push(`/inventory/history?product=${item.productId}`)}>
                               <Eye className="mr-2 h-4 w-4" />
-                              Lịch sử giao dịch
+                              Lịch sử 
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {/* <DropdownMenuItem>

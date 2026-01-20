@@ -31,14 +31,16 @@ type PigRow = {
 export default function PigIntakePage() {
   const router = useRouter()
 
-  /* ===== FORM ===== */
+  /* ===== LỨA ===== */
+  const availableBatches = ["01", "02", "03", "04"]
   const [batch, setBatch] = React.useState("")
-  const [selectedBarn, setSelectedBarn] = React.useState<string | null>(null)
+  const [isNewBatch, setIsNewBatch] = React.useState(false)
 
-  /* giả lập danh sách chuồng trống */
+  /* ===== CHUỒNG ===== */
+  const [selectedBarn, setSelectedBarn] = React.useState<string | null>(null)
   const emptyBarns = ["A001", "A002", "B001"]
 
-  /* ===== INLINE FLOW ===== */
+  /* ===== FLOW ===== */
   const [showCount, setShowCount] = React.useState(false)
   const [showDetail, setShowDetail] = React.useState(false)
 
@@ -80,16 +82,62 @@ export default function PigIntakePage() {
 
       {/* ================= FORM ================= */}
       <div className="grid gap-4 md:grid-cols-2">
+        {/* ===== LỨA ===== */}
         <Field label="Lứa">
-          <input
-            type="text"
-            className="input"
-            placeholder="Nhập lứa (vd: 03)"
-            value={batch}
-            onChange={e => setBatch(e.target.value)}
-          />
+          <div className="space-y-2 w-full">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between"
+                >
+                  {batch
+                    ? isNewBatch
+                      ? `Lứa mới: ${batch}`
+                      : `Lứa ${batch}`
+                    : "Chọn lứa"}
+                  <ChevronDown className="size-4 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent className="w-full">
+                {availableBatches.map(b => (
+                  <DropdownMenuItem
+                    key={b}
+                    onClick={() => {
+                      setBatch(b)
+                      setIsNewBatch(false)
+                    }}
+                  >
+                    Lứa {b}
+                  </DropdownMenuItem>
+                ))}
+
+                <DropdownMenuItem
+                  className="text-emerald-600 font-medium"
+                  onClick={() => {
+                    setBatch("")
+                    setIsNewBatch(true)
+                  }}
+                >
+                  ➕ Thêm lứa mới
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {isNewBatch && (
+              <input
+                type="text"
+                className="input"
+                placeholder="Nhập lứa mới (vd: 05)"
+                value={batch}
+                onChange={e => setBatch(e.target.value)}
+              />
+            )}
+          </div>
         </Field>
 
+        {/* ===== CHUỒNG ===== */}
         <Field label="Chuồng">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

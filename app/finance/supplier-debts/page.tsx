@@ -93,15 +93,14 @@ export default function SupplierDebtsPage() {
   });
 
   const suppliersWithDebt = suppliers?.filter((s) => s.totalDebt > 0) || [];
-  const totalDebt = suppliers?.reduce((sum, s) => sum + (s.totalDebt || 0), 0) || 0;
-
+  const totalDebt = suppliers?.reduce((sum, s) => sum + (Number(s.totalDebt) || 0), 0) || 0;
   const openPaymentDialog = (supplier: any) => {
     setSelectedSupplier(supplier);
     form.reset({
       supplierId: supplier.id,
       cashAccountId: accounts?.find((a) => a.isDefault)?.id || '',
       paymentDate: new Date(),
-      amount: supplier.totalDebt || 0,
+      amount: Number(supplier.totalDebt) || 0,
       description: `Thanh toán công nợ - ${supplier.name}`,
       notes: '',
     });

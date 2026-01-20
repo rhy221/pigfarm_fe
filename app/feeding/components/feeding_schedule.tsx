@@ -38,8 +38,7 @@ export default function FeedingSchedule() {
             <TableHead className="text-white">Chuồng</TableHead>
             <TableHead className="text-white">Công thức</TableHead>
             <TableHead className="text-white">Định lượng</TableHead>
-            <TableHead className="text-white">Phân công</TableHead>
-            <TableHead className="text-white">Tình trạng</TableHead>
+           
           </TableRow>
         </TableHeader>
 
@@ -52,16 +51,7 @@ export default function FeedingSchedule() {
               <TableCell>{row.chuong}</TableCell>
               <TableCell>{row.formula}</TableCell>
               <TableCell>{row.amount}</TableCell>
-              <TableCell>{row.staff}</TableCell>
-              <TableCell
-                className={
-                  row.status === "Đã cho ăn"
-                    ? "text-emerald-600 font-medium"
-                    : "text-orange-500 font-medium"
-                }
-              >
-                {row.status}
-              </TableCell>
+            
             </TableRow>
           ))}
         </TableBody>

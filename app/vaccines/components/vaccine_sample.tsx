@@ -2,23 +2,28 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Trash2, Plus, ArrowRight } from "lucide-react"
+import { Trash2, Plus } from "lucide-react"
 import {
   fetchVaccineSamples,
   fetchVaccineSuggestions,
-  saveVaccinationTemplates, 
-  deleteTemplateItem,       
+  saveVaccinationTemplates,
+  deleteTemplateItem,
   VaccineSampleItem,
   VaccineSuggestion,
 } from "@/app/api/vaccines"
+import AddVaccineSampleModal from "@/app/vaccines/components/add_vaccine_sample"
 
 export default function VaccineSample() {
+  // --- 1. STATE ---
   const [samples, setSamples] = useState<VaccineSampleItem[]>([])
   const [suggestions, setSuggestions] = useState<VaccineSuggestion[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  
+  // Gộp state từ cả 2 nhánh
+  const [saving, setSaving] = useState(false) // Từ nhánh hy
+  const [openModal, setOpenModal] = useState(false) // Từ nhánh main
 
-  // 1. Load dữ liệu khi vào trang
+  // --- 2. EFFECT (Load Data) ---
   useEffect(() => {
     Promise.all([fetchVaccineSamples(), fetchVaccineSuggestions()])
       .then(([samplesData, suggestionsData]) => {
@@ -28,47 +33,66 @@ export default function VaccineSample() {
       .finally(() => setLoading(false))
   }, [])
 
-  // 2. Xử lý xóa dòng
+  // --- 3. HANDLERS ---
+
+  // Xóa dòng
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xóa mẫu này?")) return
     
-    // Optimistic update (Xóa trên UI trước cho mượt)
+    // Optimistic update
     const oldSamples = [...samples]
     setSamples(prev => prev.filter(item => item.id !== id))
 
     try {
-      await deleteTemplateItem(id) // Gọi API xóa thật
+      // Nếu ID là temp (mới thêm chưa lưu DB) thì không cần gọi API delete
+      if (!id.toString().startsWith('temp-') && !id.toString().startsWith('manual-')) {
+          await deleteTemplateItem(id)
+      }
     } catch (error) {
       alert("Xóa thất bại")
-      setSamples(oldSamples) // Rollback nếu lỗi
+      setSamples(oldSamples)
     }
   }
 
-  // 3. Xử lý thêm từ Gợi ý vào Danh sách mẫu
+  // Thêm từ Gợi ý (Gap Analysis)
   const handleAddFromSuggestion = (sug: VaccineSuggestion) => {
     const newItem: VaccineSampleItem = {
-      id: `temp-${Date.now()}`, // ID tạm
-      vaccineId: sug.vaccineId, // ID vaccine gốc
+      id: `temp-${Date.now()}`,
+      vaccineId: sug.vaccineId,
       name: sug.name,
       dose: sug.dosage,
       age: `${sug.daysOld} ngày tuổi`,
-      daysOld: sug.daysOld,     // Cần trường này để sort/lưu
+      daysOld: sug.daysOld,
       note: sug.description,
       stage: 1
     }
     
     setSamples(prev => [...prev, newItem].sort((a, b) => (a.daysOld || 0) - (b.daysOld || 0)))
-    // Xóa khỏi gợi ý
     setSuggestions(prev => prev.filter(s => s.vaccineId !== sug.vaccineId))
   }
 
-  // 4. Lưu toàn bộ (Save Changes)
+  // Thêm thủ công từ Modal (Logic từ Main nhưng map theo Hy)
+  const handleAddManual = (data: { vaccineName: string, dosage: string, daysOld: number, stage: number, notes?: string }) => {
+    const newItem: VaccineSampleItem = {
+      id: `manual-${Date.now()}`,
+      vaccineId: '', // Chưa có ID, BE sẽ tự tạo hoặc tìm theo tên
+      name: data.vaccineName,
+      dose: data.dosage,
+      age: `${data.daysOld} ngày tuổi`,
+      daysOld: data.daysOld,
+      stage: data.stage,
+      note: data.notes
+    }
+
+    setSamples(prev => [...prev, newItem].sort((a, b) => (a.daysOld || 0) - (b.daysOld || 0)))
+  }
+
+  // Lưu toàn bộ (Save Changes)
   const handleSave = async () => {
     try {
       setSaving(true)
-      // Map lại dữ liệu cho đúng DTO Backend yêu cầu
       const payload = samples.map(s => ({
-        vaccineId: s.vaccineId, // Có thể undefined nếu nhập tay (sẽ xử lý sau)
+        vaccineId: s.vaccineId, 
         vaccineName: s.name,
         stage: s.stage || 1,
         daysOld: s.daysOld || parseInt(s.age) || 0,
@@ -79,17 +103,19 @@ export default function VaccineSample() {
       await saveVaccinationTemplates(payload)
       alert("Đã lưu cấu hình thành công!")
       
-      // Reload lại để lấy ID thật
+      // Reload lại để đồng bộ ID thật từ DB
       const refreshedData = await fetchVaccineSamples()
       setSamples(refreshedData)
       
     } catch (e) {
+      console.error(e)
       alert("Lỗi khi lưu dữ liệu")
     } finally {
       setSaving(false)
     }
   }
 
+  // --- 4. RENDER ---
   return (
     <div className="space-y-6">
       {/* TABLE */}
@@ -115,13 +141,15 @@ export default function VaccineSample() {
               samples.map((item, idx) => (
                 <tr key={item.id} className="border-b last:border-b-0 hover:bg-slate-50">
                   <td className="text-center text-slate-500">{idx + 1}</td>
-                  <td className="px-3 py-2 font-medium">{item.name}</td>
+                  <td className="px-3 py-2 font-medium">
+                    {item.name} <span className="text-xs text-slate-400">(Mũi {item.stage || 1})</span>
+                  </td>
                   <td className="px-3 py-2">{item.dose}</td>
                   <td className="px-3 py-2">{item.age}</td>
                   <td className="px-3 py-2 text-slate-500 italic truncate max-w-[200px]">{item.note}</td>
                   <td className="text-center">
                     <button 
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => handleDelete(item.id.toString())}
                       className="text-slate-400 hover:text-red-500 transition-colors p-2"
                     >
                       <Trash2 size={16} />
@@ -134,22 +162,36 @@ export default function VaccineSample() {
         </table>
       </div>
 
-      {/* ACTION BUTTONS */}
-      <div className="flex items-center justify-end gap-3 sticky bottom-4 bg-white/80 p-4 backdrop-blur border rounded-xl shadow-lg">
-          <span className="text-sm text-slate-500 mr-auto">
-            Tổng cộng: <b>{samples.length}</b> mũi tiêm
-          </span>
-          <Button variant="outline">Hủy thay đổi</Button>
-          <Button 
-            className="bg-[#53A88B] hover:bg-[#45b883]" 
-            onClick={handleSave}
-            disabled={saving}
+      {/* ACTION BAR (Gộp Hy & Main): Sticky Bottom */}
+      <div className="sticky bottom-4 bg-white/90 backdrop-blur border rounded-xl shadow-lg p-4 flex items-center justify-between z-10">
+          
+          {/* Nút Thêm (Từ Main) - Đặt bên trái */}
+          <Button
+            variant="outline"
+            className="text-emerald-600 border-emerald-500 hover:bg-emerald-50"
+            onClick={() => setOpenModal(true)}
           >
-            {saving ? "Đang lưu..." : "Lưu Cấu Hình"}
+            <Plus size={16} className="mr-1" />
+            Thêm mũi tiêm thủ công
           </Button>
+
+          {/* Cụm Lưu (Từ Hy) - Đặt bên phải */}
+          <div className="flex items-center gap-3">
+             <span className="text-sm text-slate-500 hidden sm:inline">
+                Tổng: <b>{samples.length}</b> mũi
+              </span>
+              <Button variant="ghost" className="text-slate-500">Hủy</Button>
+              <Button 
+                className="bg-[#53A88B] hover:bg-[#45b883]" 
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? "Đang lưu..." : "Lưu Cấu Hình"}
+              </Button>
+          </div>
       </div>
 
-      {/* GỢI Ý TIÊM (Gap Analysis) */}
+      {/* GỢI Ý TIÊM (Dùng logic Dynamic của Hy) */}
       {suggestions.length > 0 && (
         <div className="border-2 border-orange-200 bg-orange-50/30 rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2 text-orange-600 font-bold text-lg">
@@ -195,6 +237,13 @@ export default function VaccineSample() {
           </div>
         </div>
       )}
+
+      {/* MODAL (Từ Main) */}
+      <AddVaccineSampleModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        onSubmit={handleAddManual}
+      />
     </div>
   )
 }

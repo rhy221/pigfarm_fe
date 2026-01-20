@@ -456,7 +456,7 @@ export function useMonthlyBillSummary( month: number, year: number) {
   return useQuery({
     queryKey: REPORT_KEYS.billSummary( month, year),
     queryFn: () => api.get<MonthlyBillSummary>(
-      `/api/finance/monthly-bills/summary&month=${month}&year=${year}`
+      `/api/finance/monthly-bills/summary?month=${month}&year=${year}`
     ),
     // enabled: !!farmId,
   });

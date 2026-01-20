@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import {
@@ -44,6 +44,7 @@ import {
 } from '@/hooks/use-inventory';
 import { formatCurrency, formatNumber, cn } from '@/lib/utils';
 import { HistoryTransactionType, HistoryReferenceType } from '@/types/inventory';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 const FARM_ID = 'demo-farm-id';
 
@@ -69,6 +70,9 @@ export default function InventoryHistoryPage() {
   const [endDate, setEndDate] = useState<string>('');
   const [page, setPage] = useState(1);
 
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
   const { data: warehouses } = useWarehouses();
   const { data: productsData } = useProducts({  limit: 100 });
   const { data: history, isLoading } = useInventoryHistory({
@@ -81,7 +85,12 @@ export default function InventoryHistoryPage() {
     page,
     limit: 20,
   });
-
+  useEffect(() => {
+    const productId = searchParams.get('product')
+    if(productId) {
+      setSelectedProduct(productId);
+    }
+  },[productsData, history, warehouses, searchParams])
   const handleClearFilters = () => {
     setSelectedWarehouse('all');
     setSelectedProduct('all');
@@ -108,10 +117,10 @@ export default function InventoryHistoryPage() {
             Theo dõi tất cả biến động tồn kho
           </p>
         </div>
-        <Button variant="outline">
+        {/* <Button variant="outline">
           <Download className="mr-2 h-4 w-4" />
           Xuất Excel
-        </Button>
+        </Button> */}
       </div>
 
       {/* Filters */}
@@ -130,7 +139,12 @@ export default function InventoryHistoryPage() {
               </SelectContent>
             </Select>
 
-            <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+            <Select value={selectedProduct} onValueChange={
+              (val) => {
+              router.push(`${pathname}?product=${val}`)  
+              // setSelectedProduct(val)
+            }
+              }>
               <SelectTrigger>
                 <SelectValue placeholder="Tất cả sản phẩm" />
               </SelectTrigger>
@@ -251,12 +265,12 @@ export default function InventoryHistoryPage() {
                             {typeInfo?.label}
                           </Badge>
                         </TableCell>
-                        <TableCell>{item.warehouse?.name || '-'}</TableCell>
+                        <TableCell>{item.warehouses?.name || '-'}</TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{item.product?.name}</p>
+                            <p className="font-medium">{item.products?.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {item.product?.code}
+                              {item.products?.code}
                             </p>
                           </div>
                         </TableCell>

@@ -7,8 +7,14 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table"
+import { useState } from "react"
+import AddFeedingFormulaModal from "@/app/feeding/components/add_feeding"
+
 
 export default function FeedingAdjust() {
+  const [openModal, setOpenModal] = useState(false)
+  const [formulas, setFormulas] = useState<any[]>([])
+
   return (
     <div className="border rounded-lg p-4 space-y-4">
       <Table>
@@ -23,26 +29,46 @@ export default function FeedingAdjust() {
         </TableHeader>
 
         <TableBody>
-          <TableRow>
-            <TableCell>Cám gạo</TableCell>
-            <TableCell>__ gram/con</TableCell>
-            <TableCell>
-              <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded">
-                Mới về đến 30kg
-              </span>
-            </TableCell>
-            <TableCell>50% Cám • 50% Bột cá</TableCell>
-            <TableCell>⏰ giờ</TableCell>
-          </TableRow>
+          {formulas.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center text-slate-400">
+                Chưa có công thức
+              </TableCell>
+            </TableRow>
+          )}
+
+          {formulas.map((f, index) => (
+            <TableRow key={index}>
+              <TableCell>{f.name}</TableCell>
+              <TableCell>{f.amount}</TableCell>
+              <TableCell>
+                <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded">
+                  {f.stage}
+                </span>
+              </TableCell>
+              <TableCell>{f.ingredients}</TableCell>
+              <TableCell>⏰ {f.feedingTime}</TableCell>
+            </TableRow>
+          ))}
         </TableBody>
+
       </Table>
 
       <Button
         variant="outline"
         className="text-emerald-600 border-emerald-500"
+        onClick={() => setOpenModal(true)}
       >
         + Thêm công thức
       </Button>
+
+      <AddFeedingFormulaModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        onSubmit={(data) => {
+          setFormulas(prev => [...prev, data])
+        }}
+      />
 
       <div className="flex justify-end gap-2">
         <Button variant="destructive">Hủy bỏ</Button>

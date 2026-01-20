@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -105,6 +105,19 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
     name: 'items',
   });
 
+  // Set default warehouse when data is loaded
+  useEffect(() => {
+    if (warehouses && !form.getValues('warehouseId')) {
+      const defaultWarehouse = warehouses.find((wh) => wh.isDefault);
+      if (defaultWarehouse) {
+        form.reset({
+        ...form.getValues(),
+        warehouseId: defaultWarehouse.id,
+      });
+      }
+    }
+  }, [warehouses, form]);
+
   // Calculate totals
   const items = form.watch('items');
   const discountAmount = form.watch('discountAmount') || 0;
@@ -147,7 +160,7 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
     if (product) {
       form.setValue(`items.${index}.productId`, productId);
       form.setValue(`items.${index}.productName`, product.name);
-      form.setValue(`items.${index}.unitName`, product.unit?.abbreviation || '');
+      form.setValue(`items.${index}.unitName`, product.units?.abbreviation || '');
       form.setValue(`items.${index}.unitPrice`, product.defaultPrice);
     }
   };
@@ -379,11 +392,12 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[250px]">Sản phẩm</TableHead>
-                        <TableHead className="w-[100px]">Số lượng</TableHead>
-                        <TableHead className="w-[120px]">Đơn giá</TableHead>
-                        <TableHead className="w-[100px]">CK (%)</TableHead>
-                        <TableHead className="w-[120px] text-right">Thành tiền</TableHead>
+                        <TableHead className="w-[200px]">Sản phẩm</TableHead>
+                        <TableHead className="w-[80px]">Số lượng</TableHead>
+                        <TableHead className="w-[100px]">Đơn giá</TableHead>
+                        <TableHead className="w-[70px]">CK (%)</TableHead>
+                        <TableHead className="w-[120px]">Hạn sử dụng</TableHead>
+                        <TableHead className="w-[100px] text-right">Thành tiền</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -415,7 +429,6 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
                               <div className="flex items-center gap-1">
                                 <Input
                                   type="number"
-                                  step="0.001"
                                   min="0"
                                   {...form.register(`items.${index}.quantity`, { valueAsNumber: true })}
                                   className="w-20"
@@ -441,6 +454,36 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
                                 {...form.register(`items.${index}.discountPercent`, { valueAsNumber: true })}
                                 className="w-16"
                               />
+                            </TableCell>
+                            <TableCell>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className={cn(
+                                      'w-[120px] pl-3 text-left font-normal text-xs',
+                                      !form.watch(`items.${index}.expiryDate`) && 'text-muted-foreground'
+                                    )}
+                                  >
+                                    {form.watch(`items.${index}.expiryDate`) ? (
+                                      format(form.watch(`items.${index}.expiryDate`)!, 'dd/MM/yyyy')
+                                    ) : (
+                                      <span>Chọn ngày</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-3 w-3 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={form.watch(`items.${index}.expiryDate`) || undefined}
+                                    onSelect={(date) => form.setValue(`items.${index}.expiryDate`, date)}
+                                    disabled={(date) => date < new Date()}
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
                             </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatCurrency(itemTotal)}

@@ -30,7 +30,7 @@ export function PageBreadcrumb({ items, showHome = true }: PageBreadcrumbProps) 
   return (
     <Breadcrumb className="mb-4">
       <BreadcrumbList>
-        {showHome && (
+        {/* {showHome && (
           <>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
@@ -42,7 +42,7 @@ export function PageBreadcrumb({ items, showHome = true }: PageBreadcrumbProps) 
             </BreadcrumbItem>
             <BreadcrumbSeparator />
           </>
-        )}
+        )} */}
         {/* {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (

@@ -7,10 +7,14 @@ import {
   fetchVaccineSamples,
   VaccineSampleItem,
 } from "@/app/api/vaccines"
+import AddVaccineSampleModal from "@/app/vaccines/components/add_vaccine_sample"
+
 
 export default function VaccineSample() {
   const [samples, setSamples] = useState<VaccineSampleItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [openModal, setOpenModal] = useState(false)
+
 
   useEffect(() => {
     fetchVaccineSamples().then(data => {
@@ -78,6 +82,7 @@ export default function VaccineSample() {
         <Button
           variant="outline"
           className="text-emerald-600 border-emerald-500"
+          onClick={() => setOpenModal(true)}
         >
           <Plus size={16} className="mr-1" />
           Thêm mũi tiêm
@@ -90,6 +95,22 @@ export default function VaccineSample() {
           </Button>
         </div>
       </div>
+
+      <AddVaccineSampleModal
+        open={openModal}
+        onClose={() => setOpenModal(false)}
+        onSubmit={(data) => {
+          // TẠM THỜI push local (sau này thay bằng POST API)
+          setSamples(prev => [
+            ...prev,
+            {
+              id: Date.now(),
+              ...data,
+            },
+          ])
+        }}
+      />
+
 
       {/* GỢI Ý TIÊM – để mock trước */}
       <div className="border-2 border-orange-400 rounded-xl p-4 space-y-4">

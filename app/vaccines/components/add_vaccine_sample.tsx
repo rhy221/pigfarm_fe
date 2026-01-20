@@ -16,10 +16,11 @@ type Props = {
   open: boolean
   onClose: () => void
   onSubmit: (data: {
-    name: string
-    dose: string
-    age: string
-    note?: string
+    vaccineName: string
+    dosage: string
+    daysOld: number
+    stage: number
+    notes?: string
   }) => void
 }
 
@@ -32,6 +33,7 @@ export default function AddVaccineSampleModal({
     name: "",
     dose: "",
     age: "",
+    stage: 1, // Mặc định mũi 1
     note: "",
   })
 
@@ -42,9 +44,22 @@ export default function AddVaccineSampleModal({
   }
 
   function handleSubmit() {
-    if (!form.name || !form.dose || !form.age) return
-    onSubmit(form)
-    setForm({ name: "", dose: "", age: "", note: "" })
+    if (!form.name || !form.dose || !form.age) {
+        alert("Vui lòng nhập đủ tên, liều lượng và ngày tuổi!")
+        return
+    }
+
+    // --- SỬA Ở ĐÂY: Map dữ liệu form sang format chuẩn ---
+    onSubmit({
+        vaccineName: form.name,
+        dosage: form.dose,
+        daysOld: parseInt(form.age) || 0, // Ép kiểu sang số nguyên
+        stage: Number(form.stage) || 1,   // Ép kiểu sang số nguyên
+        notes: form.note
+    })
+
+    // Reset form
+    setForm({ name: "", dose: "", age: "", stage: 1, note: "" })
     onClose()
   }
 
@@ -52,7 +67,7 @@ export default function AddVaccineSampleModal({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>➕ Thêm mẫu tiêm</DialogTitle>
+          <DialogTitle>➕ Thêm mẫu tiêm thủ công</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -63,16 +78,31 @@ export default function AddVaccineSampleModal({
             onChange={handleChange}
           />
 
-          <Input
-            name="dose"
-            placeholder="Liều lượng (vd: 1ml/con)"
-            value={form.dose}
-            onChange={handleChange}
-          />
+          <div className="flex gap-2">
+             <div className="w-1/3">
+                <Input
+                    name="stage"
+                    type="number"
+                    min={1}
+                    placeholder="Mũi số"
+                    value={form.stage}
+                    onChange={(e) => setForm({...form, stage: Number(e.target.value)})}
+                />
+             </div>
+             <div className="w-2/3">
+                <Input
+                    name="dose"
+                    placeholder="Liều (vd: 1ml/con)"
+                    value={form.dose}
+                    onChange={handleChange}
+                />
+             </div>
+          </div>
 
           <Input
             name="age"
-            placeholder="Tuổi tiêm (vd: 15 ngày tuổi)"
+            type="number" // Đổi input type thành number
+            placeholder="Tuổi tiêm (số ngày tuổi)"
             value={form.age}
             onChange={handleChange}
           />

@@ -14,16 +14,13 @@ import {
 import AddVaccineSampleModal from "@/app/vaccines/components/add_vaccine_sample"
 
 export default function VaccineSample() {
-  // --- 1. STATE ---
   const [samples, setSamples] = useState<VaccineSampleItem[]>([])
   const [suggestions, setSuggestions] = useState<VaccineSuggestion[]>([])
   const [loading, setLoading] = useState(true)
   
-  // Gộp state từ cả 2 nhánh
-  const [saving, setSaving] = useState(false) // Từ nhánh hy
-  const [openModal, setOpenModal] = useState(false) // Từ nhánh main
+  const [saving, setSaving] = useState(false)
+  const [openModal, setOpenModal] = useState(false) 
 
-  // --- 2. EFFECT (Load Data) ---
   useEffect(() => {
     Promise.all([fetchVaccineSamples(), fetchVaccineSuggestions()])
       .then(([samplesData, suggestionsData]) => {
@@ -33,18 +30,14 @@ export default function VaccineSample() {
       .finally(() => setLoading(false))
   }, [])
 
-  // --- 3. HANDLERS ---
 
-  // Xóa dòng
   const handleDelete = async (id: string) => {
     if (!confirm("Bạn có chắc muốn xóa mẫu này?")) return
     
-    // Optimistic update
     const oldSamples = [...samples]
     setSamples(prev => prev.filter(item => item.id !== id))
 
     try {
-      // Nếu ID là temp (mới thêm chưa lưu DB) thì không cần gọi API delete
       if (!id.toString().startsWith('temp-') && !id.toString().startsWith('manual-')) {
           await deleteTemplateItem(id)
       }
@@ -54,7 +47,6 @@ export default function VaccineSample() {
     }
   }
 
-  // Thêm từ Gợi ý (Gap Analysis)
   const handleAddFromSuggestion = (sug: VaccineSuggestion) => {
     const newItem: VaccineSampleItem = {
       id: `temp-${Date.now()}`,
@@ -71,11 +63,10 @@ export default function VaccineSample() {
     setSuggestions(prev => prev.filter(s => s.vaccineId !== sug.vaccineId))
   }
 
-  // Thêm thủ công từ Modal (Logic từ Main nhưng map theo Hy)
   const handleAddManual = (data: { vaccineName: string, dosage: string, daysOld: number, stage: number, notes?: string }) => {
     const newItem: VaccineSampleItem = {
       id: `manual-${Date.now()}`,
-      vaccineId: '', // Chưa có ID, BE sẽ tự tạo hoặc tìm theo tên
+      vaccineId: '', 
       name: data.vaccineName,
       dose: data.dosage,
       age: `${data.daysOld} ngày tuổi`,
@@ -87,7 +78,6 @@ export default function VaccineSample() {
     setSamples(prev => [...prev, newItem].sort((a, b) => (a.daysOld || 0) - (b.daysOld || 0)))
   }
 
-  // Lưu toàn bộ (Save Changes)
   const handleSave = async () => {
     try {
       setSaving(true)
@@ -103,7 +93,6 @@ export default function VaccineSample() {
       await saveVaccinationTemplates(payload)
       alert("Đã lưu cấu hình thành công!")
       
-      // Reload lại để đồng bộ ID thật từ DB
       const refreshedData = await fetchVaccineSamples()
       setSamples(refreshedData)
       
@@ -115,7 +104,6 @@ export default function VaccineSample() {
     }
   }
 
-  // --- 4. RENDER ---
   return (
     <div className="space-y-6">
       {/* TABLE */}
@@ -162,10 +150,8 @@ export default function VaccineSample() {
         </table>
       </div>
 
-      {/* ACTION BAR (Gộp Hy & Main): Sticky Bottom */}
       <div className="sticky bottom-4 bg-white/90 backdrop-blur border rounded-xl shadow-lg p-4 flex items-center justify-between z-10">
           
-          {/* Nút Thêm (Từ Main) - Đặt bên trái */}
           <Button
             variant="outline"
             className="text-emerald-600 border-emerald-500 hover:bg-emerald-50"
@@ -175,7 +161,6 @@ export default function VaccineSample() {
             Thêm mũi tiêm thủ công
           </Button>
 
-          {/* Cụm Lưu (Từ Hy) - Đặt bên phải */}
           <div className="flex items-center gap-3">
              <span className="text-sm text-slate-500 hidden sm:inline">
                 Tổng: <b>{samples.length}</b> mũi
@@ -191,7 +176,6 @@ export default function VaccineSample() {
           </div>
       </div>
 
-      {/* GỢI Ý TIÊM (Dùng logic Dynamic của Hy) */}
       {suggestions.length > 0 && (
         <div className="border-2 border-orange-200 bg-orange-50/30 rounded-xl p-6 space-y-4">
           <div className="flex items-center gap-2 text-orange-600 font-bold text-lg">
@@ -238,7 +222,6 @@ export default function VaccineSample() {
         </div>
       )}
 
-      {/* MODAL (Từ Main) */}
       <AddVaccineSampleModal
         open={openModal}
         onClose={() => setOpenModal(false)}

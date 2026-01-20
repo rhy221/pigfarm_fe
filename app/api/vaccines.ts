@@ -46,6 +46,16 @@ export type VaccineSampleItem = {
   daysOld?: number
 }
 
+export type Pen = {
+  id: string
+  name: string
+}
+
+export type Vaccine = {
+  id: string
+  name: string
+}
+
 /* =====================================================
  * 1. LỊCH TỔNG QUAN (CALENDAR)
  * GET /health/vaccination/calendar

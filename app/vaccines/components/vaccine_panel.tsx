@@ -21,9 +21,11 @@ export default function VaccineSidePanel({ date }: Props) {
   // 1. Fetch dữ liệu
   const loadData = () => {
     if (!date) return
-    const dateStr = date.toISOString().split("T")[0]
-    setLoading(true)
-    setSelectedKeys(new Set()) // Reset selection khi đổi ngày
+  const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;    setLoading(true)
+    setSelectedKeys(new Set()) 
 
     fetchVaccinationDetails(dateStr)
       .then(setData)

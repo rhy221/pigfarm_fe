@@ -37,7 +37,7 @@ import { NavProjects } from "./nav-projects";
 const items = [
   {
     title: "Heo & Chuồng",
-    url: "#",
+    url: "/barns",
     icon: SquarePen,
   },
   {

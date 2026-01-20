@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { MoreVertical } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type Pen = {
   id: string;
@@ -68,6 +69,8 @@ const statusMap = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
+
   return (
     <div className="space-y-6">
       {/* ===== KPI CARDS ===== */}
@@ -82,7 +85,9 @@ export default function DashboardPage() {
       {/* ===== CORE SCREEN: DANH SÁCH CHUỒNG ===== */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Danh sách chuồng heo</h2>
-        <Button>➕ Tiếp nhận heo mới</Button>
+        <Button onClick={() => router.push("/barns_in")}>
+          Tiếp nhận heo mới
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

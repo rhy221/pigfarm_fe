@@ -194,7 +194,6 @@ useEffect(() => {
   }
 }, [errors]);
   const onSubmit = async (data: StockIssueFormValues) => {
-        console.log("fdfd");
 
     // Validate quantities
     for (const item of data.items) {
@@ -269,6 +268,7 @@ useEffect(() => {
         warehouseId: defaultWarehouse.id,
       });
         }
+        console.log(form.getValues('warehouseId') || "undefine")
       } 
     }, [warehouses, form]);
 

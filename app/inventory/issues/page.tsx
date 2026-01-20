@@ -167,12 +167,14 @@ export default function StockIssuesPage() {
             <FileDown className="mr-2 h-4 w-4" />
             Xuất Excel
           </Button> */}
-          {/* <Link href="/inventory/issues/new"> */}
-            <Button onClick={() => router.push("/inventory/issues/new")}>
+          <Link href="/inventory/issues/new">
+            <Button 
+            // onClick={() => router.push("/inventory/issues/new")}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Tạo phiếu xuất
             </Button>
-          {/* </Link> */}
+          </Link>
         </div>
       </div>
 

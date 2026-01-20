@@ -200,7 +200,13 @@ export async function fetchAvailablePens(): Promise<{id: string, name: string}[]
       throw new Error("Failed to fetch pens")
     }
 
-    return await res.json()
+    const data = await res.json()
+    
+    return data.map((item: any) => ({
+        id: item.id,
+        name: item.pen_name || item.name || "Chuồng không tên" 
+    }))
+
   } catch (error) {
     console.error("fetchAvailablePens error:", error)
     return []

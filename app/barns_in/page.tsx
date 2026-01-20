@@ -17,7 +17,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
-import { ArrowLeft, ChevronDown } from "lucide-react"
+import { ArrowLeft, ChevronDown, Loader2 } from "lucide-react"
+import { dashboardApi } from "@/app/api/barns" // Đảm bảo file api.ts đã có hàm getPens và intakePigs
 
 /* ================= TYPES ================= */
 type PigRow = {
@@ -25,6 +26,12 @@ type PigRow = {
   code: string
   earTag: string
   weight?: number
+}
+
+// Kiểu dữ liệu Chuồng từ Backend
+type Pen = {
+  id: string
+  pen_name: string
 }
 
 /* ================= PAGE ================= */
@@ -36,13 +43,29 @@ export default function PigIntakePage() {
   const [batch, setBatch] = React.useState("")
   const [isNewBatch, setIsNewBatch] = React.useState(false)
 
-  /* ===== CHUỒNG ===== */
-  const [selectedBarn, setSelectedBarn] = React.useState<string | null>(null)
-  const emptyBarns = ["A001", "A002", "B001"]
+  /* ===== CHUỒNG (FETCH DATA) ===== */
+  const [selectedBarn, setSelectedBarn] = React.useState<Pen | null>(null)
+  const [emptyBarns, setEmptyBarns] = React.useState<Pen[]>([])
+  const [loadingBarns, setLoadingBarns] = React.useState(true)
+
+  React.useEffect(() => {
+    const fetchBarns = async () => {
+      try {
+        const data = await dashboardApi.getPens()
+        setEmptyBarns(data)
+      } catch (error) {
+        console.error("Lỗi tải danh sách chuồng:", error)
+      } finally {
+        setLoadingBarns(false)
+      }
+    }
+    fetchBarns()
+  }, [])
 
   /* ===== FLOW ===== */
   const [showCount, setShowCount] = React.useState(false)
   const [showDetail, setShowDetail] = React.useState(false)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   /* ===== COUNT ===== */
   const [count, setCount] = React.useState(0)
@@ -55,6 +78,7 @@ export default function PigIntakePage() {
       id: i + 1,
       code: `PIG-${batch}-${i + 1}`,
       earTag: "",
+      weight: 0
     }))
     setRows(data)
     setShowDetail(true)
@@ -70,11 +94,37 @@ export default function PigIntakePage() {
     )
   }
 
+  /* ===== API SUBMIT ===== */
+  const handleConfirm = async () => {
+    if (!selectedBarn || !batch || rows.length === 0) return
+
+    try {
+      setIsSubmitting(true)
+      const payload = {
+        pen_id: selectedBarn.id,
+        batch: batch,
+        pigs: rows.map(r => ({
+          code: r.code,
+          earTag: r.earTag,
+          weight: r.weight
+        }))
+      }
+      
+      await dashboardApi.intakePigs(payload)
+      alert("Tiếp nhận heo thành công!")
+      router.push(`/barns/${selectedBarn.id}`)
+    } catch (error) {
+      alert("Có lỗi xảy ra khi lưu dữ liệu")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* ===== HEADER ===== */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon-sm" onClick={() => router.back()}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <span className="font-semibold">Tiếp nhận heo</span>
@@ -141,18 +191,18 @@ export default function PigIntakePage() {
         <Field label="Chuồng">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                {selectedBarn ?? "Chọn chuồng trống"}
+              <Button variant="outline" className="w-full justify-between" disabled={loadingBarns}>
+                {loadingBarns ? "Đang tải..." : (selectedBarn?.pen_name ?? "Chọn chuồng trống")}
                 <ChevronDown className="size-4 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {emptyBarns.map(b => (
                 <DropdownMenuItem
-                  key={b}
+                  key={b.id}
                   onClick={() => setSelectedBarn(b)}
                 >
-                  Chuồng {b}
+                  {b.pen_name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -251,10 +301,17 @@ export default function PigIntakePage() {
             <Button
               variant="destructive"
               onClick={() => setShowDetail(false)}
+              disabled={isSubmitting}
             >
               Hủy
             </Button>
-            <Button>Xác nhận</Button>
+            <Button 
+              onClick={handleConfirm} 
+              disabled={isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Xác nhận
+            </Button>
           </div>
         </div>
       )}
@@ -273,20 +330,16 @@ export default function PigIntakePage() {
           border-bottom: 1px solid hsl(var(--border));
           padding: 4px 2px;
           font-size: 14px;
+          background: transparent;
+          outline: none;
         }
       `}</style>
     </div>
   )
 }
 
-/* ================= COMPONENTS ================= */
-function Field({
-  label,
-  children,
-}: {
-  label: string
-  children: React.ReactNode
-}) {
+/* ================= COMPONENTS (GIỮ NGUYÊN) ================= */
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[120px_1fr] items-center gap-3">
       <label className="text-sm font-medium">{label}</label>

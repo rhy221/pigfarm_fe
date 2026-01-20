@@ -79,7 +79,7 @@ export default function AddVaccineSampleModal({
           />
 
           <div className="flex gap-2">
-             <div className="w-1/3">
+             {/* <div className="w-1/3">
                 <Input
                     name="stage"
                     type="number"
@@ -88,8 +88,8 @@ export default function AddVaccineSampleModal({
                     value={form.stage}
                     onChange={(e) => setForm({...form, stage: Number(e.target.value)})}
                 />
-             </div>
-             <div className="w-2/3">
+             </div> */}
+             <div className="flex-1">
                 <Input
                     name="dose"
                     placeholder="Liều (vd: 1ml/con)"

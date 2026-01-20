@@ -81,7 +81,9 @@ export function TaskDetailDialog({
   if (!task) return null;
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
+    // Parse date in local timezone (YYYY-MM-DD format)
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("vi-VN", {
       weekday: "long",
       day: "numeric",

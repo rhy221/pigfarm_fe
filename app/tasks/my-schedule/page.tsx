@@ -32,7 +32,10 @@ import { TaskDetailDialog } from "../components/task-detail-dialog";
 
 // Helper functions
 const formatDateKey = (date: Date): string => {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 const isToday = (date: Date): boolean => {
@@ -84,18 +87,20 @@ export default function MySchedulePage() {
         ]);
 
         const safeTasksData = Array.isArray(tasksData) ? tasksData : [];
-        const safeEmployeesData = Array.isArray(employeesData) ? employeesData : [];
+        const safeEmployeesData = Array.isArray(employeesData)
+          ? employeesData
+          : [];
 
-        // Simulate login: Pick the first employee found
-        const currentUserData = safeEmployeesData.length > 0 ? safeEmployeesData[0] : null;
-        if (currentUserData) {
-            setUser({
-                id: currentUserData.id,
-                name: currentUserData.name,
-                role: currentUserData.role || 'employee',
-                email: currentUserData.email
-            });
-        }
+        // Hardcoded user (Trần Thanh Bình)
+        const hardcodedUser = {
+          id: "16d0fc9a-52df-4f58-9ea7-832fbd1f6756",
+          name: "Trần Thanh Bình",
+          role: "employee" as const,
+          email: "thanhbinhtran123@gmail.com",
+          phone: "0987654321",
+        };
+
+        setUser(hardcodedUser);
 
         const transformedTasks = safeTasksData.map((task) => ({
           id: task.id,
@@ -124,7 +129,8 @@ export default function MySchedulePage() {
   // Filter tasks based on user role
   const allowedTaskTypes = useMemo(() => {
     if (!user) return [];
-    return ROLE_PERMISSIONS[user.role] || [];
+    const role = user.role || "employee";
+    return ROLE_PERMISSIONS[role] || [];
   }, [user]);
 
   // Filter tasks for current user
@@ -271,9 +277,9 @@ export default function MySchedulePage() {
               </h1>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="h-4 w-4" />
-                <span>{user.name}</span>
+                <span>{user?.name || "Người dùng"}</span>
                 <Badge variant="outline" className="text-xs">
-                  {roleLabels[user.role]}
+                  {roleLabels[user?.role || "employee"]}
                 </Badge>
               </div>
             </div>

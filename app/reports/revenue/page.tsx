@@ -24,25 +24,46 @@ interface RevenueReportData {
   revenue?: number;
   expenses?: number;
   profit?: number;
-  revenueItems?: Array<{ id: string; date: string; description: string; amount: number; type: string }>;
-  expenseItems?: Array<{ id: string; date: string; description: string; amount: number; type: string }>;
+  revenueItems?: Array<{
+    id: string;
+    date: string;
+    description: string;
+    amount: number;
+    type: string;
+  }>;
+  expenseItems?: Array<{
+    id: string;
+    date: string;
+    description: string;
+    amount: number;
+    type: string;
+  }>;
 }
 
 export default function RevenueReportPage() {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
 
+  // Temporary filter states
+  const [tempMonth, setTempMonth] = useState(currentMonth.toString());
+  const [tempYear, setTempYear] = useState(currentYear.toString());
+
+  // Applied filter states
   const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [reportData, setReportData] = useState<RevenueReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
+  // Fetch report when component mounts or filters change
   useEffect(() => {
     const fetchReport = async () => {
       try {
         setLoading(true);
         const currentMonthStr = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
-        const data = await reportApi.getRevenueReport({ month: currentMonthStr });
+        const data = await reportApi.getRevenueReport({
+          month: currentMonthStr,
+        });
         setReportData(data);
       } catch (error) {
         console.error("Error fetching revenue report:", error);
@@ -52,6 +73,13 @@ export default function RevenueReportPage() {
     };
     fetchReport();
   }, [selectedMonth, selectedYear]);
+
+  const handleSubmit = () => {
+    setSubmitting(true);
+    setSelectedMonth(tempMonth);
+    setSelectedYear(tempYear);
+    setTimeout(() => setSubmitting(false), 300);
+  };
 
   const handleExportPDF = () => {
     alert("Xuất PDF (chức năng sẽ được triển khai sau)");
@@ -72,7 +100,9 @@ export default function RevenueReportPage() {
   const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
   // Generate Year Options (2020 - Current)
-  const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) => (currentYear - i).toString());
+  const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) =>
+    (currentYear - i).toString()
+  );
 
   return (
     <div className="space-y-6">
@@ -100,15 +130,20 @@ export default function RevenueReportPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[140px]">
+        <Select value={tempMonth} onValueChange={setTempMonth}>
+          <SelectTrigger className="w-[140px] cursor-pointer">
             <SelectValue placeholder="Chọn tháng" />
           </SelectTrigger>
           <SelectContent>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-              const isDisabled = parseInt(selectedYear) === currentYear && month > currentMonth;
+              const isDisabled =
+                parseInt(tempYear) === currentYear && month > currentMonth;
               return (
-                <SelectItem key={month} value={month.toString()} disabled={isDisabled}>
+                <SelectItem
+                  key={month}
+                  value={month.toString()}
+                  disabled={isDisabled}
+                >
                   Tháng {month}
                 </SelectItem>
               );
@@ -116,12 +151,12 @@ export default function RevenueReportPage() {
           </SelectContent>
         </Select>
 
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[140px]">
+        <Select value={tempYear} onValueChange={setTempYear}>
+          <SelectTrigger className="w-[140px] cursor-pointer">
             <SelectValue placeholder="Chọn năm" />
           </SelectTrigger>
           <SelectContent>
-             {years.map((year) => (
+            {years.map((year) => (
               <SelectItem key={year} value={year}>
                 Năm {year}
               </SelectItem>
@@ -129,8 +164,42 @@ export default function RevenueReportPage() {
           </SelectContent>
         </Select>
 
+        <Button
+          onClick={handleSubmit}
+          disabled={submitting || loading}
+          className="bg-[#53A88B] hover:bg-[#458F79] text-white disabled:opacity-50 cursor-pointer"
+        >
+          {submitting || loading ? (
+            <>
+              <svg
+                className="animate-spin h-4 w-4 mr-2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Đang tải...
+            </>
+          ) : (
+            "Xem báo cáo"
+          )}
+        </Button>
+
         <div className="ml-auto text-sm text-gray-500 italic hidden lg:block">
-            * Dữ liệu tổng hợp trong tháng {selectedMonth}/{selectedYear}
+          * Dữ liệu tổng hợp trong tháng {selectedMonth}/{selectedYear}
         </div>
       </div>
 

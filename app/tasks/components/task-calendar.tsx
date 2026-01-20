@@ -24,7 +24,10 @@ interface TaskCalendarProps {
 
 // Helper to format date as YYYY-MM-DD
 const formatDateKey = (date: Date): string => {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 // Helper to check if date is today
@@ -352,15 +355,15 @@ function DayView({ date, tasks, onAddTask, onViewTask }: DayViewProps) {
                             task.status === "completed"
                               ? "default"
                               : task.status === "in_progress"
-                              ? "secondary"
-                              : "outline"
+                                ? "secondary"
+                                : "outline"
                           }
                         >
                           {task.status === "completed"
                             ? "Hoàn thành"
                             : task.status === "in_progress"
-                            ? "Đang làm"
-                            : "Chờ xử lý"}
+                              ? "Đang làm"
+                              : "Chờ xử lý"}
                         </Badge>
                       </div>
                     ))}

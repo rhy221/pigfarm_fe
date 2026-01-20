@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { reportApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,19 +35,39 @@ export default function ExpensesReportPage() {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
 
+  // Temporary filter states
+  const [tempMonth, setTempMonth] = useState(currentMonth.toString());
+  const [tempYear, setTempYear] = useState(currentYear.toString());
+  const [tempCategory, setTempCategory] = useState("all");
+  const [tempStatus, setTempStatus] = useState("all");
+
+  // Applied filter states
   const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [reportData, setReportData] = useState<ExpenseReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
+  // Fetch report when component mounts or filters change
   useEffect(() => {
     const fetchReport = async () => {
       try {
         setLoading(true);
         const currentMonthStr = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
-        const data = await reportApi.getExpensesReport({ month: currentMonthStr });
+        const params: any = { month: currentMonthStr };
+
+        // Add filter params
+        if (selectedCategory !== "all") {
+          params.category = selectedCategory;
+        }
+        if (selectedStatus !== "all") {
+          params.status =
+            selectedStatus === "Đã thanh toán" ? "paid" : "unpaid";
+        }
+
+        const data = await reportApi.getExpensesReport(params);
         setReportData(data);
       } catch (error) {
         console.error("Error fetching expenses report:", error);
@@ -56,32 +76,36 @@ export default function ExpensesReportPage() {
       }
     };
     fetchReport();
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear, selectedCategory, selectedStatus]);
+
+  const handleSubmit = () => {
+    setSubmitting(true);
+    setSelectedMonth(tempMonth);
+    setSelectedYear(tempYear);
+    setSelectedCategory(tempCategory);
+    setSelectedStatus(tempStatus);
+    // Reset submitting after a short delay to show the loading effect
+    setTimeout(() => setSubmitting(false), 300);
+  };
 
   const handleExportPDF = () => {
     alert("Xuất PDF (chức năng sẽ được triển khai sau)");
   };
 
-  // Map backend data to frontend format
-  const mappedData =
-    reportData?.expenses?.map((expense) => ({
-      id: expense.id,
-      maPhieu: expense.id,
-      ngayPhatSinh: expense.date,
-      loaiChiPhi: expense.category,
-      soTien: expense.amount,
-      tinhTrang:
-        expense.status === "paid" ? "Đã thanh toán" : "Chưa thanh toán",
-    })) || [];
-
-  // Filter logic
-  const filteredData = mappedData.filter((item) => {
-    if (selectedCategory !== "all" && item.loaiChiPhi !== selectedCategory)
-      return false;
-    if (selectedStatus !== "all" && item.tinhTrang !== selectedStatus)
-      return false;
-    return true;
-  });
+  // Map backend data to frontend format (no client-side filtering needed)
+  const filteredData = useMemo(() => {
+    return (
+      reportData?.expenses?.map((expense) => ({
+        id: expense.id,
+        maPhieu: expense.id,
+        ngayPhatSinh: expense.date,
+        loaiChiPhi: expense.category,
+        soTien: expense.amount,
+        tinhTrang:
+          expense.status === "paid" ? "Đã thanh toán" : "Chưa thanh toán",
+      })) || []
+    );
+  }, [reportData]);
 
   const totalExpense = filteredData.reduce((sum, item) => sum + item.soTien, 0);
   const paidExpense = filteredData
@@ -92,7 +116,9 @@ export default function ExpensesReportPage() {
     .reduce((sum, item) => sum + item.soTien, 0);
 
   // Generate Year Options (2020 - Current)
-  const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) => (currentYear - i).toString());
+  const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) =>
+    (currentYear - i).toString()
+  );
 
   return (
     <div className="space-y-6">
@@ -120,15 +146,20 @@ export default function ExpensesReportPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[140px]">
+        <Select value={tempMonth} onValueChange={setTempMonth}>
+          <SelectTrigger className="w-[140px] cursor-pointer">
             <SelectValue placeholder="Chọn tháng" />
           </SelectTrigger>
           <SelectContent>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-              const isDisabled = parseInt(selectedYear) === currentYear && month > currentMonth;
+              const isDisabled =
+                parseInt(tempYear) === currentYear && month > currentMonth;
               return (
-                <SelectItem key={month} value={month.toString()} disabled={isDisabled}>
+                <SelectItem
+                  key={month}
+                  value={month.toString()}
+                  disabled={isDisabled}
+                >
                   Tháng {month}
                 </SelectItem>
               );
@@ -136,12 +167,12 @@ export default function ExpensesReportPage() {
           </SelectContent>
         </Select>
 
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[140px]">
+        <Select value={tempYear} onValueChange={setTempYear}>
+          <SelectTrigger className="w-[140px] cursor-pointer">
             <SelectValue placeholder="Chọn năm" />
           </SelectTrigger>
           <SelectContent>
-             {years.map((year) => (
+            {years.map((year) => (
               <SelectItem key={year} value={year}>
                 Năm {year}
               </SelectItem>
@@ -149,8 +180,8 @@ export default function ExpensesReportPage() {
           </SelectContent>
         </Select>
 
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full sm:w-[200px]">
+        <Select value={tempCategory} onValueChange={setTempCategory}>
+          <SelectTrigger className="w-full sm:w-[200px] cursor-pointer">
             <SelectValue placeholder="Loại chi phí" />
           </SelectTrigger>
           <SelectContent>
@@ -164,8 +195,8 @@ export default function ExpensesReportPage() {
           </SelectContent>
         </Select>
 
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-full sm:w-[200px]">
+        <Select value={tempStatus} onValueChange={setTempStatus}>
+          <SelectTrigger className="w-full sm:w-[200px] cursor-pointer">
             <SelectValue placeholder="Tình trạng" />
           </SelectTrigger>
           <SelectContent>
@@ -175,8 +206,42 @@ export default function ExpensesReportPage() {
           </SelectContent>
         </Select>
 
+        <Button
+          onClick={handleSubmit}
+          disabled={submitting || loading}
+          className="bg-[#53A88B] hover:bg-[#458F79] text-white disabled:opacity-50 cursor-pointer"
+        >
+          {submitting || loading ? (
+            <>
+              <svg
+                className="animate-spin h-4 w-4 mr-2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Đang tải...
+            </>
+          ) : (
+            "Xem báo cáo"
+          )}
+        </Button>
+
         <div className="ml-auto text-sm text-gray-500 italic hidden lg:block">
-            * Dữ liệu tổng hợp trong tháng {selectedMonth}/{selectedYear}
+          * Dữ liệu tổng hợp trong tháng {selectedMonth}/{selectedYear}
         </div>
       </div>
 

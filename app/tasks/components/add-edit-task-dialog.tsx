@@ -68,8 +68,14 @@ export function AddEditTaskDialog({
 
   // Initialize form state based on task or defaults - no useEffect needed
   const getInitialDate = () => {
-    if (task) return new Date(task.date);
-    if (defaultDate) return new Date(defaultDate);
+    if (task) {
+      const [year, month, day] = task.date.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+    if (defaultDate) {
+      const [year, month, day] = defaultDate.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
     return new Date();
   };
 
@@ -96,7 +102,9 @@ export function AddEditTaskDialog({
   useEffect(() => {
     if (open) {
       if (task) {
-        setDate(new Date(task.date));
+        // Parse date in local timezone (avoid UTC conversion)
+        const [year, month, day] = task.date.split("-").map(Number);
+        setDate(new Date(year, month - 1, day));
         setShift(task.shift);
         setBarnId(task.barnId);
         setEmployeeId(task.employeeId);
@@ -105,7 +113,12 @@ export function AddEditTaskDialog({
         setStatus(task.status);
         setNotes(task.notes || "");
       } else {
-        setDate(defaultDate ? new Date(defaultDate) : new Date());
+        if (defaultDate) {
+          const [year, month, day] = defaultDate.split("-").map(Number);
+          setDate(new Date(year, month - 1, day));
+        } else {
+          setDate(new Date());
+        }
         setShift(defaultShift || "morning");
         setBarnId("");
         setEmployeeId("");
@@ -120,8 +133,9 @@ export function AddEditTaskDialog({
 
   // Filter employees based on task type (role permissions)
   const filteredEmployees = employees.filter((emp) => {
-    const allowedTaskTypes = ROLE_PERMISSIONS[emp.role];
-    return allowedTaskTypes.includes(taskType);
+    const role = emp.role || "employee"; // Default to employee if role is undefined
+    const allowedTaskTypes = ROLE_PERMISSIONS[role];
+    return allowedTaskTypes?.includes(taskType) ?? true;
   });
 
   // When task type changes, check if current employee is still valid
@@ -132,8 +146,9 @@ export function AddEditTaskDialog({
     if (employeeId) {
       const employee = employees.find((e) => e.id === employeeId);
       if (employee) {
-        const allowedTaskTypes = ROLE_PERMISSIONS[employee.role];
-        if (!allowedTaskTypes.includes(newTaskType)) {
+        const role = employee.role || "employee";
+        const allowedTaskTypes = ROLE_PERMISSIONS[role];
+        if (!allowedTaskTypes?.includes(newTaskType)) {
           setEmployeeId("");
         }
       }
@@ -150,9 +165,15 @@ export function AddEditTaskDialog({
 
     if (!barn || !employee) return;
 
+    // Format date as YYYY-MM-DD in local timezone (avoid UTC conversion)
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const formattedDate = `${year}-${month}-${day}`;
+
     const taskData = {
       ...(task?.id && { id: task.id }),
-      date: date.toISOString().split("T")[0],
+      date: formattedDate,
       shift,
       barnId,
       barnName: barn.name,
@@ -300,8 +321,8 @@ export function AddEditTaskDialog({
                       {employee.role === "veterinarian"
                         ? "Bác sĩ"
                         : employee.role === "admin"
-                        ? "Quản lý"
-                        : "Nhân viên"}
+                          ? "Quản lý"
+                          : "Nhân viên"}
                       )
                     </SelectItem>
                   ))

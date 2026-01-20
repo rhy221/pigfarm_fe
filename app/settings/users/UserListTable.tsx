@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import type { User } from "./UserListContent";
 
 interface UserGroup {
-  id: number | bigint;
+  id: string;
   name: string;
 }
 
@@ -38,8 +38,7 @@ const UserListTable: React.FC<UserListTableProps> = ({
     const updatedUsers = [...users];
     const currentUser = { ...updatedUsers[index] };
 
-    const newValue = field === "role_id" ? BigInt(value) : value;
-    (currentUser as any)[field] = newValue;
+    (currentUser as any)[field] = value;
     updatedUsers[index] = currentUser;
     setUsers(updatedUsers);
 
@@ -48,7 +47,7 @@ const UserListTable: React.FC<UserListTableProps> = ({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          [field]: field === "role_id" ? Number(value) : value 
+          [field]: value 
         }),
       });
 
@@ -88,7 +87,7 @@ const UserListTable: React.FC<UserListTableProps> = ({
               setEditingCell(null);
             }
           }}
-          className="w-full border border-emerald-200 rounded-md px-2 py-1 text-sm text-center bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="w-full border border-emerald-200 rounded-md px-2 py-1 text-sm text-center bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-800"
         />
       );
     }
@@ -127,7 +126,7 @@ const UserListTable: React.FC<UserListTableProps> = ({
         <tbody className="divide-y divide-emerald-50">
           {users.map((row, index) => {
             const currentGroup = row.user_group || userGroups?.find(
-              (g) => String(g?.id) === String(row.role_id)
+              (g) => g?.id === row.role_id
             );
 
             return (
@@ -138,20 +137,20 @@ const UserListTable: React.FC<UserListTableProps> = ({
                 }`}
               >
                 <td className="px-2 py-2 text-center text-gray-500">{index + 1}</td>
-                <td className="px-4 py-2 text-center text-emerald-900">
+                <td className="px-4 py-2 text-center text-emerald-900 font-medium">
                   {renderCell(index, "full_name", row.full_name)}
                 </td>
                 <td className="px-4 py-2 text-center">
                   {editingCell?.row === index && editingCell.field === "role_id" ? (
                     <select
                       autoFocus
-                      value={row.role_id?.toString() || ""}
+                      value={row.role_id || ""}
                       onChange={(e) => updateValue(index, "role_id", e.target.value)}
                       onBlur={() => setEditingCell(null)}
-                      className="w-full border border-emerald-200 rounded-md px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full border border-emerald-200 rounded-md px-2 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-gray-800"
                     >
                       {userGroups.map((g) => (
-                        <option key={String(g?.id)} value={String(g?.id)}>
+                        <option key={g?.id} value={g?.id}>
                           {g?.name}
                         </option>
                       ))}

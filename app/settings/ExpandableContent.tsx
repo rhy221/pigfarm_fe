@@ -48,27 +48,29 @@ const ExpandableContent: React.FC<ExpandableContentProps> = ({ contentType, chil
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
         <h2 className="text-x  text-[var(--color-card-foreground)]">Danh sách {contentType.toLowerCase()}</h2>
-        <div className="flex flex-wrap gap-2">
-          {/* Thêm */}
-          <button
-            onClick={() => setIsAdding(true)}
-            disabled={isAdding}
-            className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
-          >
-            <span>Thêm</span>
-          </button>
+        {contentType !== "Phân quyền truy cập" && (
+          <div className="flex flex-wrap gap-2">
+            {/* Thêm */}
+            <button
+              onClick={() => setIsAdding(true)}
+              disabled={isAdding}
+              className="border border-emerald-600 text-emerald-600 px-6 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition"
+            >
+              <span>Thêm</span>
+            </button>
 
-          {/* Xoá */}
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg
-                      bg-red-700 text-white
-                      hover:bg-red-800 transition"
-          >
-            <Trash2 size={16} />
-            <span>Xoá</span>
-          </button>
-        </div>
+            {/* Xoá */}
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-1 px-4 py-2 text-sm rounded-lg
+                        bg-red-700 text-white
+                        hover:bg-red-800 transition"
+            >
+              <Trash2 size={16} />
+              <span>Xoá</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Content Area */}

@@ -66,7 +66,7 @@ export async function fetchVaccinationCalendar(
 ): Promise<CalendarEvent[]> {
   try {
     const res = await fetch(
-      `${API_URL}/health/vaccination/calendar?month=${month}&year=${year}`,
+      `${API_URL}/vaccination/calendar?month=${month}&year=${year}`,
       { cache: "no-store" }
     )
     if (!res.ok) throw new Error("Failed fetch calendar")
@@ -102,7 +102,7 @@ export async function fetchVaccinationCalendar(
  * ===================================================== */
 export async function fetchVaccinationDetails(date: string): Promise<VaccinationGroup[]> {
   try {
-    const res = await fetch(`${API_URL}/health/vaccination/details?date=${date}`, { cache: "no-store" })
+    const res = await fetch(`${API_URL}/vaccination/details?date=${date}`, { cache: "no-store" })
     if (!res.ok) throw new Error("Failed fetch details")
     return await res.json()
   } catch (error) {
@@ -116,7 +116,7 @@ export async function fetchVaccinationDetails(date: string): Promise<Vaccination
  * PATCH /health/vaccination/complete
  * ===================================================== */
 export async function markVaccinated(items: any[]) {
-  const res = await fetch(`${API_URL}/health/vaccination/complete`, {
+  const res = await fetch(`${API_URL}/vaccination/complete`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ items }), 
@@ -139,7 +139,7 @@ export async function createVaccinationSchedule(payload: any) {
     color: payload.color
   }
 
-  const res = await fetch(`${API_URL}/health/vaccination/manual`, {
+  const res = await fetch(`${API_URL}/vaccination/manual`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -151,19 +151,24 @@ export async function createVaccinationSchedule(payload: any) {
 
 /* =====================================================
  * 5. MẪU TIÊM CHỦNG (TEMPLATES)
- * GET /health/templates
+ * GET /vaccination/templates
  * ===================================================== */
 export async function fetchVaccineSamples(): Promise<VaccineSampleItem[]> {
-  const res = await fetch(`${API_URL}/health/templates`, { cache: "no-store" })
-  if (!res.ok) return []
+  const res = await fetch(`${API_URL}/vaccination/templates`, { cache: "no-store" })
+  
+  if (!res.ok) {
+    console.error("Lỗi fetchVaccineSamples:", res.status, res.statusText);
+    return [] 
+  }
   
   const data = await res.json()
+  
   return data.map((t: any) => ({
     id: t.id,
-    name: t.vaccineName,
-    dose: t.dosage,
-    age: t.daysOldText,
-    note: t.notes,
+    name: t.vaccineName,    
+    dose: t.dosage,         
+    age: t.daysOldText,     
+    note: t.notes,          
     
     vaccineId: t.vaccineId,
     stage: t.stage,
@@ -176,7 +181,7 @@ export async function fetchVaccineSamples(): Promise<VaccineSampleItem[]> {
  * GET /health/templates/suggestions
  * ===================================================== */
 export async function fetchVaccineSuggestions(): Promise<VaccineSuggestion[]> {
-  const res = await fetch(`${API_URL}/health/templates/suggestions`, { cache: "no-store" })
+  const res = await fetch(`${API_URL}/vaccination/templates/suggestions`, { cache: "no-store" })
   if (!res.ok) return []
   return await res.json()
 }
@@ -208,7 +213,7 @@ export async function fetchAvailablePens(): Promise<{id: string, name: string}[]
  * ===================================================== */
 export async function fetchVaccines(): Promise<{id: string, name: string}[]> {
   try {
-    const res = await fetch(`${API_URL}/health/vaccines`, {
+    const res = await fetch(`${API_URL}/vaccination/vaccine-list`, {
       cache: "no-store",
     })
 
@@ -223,9 +228,8 @@ export async function fetchVaccines(): Promise<{id: string, name: string}[]> {
   }
 }
 
-
 export async function saveVaccinationTemplates(data: any[]) {
-  const res = await fetch(`${API_URL}/health/templates`, {
+  const res = await fetch(`${API_URL}/vaccination/templates`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
@@ -233,7 +237,16 @@ export async function saveVaccinationTemplates(data: any[]) {
   if (!res.ok) throw new Error("Save failed")
   return res.json()
 }
-
 export async function deleteTemplateItem(id: string) {
-  await fetch(`${API_URL}/health/templates/item/${id}`, { method: "DELETE" })
+  await fetch(`${API_URL}/vaccination/templates/item/${id}`, { method: "DELETE" })
+}
+
+export async function addTemplateItem(data: any) {
+  const res = await fetch(`${API_URL}/vaccination/templates/item`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to add template item");
+  return res.json();
 }

@@ -34,7 +34,7 @@ export default function FeedingSchedule() {
       <Table>
         <TableHeader className="bg-emerald-600">
           <TableRow>
-            <TableHead className="text-white w-10"></TableHead>
+            {/* <TableHead className="text-white w-10"></TableHead> */}
             <TableHead className="text-white">Chuồng</TableHead>
             <TableHead className="text-white">Công thức</TableHead>
             <TableHead className="text-white">Định lượng</TableHead>
@@ -45,9 +45,9 @@ export default function FeedingSchedule() {
         <TableBody>
           {data.map((row, i) => (
             <TableRow key={i}>
-              <TableCell>
+              {/* <TableCell>
                 <input type="checkbox" />
-              </TableCell>
+              </TableCell> */}
               <TableCell>{row.chuong}</TableCell>
               <TableCell>{row.formula}</TableCell>
               <TableCell>{row.amount}</TableCell>
@@ -58,9 +58,9 @@ export default function FeedingSchedule() {
       </Table>
 
       <div className="flex justify-end">
-        <Button className="bg-emerald-600 hover:bg-emerald-700">
+        {/* <Button className="bg-emerald-600 hover:bg-emerald-700">
           Đã cho ăn
-        </Button>
+        </Button> */}
       </div>
     </div>
   )

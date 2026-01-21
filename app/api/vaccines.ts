@@ -131,23 +131,16 @@ export async function markVaccinated(items: any[]) {
  * POST /health/vaccination/manual
  * ===================================================== */
 export async function createVaccinationSchedule(payload: any) {
-  const body = {
-    penIds: payload.penIds, 
-    scheduledDate: `${payload.date}T${payload.time}:00.000Z`, 
-    vaccineName: payload.vaccineName,
-    stage: payload.stage,
-    color: payload.color
-  }
-
   const res = await fetch(`${API_URL}/vaccination/manual`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload), // 🔥 GỬI NGUYÊN PAYLOAD
   })
 
   if (!res.ok) throw new Error("Failed create schedule")
   return res.json()
 }
+
 
 /* =====================================================
  * 5. MẪU TIÊM CHỦNG (TEMPLATES)

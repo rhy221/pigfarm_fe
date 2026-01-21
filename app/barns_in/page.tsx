@@ -18,17 +18,16 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 import { ArrowLeft, ChevronDown, Loader2 } from "lucide-react"
-import { dashboardApi } from "@/app/api/barns" // Đảm bảo file api.ts đã có hàm getPens và intakePigs
+import { barnsApi } from "@/app/api/barns"
 
 /* ================= TYPES ================= */
 type PigRow = {
-  id: number
+  id: string
   code: string
   earTag: string
   weight?: number
 }
 
-// Kiểu dữ liệu Chuồng từ Backend
 type Pen = {
   id: string
   pen_name: string
@@ -38,91 +37,128 @@ type Pen = {
 export default function PigIntakePage() {
   const router = useRouter()
 
+  /* ===== META ===== */
+  const [breeds, setBreeds] = React.useState<{ id: string; name: string }[]>([])
+  const [vaccines, setVaccines] = React.useState<{ id: string; name: string }[]>([])
+  const [breedId, setBreedId] = React.useState("")
+  const [vaccineIds, setVaccineIds] = React.useState<string[]>([])
+
   /* ===== LỨA ===== */
   const availableBatches = ["01", "02", "03", "04"]
   const [batch, setBatch] = React.useState("")
   const [isNewBatch, setIsNewBatch] = React.useState(false)
+  const [batches, setBatches] = React.useState<{
+    id: string
+    batch_name: string
+    arrival_date: string
+  }[]>([])
 
-  /* ===== CHUỒNG (FETCH DATA) ===== */
+  /* ===== FORM ===== */
+  const [arrivalDate, setArrivalDate] = React.useState("")
+  const [daysOld, setDaysOld] = React.useState(0)
+  const [count, setCount] = React.useState(0)
+
+  /* ===== CHUỒNG ===== */
   const [selectedBarn, setSelectedBarn] = React.useState<Pen | null>(null)
   const [emptyBarns, setEmptyBarns] = React.useState<Pen[]>([])
   const [loadingBarns, setLoadingBarns] = React.useState(true)
 
-  React.useEffect(() => {
-    const fetchBarns = async () => {
-      try {
-        const data = await dashboardApi.getPens()
-        setEmptyBarns(data)
-      } catch (error) {
-        console.error("Lỗi tải danh sách chuồng:", error)
-      } finally {
-        setLoadingBarns(false)
-      }
-    }
-    fetchBarns()
-  }, [])
-
   /* ===== FLOW ===== */
-  const [showCount, setShowCount] = React.useState(false)
   const [showDetail, setShowDetail] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
-  /* ===== COUNT ===== */
-  const [count, setCount] = React.useState(0)
-
-  /* ===== DETAIL ===== */
+  /* ===== DATA ===== */
   const [rows, setRows] = React.useState<PigRow[]>([])
 
-  const createRows = () => {
-    const data: PigRow[] = Array.from({ length: count }).map((_, i) => ({
-      id: i + 1,
-      code: `PIG-${batch}-${i + 1}`,
-      earTag: "",
-      weight: 0
-    }))
-    setRows(data)
-    setShowDetail(true)
-  }
+  /* ================= FETCH ================= */
+  React.useEffect(() => {
+    barnsApi.getPens().then(data => {
+      setEmptyBarns(data.map(p => ({ id: p.id, pen_name: p.name })))
+      setLoadingBarns(false)
+    })
+    barnsApi.getBreeds().then(setBreeds)
+    barnsApi.getVaccines().then(setVaccines)
+    barnsApi.getPigBatches().then(setBatches)
+  }, [])
 
-  const updateRow = (
-    id: number,
-    field: keyof PigRow,
-    value: string | number
-  ) => {
-    setRows(prev =>
-      prev.map(r => (r.id === id ? { ...r, [field]: value } : r))
-    )
-  }
-
-  /* ===== API SUBMIT ===== */
-  const handleConfirm = async () => {
-    if (!selectedBarn || !batch || rows.length === 0) return
+  /* ================= STEP 1: IMPORT ================= */
+  const handleContinue = async () => {
+    console.log("IMPORT PAYLOAD", {
+      batch,
+      selectedBarn,
+      count,
+    })
+    if (!selectedBarn || !batch || !arrivalDate || !breedId || count <= 0) return
 
     try {
       setIsSubmitting(true)
-      const payload = {
-        pen_id: selectedBarn.id,
-        batch: batch,
-        pigs: rows.map(r => ({
-          code: r.code,
-          earTag: r.earTag,
-          weight: r.weight
+
+      const res = await barnsApi.importBatch({
+        existingBatchId: isNewBatch ? null : batch,
+        batchName: isNewBatch ? `Lứa nhập ngày ${arrivalDate}` : undefined,
+        penId: selectedBarn.id,
+        breedId,
+        arrivalDate,
+        quantity: count,
+        daysOld,
+        vaccineIds,
+      })
+
+
+      console.log("IMPORT RESPONSE", res)
+
+      setRows(
+        res.pigs.map((p: any) => ({
+          id: p.id,
+          code: p.id, // ✅ dùng id làm mã tạm
+          earTag: "",
+          weight: 0,
         }))
-      }
-      
-      await dashboardApi.intakePigs(payload)
-      alert("Tiếp nhận heo thành công!")
-      router.push(`/barns/${selectedBarn.id}`)
-    } catch (error) {
-      alert("Có lỗi xảy ra khi lưu dữ liệu")
+      )
+
+
+      setShowDetail(true)
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  /* ================= STEP 2: UPDATE DETAIL ================= */
+ const handleSave = async () => {
+  const invalid = rows.some(r => !r.earTag || !r.weight)
+    if (invalid) {
+      alert("Vui lòng nhập đầy đủ mã tai và trọng lượng")
+      return
+    }
+
+  try {
+    setIsSubmitting(true)
+
+    await barnsApi.updatePigDetails({
+      items: rows.map(r => ({
+        id: r.id,
+        earTag: r.earTag,
+        weight: r.weight ?? 0,
+      })),
+    })
+
+    alert("Lưu thành công!")
+    router.push(`/barns/${selectedBarn?.id}`)
+  } catch (err) {
+    console.error(err)
+    alert("Lỗi khi lưu chi tiết heo")
+  } finally {
+    setIsSubmitting(false)
+  }
+}
+
+  const updateRow = (id: string, field: keyof PigRow, value: any) => {
+    setRows(prev => prev.map(r => (r.id === id ? { ...r, [field]: value } : r)))
+  }
+
+  /* ================= RENDER ================= */
   return (
     <div className="space-y-6">
-      {/* ===== HEADER ===== */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
@@ -130,56 +166,56 @@ export default function PigIntakePage() {
         <span className="font-semibold">Tiếp nhận heo</span>
       </div>
 
-      {/* ================= FORM ================= */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* ===== LỨA ===== */}
-        <Field label="Lứa">
+      {!showDetail && (
+        <>
+          <Field label="Lứa">
           <div className="space-y-2 w-full">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between"
-                >
+                <Button variant="outline" className="w-full justify-between">
                   {batch
-                    ? isNewBatch
-                      ? `Lứa mới: ${batch}`
-                      : `Lứa ${batch}`
+                    ? batches.find(b => b.id === batch)?.batch_name || "Lứa mới"
                     : "Chọn lứa"}
                   <ChevronDown className="size-4 opacity-60" />
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent className="w-full">
-                {availableBatches.map(b => (
+              <DropdownMenuContent className="w-[260px]">
+                {batches.map(b => (
                   <DropdownMenuItem
-                    key={b}
+                    key={b.id}
                     onClick={() => {
-                      setBatch(b)
+                      setBatch(b.id)
                       setIsNewBatch(false)
                     }}
                   >
-                    Lứa {b}
+                    <div className="flex flex-col">
+                      <span>{b.batch_name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(b.arrival_date).toLocaleDateString("vi-VN")}
+                      </span>
+                    </div>
                   </DropdownMenuItem>
                 ))}
 
                 <DropdownMenuItem
-                  className="text-emerald-600 font-medium"
                   onClick={() => {
                     setBatch("")
                     setIsNewBatch(true)
                   }}
+                  className="text-primary"
                 >
-                  ➕ Thêm lứa mới
+                  ➕ Tạo lứa mới
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* INPUT CHỈ HIỆN KHI TẠO LỨA MỚI */}
             {isNewBatch && (
               <input
                 type="text"
                 className="input"
-                placeholder="Nhập lứa mới (vd: 05)"
+                placeholder="Nhập mã lứa (vd: 05)"
                 value={batch}
                 onChange={e => setBatch(e.target.value)}
               />
@@ -187,173 +223,110 @@ export default function PigIntakePage() {
           </div>
         </Field>
 
-        {/* ===== CHUỒNG ===== */}
-        <Field label="Chuồng">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between" disabled={loadingBarns}>
-                {loadingBarns ? "Đang tải..." : (selectedBarn?.pen_name ?? "Chọn chuồng trống")}
-                <ChevronDown className="size-4 opacity-60" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {emptyBarns.map(b => (
-                <DropdownMenuItem
-                  key={b.id}
-                  onClick={() => setSelectedBarn(b)}
-                >
-                  {b.pen_name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </Field>
-      </div>
 
-      <div className="flex justify-end">
-        <Button
-          disabled={!batch || !selectedBarn}
-          onClick={() => {
-            setShowCount(true)
-            setShowDetail(false)
-          }}
-        >
-          Lưu
-        </Button>
-      </div>
+          <Field label="Chuồng">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {selectedBarn?.pen_name || "Chọn chuồng"}
+                  <ChevronDown className="size-4 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {emptyBarns.map(b => (
+                  <DropdownMenuItem key={b.id} onClick={() => setSelectedBarn(b)}>
+                    {b.pen_name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </Field>
+          <Field label="Giống">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {breeds.find(b => b.id === breedId)?.name || "Chọn giống"}
+                  <ChevronDown className="size-4 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
 
-      {/* ================= NHẬP SỐ LƯỢNG ================= */}
-      {showCount && (
-        <div className="mt-8 space-y-4">
-          <SectionTitle title="Nhập số lượng" />
+              <DropdownMenuContent className="w-full">
+                {breeds.map(b => (
+                  <DropdownMenuItem
+                    key={b.id}
+                    onClick={() => setBreedId(b.id)}
+                  >
+                    {b.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </Field>
 
-          <Field label="Số lượng con">
-            <input
-              type="number"
-              min={1}
-              className="input"
-              value={count}
-              onChange={e => setCount(Number(e.target.value))}
-            />
+          <Field label="Ngày nhập">
+            <input type="date" className="input" value={arrivalDate} onChange={e => setArrivalDate(e.target.value)} />
+          </Field>
+
+          <Field label="Ngày tuổi">
+            <input type="number" className="input" value={daysOld} onChange={e => setDaysOld(+e.target.value)} />
+          </Field>
+
+          <Field label="Số lượng">
+            <input type="number" className="input" value={count} onChange={e => setCount(+e.target.value)} />
           </Field>
 
           <div className="flex justify-end">
-            <Button disabled={count <= 0} onClick={createRows}>
-              Tạo danh sách
+            <Button onClick={handleContinue} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Tiếp tục
             </Button>
           </div>
-        </div>
+        </>
       )}
 
-      {/* ================= CHI TIẾT ================= */}
       {showDetail && (
-        <div className="mt-10 space-y-4">
-          <SectionTitle title="Chi tiết từng con" />
-
+        <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>STT</TableHead>
-                <TableHead>Mã số</TableHead>
+                <TableHead>Mã</TableHead>
                 <TableHead>Mã tai</TableHead>
                 <TableHead>Trọng lượng</TableHead>
               </TableRow>
             </TableHeader>
-
             <TableBody>
-              {rows.map((r, i) => (
+              {rows.map(r => (
                 <TableRow key={r.id}>
-                  <TableCell>{i + 1}</TableCell>
+                  <TableCell>{r.code}</TableCell>
                   <TableCell>
-                    <input
-                      className="table-input"
-                      value={r.code}
-                      onChange={e =>
-                        updateRow(r.id, "code", e.target.value)
-                      }
-                    />
+                    <input className="table-input" onChange={e => updateRow(r.id, "earTag", e.target.value)} />
                   </TableCell>
                   <TableCell>
-                    <input
-                      className="table-input"
-                      value={r.earTag}
-                      onChange={e =>
-                        updateRow(r.id, "earTag", e.target.value)
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <input
-                      type="number"
-                      className="table-input"
-                      value={r.weight ?? ""}
-                      onChange={e =>
-                        updateRow(r.id, "weight", Number(e.target.value))
-                      }
-                    />
+                    <input type="number" className="table-input" onChange={e => updateRow(r.id, "weight", +e.target.value)} />
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
 
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="destructive"
-              onClick={() => setShowDetail(false)}
-              disabled={isSubmitting}
-            >
-              Hủy
-            </Button>
-            <Button 
-              onClick={handleConfirm} 
-              disabled={isSubmitting}
-            >
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Xác nhận
+              Lưu
             </Button>
           </div>
-        </div>
+        </>
       )}
-
-      {/* ===== STYLES ===== */}
-      <style jsx>{`
-        .input {
-          width: 100%;
-          border-radius: 6px;
-          border: 1px solid hsl(var(--border));
-          padding: 6px 10px;
-          font-size: 14px;
-        }
-        .table-input {
-          width: 100%;
-          border-bottom: 1px solid hsl(var(--border));
-          padding: 4px 2px;
-          font-size: 14px;
-          background: transparent;
-          outline: none;
-        }
-      `}</style>
     </div>
   )
 }
 
-/* ================= COMPONENTS (GIỮ NGUYÊN) ================= */
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/* ================= UI ================= */
+function Field({ label, children }: any) {
   return (
-    <div className="grid grid-cols-[120px_1fr] items-center gap-3">
+    <div className="grid grid-cols-[120px_1fr] gap-3 items-center">
       <label className="text-sm font-medium">{label}</label>
       {children}
-    </div>
-  )
-}
-
-function SectionTitle({ title }: { title: string }) {
-  return (
-    <div className="relative flex items-center">
-      <div className="flex-grow border-t" />
-      <span className="mx-3 text-sm text-muted-foreground">{title}</span>
-      <div className="flex-grow border-t" />
     </div>
   )
 }

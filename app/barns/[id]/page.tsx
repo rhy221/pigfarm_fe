@@ -23,88 +23,112 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 
-import TransferBarnModal from "@/app/barns_detail/barns_transfer_modal"
-// Giả định bạn đã tạo file này ở bước trước
-import { dashboardApi } from "@/app/api/barns" 
+import TransferBarnModal from "@/app/barns/barns_transfer_modal"
+import { barnsApi } from "@/app/api/barns"
+import type { Pen, Pig } from "@/app/api/barns"
+import { se } from "date-fns/locale"
 
 export default function BarnDetailPage() {
   const router = useRouter()
   const params = useParams()
   const penId = params.id as string
 
-  // --- States ---
-  const [penData, setPenData] = useState<any>(null)
+  // ===== STATE =====
+  const [pen, setPen] = useState<Pen | null>(null)
+  const [pigs, setPigs] = useState<Pig[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
   const [search, setSearch] = useState("")
   const [selectedPigIds, setSelectedPigIds] = useState<string[]>([])
   const [openTransfer, setOpenTransfer] = useState(false)
 
-  // --- Fetch Data ---
+  // ===== FETCH DATA =====
   useEffect(() => {
-    const fetchDetail = async () => {
+    if (!penId) return
+
+    const fetchData = async () => {
       try {
         setLoading(true)
-        // Gọi API lấy chi tiết chuồng từ PensController
-        const data = await dashboardApi.getPenDetail(penId)
-        setPenData(data)
-      } catch (err: any) {
-        setError("Không thể tải thông tin chuồng heo.")
+
+        // 1. Fetch pen
+        const pens = await barnsApi.getPens()
+        const currentPen = pens.find(p => p.id === penId)
+        if (!currentPen) throw new Error("Không tìm thấy chuồng")
+
+        setPen(currentPen)
+
+        // 2. Fetch pigs in pen
+        const pigsInPen = await barnsApi.getPigsByPenId(penId)
+        setPigs(pigsInPen)
+
+      } catch (err) {
         console.error(err)
+        setError("Không thể tải dữ liệu chuồng")
       } finally {
         setLoading(false)
       }
     }
-    if (penId) fetchDetail()
+
+    fetchData()
   }, [penId])
 
-  // --- Logic Tìm kiếm ---
+  // ===== SEARCH =====
   const filteredPigs = useMemo(() => {
-    const pigsList = penData?.pigs || []
-    if (!search.trim()) return pigsList
-
+    if (!search.trim()) return pigs
     const keyword = search.toLowerCase()
-    return pigsList.filter(
-      (pig: any) =>
-        pig.id.toLowerCase().includes(keyword) ||
-        (pig.ear_tag && pig.ear_tag.toLowerCase().includes(keyword))
-    )
-  }, [search, penData])
 
-  // --- Logic Chọn nhiều ---
+    return pigs.filter(
+      pig =>
+        pig.id.toLowerCase().includes(keyword) ||
+        pig.earTagNumber?.toLowerCase().includes(keyword)
+    )
+  }, [search, pigs])
+
+  // ===== SELECT ALL =====
   const isAllSelected =
     filteredPigs.length > 0 &&
-    filteredPigs.every((pig: any) => selectedPigIds.includes(pig.id))
+    filteredPigs.every(pig => selectedPigIds.includes(pig.id))
 
   const toggleSelectAll = () => {
     if (isAllSelected) {
       setSelectedPigIds(prev =>
-        prev.filter(id => !filteredPigs.some((p: any) => p.id === id))
+        prev.filter(id => !filteredPigs.some(p => p.id === id))
       )
     } else {
       setSelectedPigIds(prev => {
-        const ids = filteredPigs.map((p: any) => p.id)
+        const ids = filteredPigs.map(p => p.id)
         return Array.from(new Set([...prev, ...ids]))
       })
     }
   }
 
-  // --- Render logic ---
-  if (loading) return (
-    <div className="flex h-[80vh] flex-col items-center justify-center gap-2">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      <p className="text-sm text-muted-foreground">Đang tải dữ liệu chuồng...</p>
-    </div>
-  )
+  // ===== RENDER STATES =====
+  if (loading) {
+    return (
+      <div className="flex h-[80vh] flex-col items-center justify-center gap-2">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">
+          Đang tải dữ liệu chuồng...
+        </p>
+      </div>
+    )
+  }
 
-  if (error || !penData) return (
-    <div className="flex h-[80vh] flex-col items-center justify-center gap-4 text-center">
-      <AlertCircle className="h-12 w-12 text-destructive" />
-      <p className="text-lg font-medium">{error || "Dữ liệu không tồn tại"}</p>
-      <Button onClick={() => router.back()}>Quay lại</Button>
-    </div>
-  )
+  if (error || !pen) {
+    return (
+      <div className="flex h-[80vh] flex-col items-center justify-center gap-4 text-center">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <p className="text-lg font-medium">
+          {error || "Dữ liệu không tồn tại"}
+        </p>
+        <Button onClick={() => router.back()}>Quay lại</Button>
+      </div>
+    )
+  }
+  
 
+  // ===== MAIN RENDER =====
   return (
     <div className="space-y-6">
       {/* ===== HEADER ===== */}
@@ -114,8 +138,8 @@ export default function BarnDetailPage() {
         </Button>
 
         <div>
-          <h1 className="text-xl font-bold">{penData.pen_name}</h1>
-          <p className="text-xs text-muted-foreground">ID: {penId}</p>
+          <h1 className="text-xl font-bold">{pen.name}</h1>
+          <p className="text-xs text-muted-foreground">ID: {pen.id}</p>
         </div>
 
         <div className="ml-auto">
@@ -130,8 +154,8 @@ export default function BarnDetailPage() {
               <DropdownMenuItem onClick={() => console.log("Edit pen", penId)}>
                 Chỉnh sửa thông tin
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                variant="destructive"
+              <DropdownMenuItem
+                className="text-destructive"
                 onClick={() => console.log("Delete pen", penId)}
               >
                 Xóa chuồng
@@ -141,27 +165,35 @@ export default function BarnDetailPage() {
         </div>
       </div>
 
-      {/* ===== THÔNG TIN TỔNG QUAN ===== */}
+      {/* ===== OVERVIEW ===== */}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <p className="text-sm text-muted-foreground">Số lượng heo</p>
           <p className="text-2xl font-bold">
-            {penData.pigs?.length || 0} / {penData.capacity || 100}
+            {pigs.length} / {pen.capacity}
           </p>
         </div>
+
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <p className="text-sm text-muted-foreground">🌡 Nhiệt độ</p>
-          <p className={`text-2xl font-bold ${penData.temperature > 32 ? "text-red-500" : "text-green-600"}`}>
-            {penData.temperature}°C
+          <p
+            className={`text-2xl font-bold ${
+              pen.temperature > 32 ? "text-red-500" : "text-green-600"
+            }`}
+          >
+            {pen.temperature}°C
           </p>
         </div>
+
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <p className="text-sm text-muted-foreground">💧 Độ ẩm</p>
-          <p className="text-2xl font-bold text-blue-600">{penData.humidity}%</p>
+          <p className="text-2xl font-bold text-blue-600">
+            {pen.humidity}%
+          </p>
         </div>
       </div>
 
-      {/* ===== DANH SÁCH HEO TRONG CHUỒNG ===== */}
+      {/* ===== PIG LIST ===== */}
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-full max-w-sm">
@@ -173,6 +205,7 @@ export default function BarnDetailPage() {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
+
           <div className="text-sm text-muted-foreground">
             Đang chọn <b>{selectedPigIds.length}</b> / {filteredPigs.length} con
           </div>
@@ -191,23 +224,29 @@ export default function BarnDetailPage() {
                 <TableHead>STT</TableHead>
                 <TableHead>Mã số (ID)</TableHead>
                 <TableHead>Mã tai</TableHead>
-                <TableHead className="text-right">Trọng lượng (kg)</TableHead>
+                <TableHead className="text-right">
+                  Trọng lượng (kg)
+                </TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {filteredPigs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                    Không có heo nào trong chuồng này.
+                  <TableCell
+                    colSpan={5}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    Không có heo nào trong chuồng này
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredPigs.map((pig: any, index: number) => (
+                filteredPigs.map((pig, index) => (
                   <TableRow key={pig.id}>
                     <TableCell>
                       <Checkbox
                         checked={selectedPigIds.includes(pig.id)}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={checked => {
                           setSelectedPigIds(prev =>
                             checked
                               ? [...prev, pig.id]
@@ -216,11 +255,19 @@ export default function BarnDetailPage() {
                         }}
                       />
                     </TableCell>
+
                     <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-mono text-xs">{pig.id}</TableCell>
-                    <TableCell>{pig.ear_tag || "---"}</TableCell>
+
+                    <TableCell className="font-mono text-xs">
+                      {pig.id}
+                    </TableCell>
+
+                    <TableCell>
+                      {pig.earTagNumber || "---"}
+                    </TableCell>
+
                     <TableCell className="text-right font-medium">
-                      {pig.weight || 0}
+                      {pig.weight ?? 0}
                     </TableCell>
                   </TableRow>
                 ))
@@ -230,7 +277,7 @@ export default function BarnDetailPage() {
         </div>
       </div>
 
-      {/* ===== NÚT THAO TÁC NỔI (Sticky Action Bar) ===== */}
+      {/* ===== ACTIONS ===== */}
       <div className="flex justify-end gap-3 pt-4">
         <Button
           variant="outline"
@@ -239,25 +286,27 @@ export default function BarnDetailPage() {
         >
           Chuyển chuồng ({selectedPigIds.length})
         </Button>
+
         <Button onClick={() => router.push("/barns_in")}>
           Tiếp nhận heo mới
         </Button>
       </div>
 
-      {/* MODAL CHUYỂN CHUỒNG */}
+      {/* ===== TRANSFER MODAL ===== */}
       <TransferBarnModal
         isOpen={openTransfer}
-        onClose={() => setOpenTransfer(false)}
+        onClose={() => {
+          setOpenTransfer(false)
+        }}
         selectedPigIds={selectedPigIds}
-        // Barns này nên được fetch từ api.getPens() trong thực tế
-        barns={[]} 
-        onSubmit={async (payload) => {
-          console.log("Gửi API chuyển chuồng:", payload)
-          // dashboardApi.transferPigs(payload)
+        currentBarnId={pen.id}
+        onTransferred={() => {
           setOpenTransfer(false)
           setSelectedPigIds([])
+          router.refresh()
         }}
       />
+
     </div>
   )
 }

@@ -163,11 +163,17 @@ function DayCell({
         </span>
         {dayTasks.length > 0 && (
           <div className="flex gap-1">
-            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-              {dayTasks.filter(t => t.status === 'completed').length}
+            <Badge
+              variant="secondary"
+              className="text-xs bg-green-100 text-green-700"
+            >
+              {dayTasks.filter((t) => t.status === "completed").length}
             </Badge>
-            <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
-              {dayTasks.filter(t => t.status !== 'completed').length}
+            <Badge
+              variant="secondary"
+              className="text-xs bg-orange-100 text-orange-700"
+            >
+              {dayTasks.filter((t) => t.status !== "completed").length}
             </Badge>
           </div>
         )}
@@ -198,11 +204,11 @@ function DayCell({
               {shiftTasks.length > 0 ? (
                 <div className="flex items-center justify-center gap-1 h-full">
                   <span className="text-xs font-semibold text-green-600">
-                    {shiftTasks.filter(t => t.status === 'completed').length}
+                    {shiftTasks.filter((t) => t.status === "completed").length}
                   </span>
                   <span className="text-[10px] text-muted-foreground">/</span>
                   <span className="text-xs font-semibold text-orange-600">
-                    {shiftTasks.filter(t => t.status !== 'completed').length}
+                    {shiftTasks.filter((t) => t.status !== "completed").length}
                   </span>
                 </div>
               ) : (

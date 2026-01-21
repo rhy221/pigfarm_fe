@@ -19,6 +19,11 @@ const AddNewWorkShiftModal: React.FC<AddNewWorkShiftModalProps> = ({ onClose, on
       end_time: endTime,       
     };
 
+    if (startTime >= endTime) {
+      alert("Giờ bắt đầu phải nhỏ hơn giờ kết thúc!");
+      return;
+    }
+
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/work-shifts`, {
         method: "POST",

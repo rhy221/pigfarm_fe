@@ -16,9 +16,7 @@ interface WorkShiftTableProps {
 
 type EditableField = "name" | "startTime" | "endTime";
 
-type EditingCell =
-  | { row: number; field: EditableField }
-  | null;
+type EditingCell = { row: number; field: EditableField } | null;
 
 const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
   shifts,
@@ -32,9 +30,28 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
 
-  const handleFinishEditing = async (index: number, field: EditableField, value: string) => {
-    const row = shifts[index];
-    const trimmedValue = value.trim();
+  const handleFinishEditing = async (index: number, field: EditableField) => {
+    const originalRow = shifts[index];
+    const editedRow = editedShifts[index];
+    
+    if (!originalRow || !editedRow) {
+      setEditingCell(null);
+      return;
+    }
+
+    const value = editedRow[field]?.trim();
+    const oldValue = originalRow[field];
+
+    if (field === "startTime" || field === "endTime") {
+      if (editedRow.startTime >= editedRow.endTime) {
+        alert("Giờ bắt đầu phải nhỏ hơn giờ kết thúc!");
+        const resetEdited = [...editedShifts];
+        resetEdited[index] = { ...originalRow };
+        setEditedShifts(resetEdited);
+        setEditingCell(null);
+        return;
+      }
+    }
 
     const fieldMapping = {
       name: "session",
@@ -42,48 +59,37 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
       endTime: "end_time",
     };
 
-    const oldValue = String(row[field as keyof WorkShift]); 
-
-    if (trimmedValue && trimmedValue !== oldValue) {
+    if (value && value !== oldValue) {
       const dbField = fieldMapping[field];
       try {
-        setEditingCell(null);
-        await onUpdate(row.id!, { [dbField]: trimmedValue });
+        await onUpdate(originalRow.id!, { [dbField]: value });
       } catch (error) {
         console.error("Lỗi cập nhật:", error);
       }
     }
+    
     setEditingCell(null);
   };
 
   const updateValue = (
     index: number,
-    field: "name" | "startTime" | "endTime",
+    field: EditableField,
     value: string
   ) => {
     const newEdited = [...editedShifts];
-    if (!newEdited[index]) newEdited[index] = { ...shifts[index] };
-    newEdited[index][field] = value;
+    newEdited[index] = { ...newEdited[index], [field]: value };
     setEditedShifts(newEdited);
   };
 
   return (
-    <div className="overflow-x-auto border border-emerald-100 rounded-lg bg-[var(--color-card)] shadow-sm max-w-4xl mx-auto">
+    <div className="overflow-x-auto border border-emerald-100 rounded-lg bg-white shadow-sm max-w-4xl mx-auto">
       <table className="w-full table-fixed text-sm"> 
-        <thead className="bg-emerald-50">
+        <thead className="bg-emerald-50 text-emerald-700">
           <tr className="divide-x divide-emerald-100">
-            <th className="w-[80px] px-3 py-3 text-center text-sm font-semibold text-emerald-700 uppercase">
-              STT
-            </th>
-            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-emerald-700">
-              Ca làm
-            </th>
-            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-emerald-700">
-              Giờ bắt đầu
-            </th>
-            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold text-emerald-700">
-              Giờ kết thúc
-            </th>
+            <th className="w-[80px] px-3 py-3 text-center text-sm font-semibold uppercase">STT</th>
+            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold">Ca làm</th>
+            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold">Giờ bắt đầu</th>
+            <th className="w-[150px] px-3 py-3 text-center text-sm font-semibold">Giờ kết thúc</th>
             <th className="w-[80px] px-3 py-3 text-center">
               <input
                 type="checkbox"
@@ -115,12 +121,9 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                       type="text"
                       value={current.name}
                       onChange={(e) => updateValue(index, "name", e.target.value)}
-                      onBlur={(e) => handleFinishEditing(index, "name", e.target.value)}
+                      onBlur={() => handleFinishEditing(index, "name")}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.currentTarget.onblur = null;
-                          handleFinishEditing(index, "name", e.currentTarget.value);
-                        }
+                        if (e.key === "Enter") handleFinishEditing(index, "name");
                         if (e.key === "Escape") setEditingCell(null);
                       }}
                       className="w-full border border-emerald-200 rounded-md px-2 py-1 text-sm text-center focus:ring-2 focus:ring-emerald-500 outline-none"
@@ -142,12 +145,9 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                       type="time"
                       value={current.startTime}
                       onChange={(e) => updateValue(index, "startTime", e.target.value)}
-                      onBlur={(e) => handleFinishEditing(index, "startTime", e.target.value)}
+                      onBlur={() => handleFinishEditing(index, "startTime")}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.currentTarget.onblur = null;
-                          handleFinishEditing(index, "startTime", e.currentTarget.value);
-                        }
+                        if (e.key === "Enter") handleFinishEditing(index, "startTime");
                         if (e.key === "Escape") setEditingCell(null);
                       }}
                       className="w-full border border-emerald-200 rounded-md px-1 py-1 text-sm text-center focus:ring-2 focus:ring-emerald-500 outline-none"
@@ -169,12 +169,9 @@ const WorkShiftTable: React.FC<WorkShiftTableProps> = ({
                       type="time"
                       value={current.endTime}
                       onChange={(e) => updateValue(index, "endTime", e.target.value)}
-                      onBlur={(e) => handleFinishEditing(index, "endTime", e.target.value)}
+                      onBlur={() => handleFinishEditing(index, "endTime")}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.currentTarget.onblur = null;
-                          handleFinishEditing(index, "endTime", e.currentTarget.value);
-                        }
+                        if (e.key === "Enter") handleFinishEditing(index, "endTime");
                         if (e.key === "Escape") setEditingCell(null);
                       }}
                       className="w-full border border-emerald-200 rounded-md px-1 py-1 text-sm text-center focus:ring-2 focus:ring-emerald-500 outline-none"

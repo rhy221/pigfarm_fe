@@ -1,4 +1,4 @@
-import { CalendarEvent } from "@/app/vaccines/components/vacccine_calendar"
+import { CalendarEvent } from "@/app/(main)/vaccines/components/vacccine_calendar"
 import { cn } from "@/lib/utils"
 
 const colorMap = {

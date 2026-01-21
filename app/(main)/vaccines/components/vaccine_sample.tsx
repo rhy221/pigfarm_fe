@@ -11,7 +11,7 @@ import {
   VaccineSampleItem,
   VaccineSuggestion,
 } from "@/app/api/vaccines"
-import AddVaccineSampleModal from "@/app/vaccines/components/add_vaccine_sample"
+import AddVaccineSampleModal from "@/app/(main)/vaccines/components/add_vaccine_sample"
 
 export default function VaccineSample() {
   const [samples, setSamples] = useState<VaccineSampleItem[]>([])

@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import CalendarHeader from "@/app/vaccines/components/vaccine_calendar_header"
-import Calendar from "@/app/vaccines/components/vaccine_calendar"
-import VaccineSample from "@/app/vaccines/components/vaccine_sample"
+import CalendarHeader from "@/app/(main)/vaccines/components/vaccine_calendar_header"
+import Calendar from "@/app/(main)/vaccines/components/vaccine_calendar"
+import VaccineSample from "@/app/(main)/vaccines/components/vaccine_sample"
 
 export type VaccineTab = "vaccines" | "vaccines_sample"
 

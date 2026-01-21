@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import CalendarDay from "./vaccine_calendarday"
 import VaccineSidePanel from "./vaccine_panel"
 import { fetchVaccinationCalendar } from "@/app/api/vaccines"
-import { CalendarEvent } from "@/app/vaccines/components/vacccine_calendar"
+import { CalendarEvent } from "@/app/(main)/vaccines/components/vacccine_calendar"
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 

@@ -8,7 +8,7 @@ import {
   TableCell,
 } from "@/components/ui/table"
 import { useState } from "react"
-import AddFeedingFormulaModal from "@/app/feeding/components/add_feeding"
+import AddFeedingFormulaModal from "@/app/(main)/feeding/components/add_feeding"
 
 
 export default function FeedingAdjust() {

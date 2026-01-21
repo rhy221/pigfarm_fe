@@ -8,7 +8,7 @@ import { dashboardApi } from "@/app/api/barns" // Import api vừa tạo
 
 type Pen = {
   id: string
-  pen_name: string
+  name: string
   capacity: number
   temperature: number
   humidity: number
@@ -94,14 +94,14 @@ export default function DashboardPage() {
       {/* ===== DANH SÁCH CHUỒNG ===== */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Danh sách chuồng heo</h2>
-        <Button onClick={() => router.push("/barns_in")}>
+        <Button onClick={() => router.push("/barns/barns_in")}>
           Tiếp nhận heo mới
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {pens.map((pen) => {
-          const currentPigs = pen.pigs.length
+          const currentPigs = pen?.pigs?.length || 0
           const status = pen.temperature >= 35 ? "danger" : pen.temperature >= 31 ? "warning" : "normal"
           return (
             <div
@@ -109,7 +109,7 @@ export default function DashboardPage() {
               className="rounded-xl border bg-background p-4 shadow-sm transition hover:shadow-md"
             >
               <div className="flex items-start justify-between">
-                <h3 className="text-base font-semibold">{pen.pen_name}</h3>
+                <h3 className="text-base font-semibold">{pen.name}</h3>
                 <button className="rounded-md p-1 hover:bg-muted">
                   <MoreVertical className="h-4 w-4" />
                 </button>

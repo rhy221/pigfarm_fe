@@ -38,17 +38,16 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <QueryProvider>
-          <SidebarProvider>
+          {/* <SidebarProvider>
             <AppSidebar />
             <SidebarInset>
-              {/* <SidebarTrigger /> */}
 
-              <Header />
-              <main className="min-h-screen w-full p-8">{children}</main>
+              <Header /> */}
+              <main >{children}</main>
               <Toaster />
-              <ChatWidget />
+              {/* <ChatWidget />
             </SidebarInset>
-          </SidebarProvider>
+          </SidebarProvider> */}
         </QueryProvider>
       </body>
     </html>

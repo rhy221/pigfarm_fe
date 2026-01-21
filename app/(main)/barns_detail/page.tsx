@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
 
-import TransferBarnModal from "@/app/barns_detail/barns_transfer_modal"
+import TransferBarnModal from "@/app/(main)/barns_detail/barns_transfer_modal"
 // Giả định bạn đã tạo file này ở bước trước
 import { dashboardApi } from "@/app/api/barns" 
 

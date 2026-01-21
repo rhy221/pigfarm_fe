@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Check, Loader2 } from "lucide-react"
 import { fetchVaccinationDetails, markVaccinated, VaccinationGroup } from "@/app/api/vaccines"
-import { exportVaccinationPdf } from "@/app/vaccines/export"
+import { exportVaccinationPdf } from "@/app/(main)/vaccines/export"
 import { cn } from "@/lib/utils"
 
 type Props = {

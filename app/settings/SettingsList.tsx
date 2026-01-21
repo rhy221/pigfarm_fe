@@ -15,7 +15,8 @@ import {
   Users,
   UserCog,
   LucideIcon,
-  Layers
+  Layers,
+  LockKeyhole
 } from 'lucide-react';
 
 interface SystemItem {
@@ -37,6 +38,7 @@ const systemItems: SystemItem[] = [
   { title: 'Ca làm', icon: Clock, isExpandable: true, contentTypeKey: 'CA_LAM' },
   { title: 'Nhóm người dùng', icon: UserCog, isExpandable: true, contentTypeKey: 'NHOM_NGUOI_DUNG' },
   { title: 'Người dùng', icon: Users, isExpandable: true, contentTypeKey: 'NGUOI_DUNG' },
+  { title: 'Phân quyền truy cập', icon: LockKeyhole, isExpandable: true, contentTypeKey: 'PHAN_QUYEN' },
 ];
 
 const SettingsList: React.FC = () => {

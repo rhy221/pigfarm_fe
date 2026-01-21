@@ -16,6 +16,7 @@ import SanitationMethodContent from "./sanitation_method/SanitationMethodContent
 import WorkShiftContent from "./work/WorkShiftContent";
 import UserGroupContent from "./user_group/UserGroupContent";
 import UserListContent from "./users/UserListContent";
+import AccessControlContent from "./access/AccessControlContent";
 
 interface SettingItemProps {
   IconComponent: LucideIcon;
@@ -134,13 +135,21 @@ const SettingItem: React.FC<SettingItemProps> = ({
       case "NGUOI_DUNG":
         return (
           <UserListContent
-            userGroups={["Admin", "User", "Guest"]} 
             isAdding={isAdding} 
             setIsAdding={setIsAdding}
             showDeleteConfirm={showDeleteConfirm}
             setShowDeleteConfirm={setShowDeleteConfirm}
           />
         );  
+      case "PHAN_QUYEN":
+        return (
+          <AccessControlContent
+            isAdding={isAdding}
+            setIsAdding={setIsAdding}
+            showDeleteConfirm={showDeleteConfirm}
+            setShowDeleteConfirm={setShowDeleteConfirm}
+          />
+        );
       default:
         return <div>Chưa có thông tin về {title}.</div>;
     }

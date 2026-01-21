@@ -28,13 +28,20 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
 }) => {
   const [editingCell, setEditingCell] = useState<EditingCell>(null);
 
-  const handleFinishEditing = async (index: number, value: string) => {
-    const row = groups[index];
-    const trimmedValue = value.trim();
+  const handleFinishEditing = async (index: number) => {
+    const originalRow = groups[index];
+    const editedRow = editedGroups[index];
 
-    if (trimmedValue && trimmedValue !== row.name) {
+    if (!originalRow || !editedRow) {
+      setEditingCell(null);
+      return;
+    }
+
+    const trimmedValue = editedRow.name.trim();
+
+    if (trimmedValue && trimmedValue !== originalRow.name) {
       try {
-        await onUpdate(row.id!, { name: trimmedValue });
+        await onUpdate(originalRow.id!, { name: trimmedValue });
       } catch (error) {
         console.error("Lỗi cập nhật:", error);
       }
@@ -44,8 +51,7 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
 
   const updateValue = (index: number, value: string) => {
     const newEdited = [...editedGroups];
-    if (!newEdited[index]) newEdited[index] = { ...groups[index] };
-    newEdited[index].name = value;
+    newEdited[index] = { ...newEdited[index], name: value };
     setEditedGroups(newEdited);
   };
 
@@ -61,12 +67,14 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
               Nhóm người dùng
             </th>
             <th className="w-[80px] text-center">
-              <input
-                type="checkbox"
-                checked={allChecked}
-                onChange={toggleAll}
-                className="h-5 w-5 text-emerald-600 cursor-pointer"
-              />
+              {groups.some(g => !g.hasUsers) && (
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  onChange={toggleAll}
+                  className="h-5 w-5 text-emerald-600 cursor-pointer"
+                />
+              )}
             </th>
           </tr>
         </thead>
@@ -93,17 +101,17 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
                       type="text"
                       value={current.name}
                       onChange={(e) => updateValue(index, e.target.value)}
-                      onBlur={(e) => handleFinishEditing(index, e.target.value)}
+                      onBlur={() => handleFinishEditing(index)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
-                          handleFinishEditing(index, e.currentTarget.value);
+                          handleFinishEditing(index);
                         }
                         if (e.key === "Escape") {
-                          setEditingCell(null);                         
+                          setEditingCell(null);
                         }
                       }}
                       className="w-full border border-emerald-200 rounded-md px-2 py-1 text-sm text-center
-                                bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   ) : (
                     <span
@@ -111,7 +119,7 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
                         setEditingCell({ row: index, field: "name" })
                       }
                       className="block cursor-pointer rounded-md px-2 py-1
-                                   hover:bg-emerald-50 hover:text-emerald-700"
+                                    hover:bg-emerald-50 hover:text-emerald-700"
                     >
                       {current.name}
                     </span>
@@ -119,12 +127,14 @@ const UserGroupTable: React.FC<UserGroupTableProps> = ({
                 </td>
 
                 <td className="px-4 py-2 text-center">
-                  <input
-                    type="checkbox"
-                    checked={checkedRows[index] ?? false}
-                    onChange={() => toggleRow(index)}
-                    className="h-5 w-5 text-emerald-600 cursor-pointer"
-                  />
+                  {!row.hasUsers && (
+                    <input
+                      type="checkbox"
+                      checked={checkedRows[index] ?? false}
+                      onChange={() => toggleRow(index)}
+                      className="h-5 w-5 text-emerald-600 cursor-pointer"
+                    />
+                  )}
                 </td>
               </tr>
             );

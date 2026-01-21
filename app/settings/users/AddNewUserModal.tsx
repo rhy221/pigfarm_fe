@@ -3,14 +3,14 @@
 import React, { useState, useEffect } from "react";
 
 interface UserGroup {
-  id: number | bigint;
+  id: string;
   name: string;
 }
 
 interface AddNewUserModalProps {
   userGroups: UserGroup[];
   onClose: () => void;
-  onSave: (fullName: string, roleId: number | bigint, email: string, password_hash: string, phone: string) => void;
+  onSave: (fullName: string, roleId: string, email: string, password_hash: string, phone: string) => void;
 }
 
 const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups = [], onClose, onSave }) => {
@@ -22,7 +22,7 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups = [], onCl
 
   useEffect(() => {
     if (userGroups.length > 0 && !roleId && userGroups[0]?.id !== undefined) {
-      setRoleId(userGroups[0].id.toString());
+      setRoleId(userGroups[0].id);
     }
   }, [userGroups, roleId]);
 
@@ -37,7 +37,7 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups = [], onCl
       return;
     }
     
-    onSave(fullName.trim(), BigInt(roleId), email.trim(), password, phone.trim());
+    onSave(fullName.trim(), roleId, email.trim(), password, phone.trim());
     
     setFullName("");
     setEmail("");
@@ -68,7 +68,7 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups = [], onCl
           type="text"
           value={fullName}
           onChange={handleFullNameChange}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-800"
         />
       </div>
 
@@ -77,13 +77,13 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups = [], onCl
         <select
           value={roleId}
           onChange={(e) => setRoleId(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-800"
         >         
           {userGroups && userGroups.length > 0 ? (
             userGroups.map((group) => {
               if (!group || group.id === undefined) return null;
               return (
-                <option key={group.id.toString()} value={group.id.toString()}>
+                <option key={group.id} value={group.id}>
                   {group.name}
                 </option>
               );
@@ -101,7 +101,7 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups = [], onCl
           placeholder="@gmail.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-800"
         />
       </div>
 
@@ -111,7 +111,7 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups = [], onCl
           type="text"
           value={phone}
           onChange={handlePhoneChange}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-800"
         />
       </div>
 
@@ -121,7 +121,7 @@ const AddNewUserModal: React.FC<AddNewUserModalProps> = ({ userGroups = [], onCl
           type="text"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none"
+          className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-800"
         />
       </div>
 

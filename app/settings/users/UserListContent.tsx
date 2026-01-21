@@ -5,20 +5,20 @@ import UserListTable from "./UserListTable";
 import AddNewUserModal from "./AddNewUserModal";
 
 interface UserGroup {
-  id: number | bigint;
+  id: string;
   name: string;
 }
 
 export interface User {
   id: string;
   full_name: string;
-  role_id: number | bigint;
+  role_id: string;
   email: string;
   password_hash: string;
   phone: string;
   is_active: boolean;
   user_group?: {
-    id: number | bigint;
+    id: string;
     name: string;
   };
 }
@@ -45,7 +45,7 @@ const UserListContent: React.FC<UserListContentProps> = ({
     try {
       const [usersRes, groupsRes] = await Promise.all([
         fetch(`${API_URL}/users`),
-        fetch(`${API_URL}/users/groups`)
+        fetch(`${API_URL}/user-groups`)
       ]);
       const usersData = await usersRes.json();
       const groupsData = await groupsRes.json();
@@ -80,14 +80,14 @@ const UserListContent: React.FC<UserListContentProps> = ({
     setCheckedRows(newChecked);
   };
 
-  const addUser = async (full_name: string, role_id: number | bigint, email: string, password_hash: string, phone: string) => {
+  const addUser = async (full_name: string, role_id: string, email: string, password_hash: string, phone: string) => {
     try {
       const response = await fetch(`${API_URL}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           full_name,
-          role_id: Number(role_id),
+          role_id,
           email,
           password_hash,
           phone,

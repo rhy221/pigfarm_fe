@@ -29,6 +29,23 @@ const statusMap = {
   danger: { label: "Nguy hiểm", color: "bg-red-100 text-red-700" },
 }
 
+function StatCard({
+  title,
+  value,
+  alert = false,
+}: {
+  title: string;
+  value: number;
+  alert?: boolean;
+}) {
+  return (
+    <div className={`rounded-xl border p-4 shadow-sm ${alert ? "border-red-200 bg-red-50/40" : "bg-background"}`}>
+      <p className="text-sm text-muted-foreground">{title}</p>
+      <p className="mt-1 text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [pens, setPens] = React.useState<Pen[]>([])
@@ -54,12 +71,6 @@ export default function DashboardPage() {
     fetchData()
   }, [])
 
-  // Hàm helper để xác định status dựa trên nhiệt độ từ Backend
-  const getStatus = (temp: number): "normal" | "warning" | "danger" => {
-    if (temp >= 35) return "danger"
-    if (temp >= 31) return "warning"
-    return "normal"
-  }
 
   if (loading) {
     return (
@@ -89,10 +100,9 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {pens.map(pen => {
-          const currentPigs = pen.pigs?.length || 0
-          const status = getStatus(pen.temperature)
-
+        {pens.map((pen) => {
+          const currentPigs = pen.pigs.length
+          const status = pen.temperature >= 35 ? "danger" : pen.temperature >= 31 ? "warning" : "normal"
           return (
             <div
               key={pen.id}
@@ -133,11 +143,15 @@ export default function DashboardPage() {
 
               <div className="mt-3">
                 <span
-                  className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${
-                    statusMap[status].color
+                  className={`font-medium ${
+                    pen.temperature >= 35
+                      ? "text-red-600"
+                      : pen.temperature >= 30
+                        ? "text-yellow-600"
+                        : "text-green-600"
                   }`}
                 >
-                  {statusMap[status].label}
+                  {statusMap[status as keyof typeof statusMap].label}
                 </span>
               </div>
 
@@ -145,7 +159,7 @@ export default function DashboardPage() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => router.push(`/barns/${pen.id}`)} // Điều hướng đến trang chi tiết
+                  onClick={() => router.push(`/barns/${pen.id}`)}
                 >
                   Xem chi tiết
                 </Button>
@@ -155,14 +169,5 @@ export default function DashboardPage() {
         })}
       </div>
     </div>
-  )
-}
-
-function StatCard({ title, value, alert = false }: { title: string; value: number; alert?: boolean }) {
-  return (
-    <div className={`rounded-xl border p-4 shadow-sm ${alert ? "border-red-200 bg-red-50/40" : "bg-background"}`}>
-      <p className="text-sm text-muted-foreground">{title}</p>
-      <p className="mt-1 text-2xl font-bold">{value}</p>
-    </div>
-  )
+  );
 }

@@ -8,6 +8,7 @@ export interface UserGroup {
   id?: string;
   stt: number;
   name: string;
+  hasUsers: boolean;
 }
 
 interface UserGroupContentProps {
@@ -31,11 +32,12 @@ const UserGroupContent: React.FC<UserGroupContentProps> = ({
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user-groups`);
       const data = await res.json();
-      const rawData = Array.isArray(data) ? data : (data.data || []);
+      const rawData = Array.isArray(data) ? data : data.data || [];
       const mappedData = rawData.map((g: any, index: number) => ({
-        id: g.id.toString(),
+        id: g.id,
         stt: index + 1,
         name: g.name,
+        hasUsers: g.hasUsers || false,
       }));
       setGroups(mappedData);
       setEditedGroups(mappedData);
@@ -51,16 +53,20 @@ const UserGroupContent: React.FC<UserGroupContentProps> = ({
 
   const handleUpdate = async (id: string, updateData: { name: string }) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user-groups/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/user-groups/${id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        }
+      );
 
-      if (res.ok) {       
+      if (res.ok) {
+        await fetchGroups();
       } else {
         const err = await res.json();
-        alert(err.message || "Lỗi khi cập nhật");       
+        alert(err.message || "Lỗi khi cập nhật");
         await fetchGroups();
       }
     } catch (error) {
@@ -74,7 +80,9 @@ const UserGroupContent: React.FC<UserGroupContentProps> = ({
 
   const deleteSelected = async () => {
     try {
-      const idsToDelete = groups.filter((_, i) => checkedRows[i]).map((g) => g.id);
+      const idsToDelete = groups
+        .filter((_, i) => checkedRows[i])
+        .map((g) => g.id);
       await Promise.all(
         idsToDelete.map((id) =>
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/user-groups/${id}`, {
@@ -89,15 +97,28 @@ const UserGroupContent: React.FC<UserGroupContentProps> = ({
     }
   };
 
+  const selectableIndices = groups
+    .map((g, i) => (!g.hasUsers ? i : -1))
+    .filter((i) => i !== -1);
+
   const hasSelected = checkedRows.some((val) => val === true);
-  const allChecked = groups.length > 0 && checkedRows.every(Boolean);
+
+  const allChecked = 
+    selectableIndices.length > 0 && 
+    selectableIndices.every((i) => checkedRows[i]);
 
   const toggleAll = () => {
     const nextValue = !allChecked;
-    setCheckedRows(groups.map(() => nextValue));
+    const newChecked = groups.map((g) => {   
+      if (g.hasUsers) return false;
+      return nextValue;
+    });
+    setCheckedRows(newChecked);
   };
 
   const toggleRow = (index: number) => {
+    if (groups[index].hasUsers) return;
+
     const newChecked = [...checkedRows];
     newChecked[index] = !newChecked[index];
     setCheckedRows(newChecked);
@@ -120,20 +141,23 @@ const UserGroupContent: React.FC<UserGroupContentProps> = ({
 
       {isAdding && setIsAdding && (
         <div className="w-80 flex-shrink-0">
-          <AddNewUserGroupModal onClose={() => setIsAdding(false)} onSave={addGroup} />
+          <AddNewUserGroupModal
+            onClose={() => setIsAdding(false)}
+            onSave={addGroup}
+          />
         </div>
       )}
 
       {showDeleteConfirm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 animate-in fade-in duration-200 text-gray-800">
           <div className="bg-white rounded-lg shadow-lg p-6 w-96 animate-in zoom-in duration-200 border border-gray-200">
             <h3 className="text-lg font-semibold mb-4 text-center text-gray-800">
               {hasSelected ? "Xác nhận xoá" : "Thông báo"}
             </h3>
-            
+
             <p className="mb-6 text-center text-gray-600">
-              {hasSelected 
-                ? "Bạn có chắc muốn xoá các nhóm người dùng được chọn không?" 
+              {hasSelected
+                ? "Bạn có chắc muốn xoá các nhóm người dùng được chọn không?"
                 : "Vui lòng chọn nhóm người dùng từ danh sách để thực hiện thao tác xoá."}
             </p>
 

@@ -35,24 +35,16 @@ const WorkShiftContent: React.FC<WorkShiftContentProps> = ({
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/work-shifts`);
       const data = await res.json();
       const rawData = Array.isArray(data) ? data : (data.data || []);
-      const mappedData = rawData.map((s: any, index: number) => {
-        const formatTime = (timeStr: string) => {
-          if (!timeStr) return "00:00";
-          if (timeStr.includes('T')) return timeStr.slice(11, 16);
-          return timeStr;
-        };
-
-        return {
+      const mappedData = rawData.map((s: any, index: number) => ({
           id: s.id,
           stt: index + 1,
           name: s.session,
-          startTime: formatTime(s.start_time),
-          endTime: formatTime(s.end_time),
+          startTime: s.start_time, 
+          endTime: s.end_time,
           hasAssignments: s.hasAssignments || false,
-        };
-      });
+      }));
       setShifts(mappedData);
-      setEditedShifts(mappedData);
+      setEditedShifts(mappedData); 
       setCheckedRows(mappedData.map(() => false));
     } catch (error) {
       console.error(error);

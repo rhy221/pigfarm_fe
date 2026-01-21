@@ -42,7 +42,7 @@ const AddNewUserGroupModal: React.FC<AddNewUserGroupModalProps> = ({ onClose, on
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Tên nhóm"
-        className="w-full border border-gray-300 rounded-lg p-2 mb-4 focus:ring-2 focus:ring-green-500 focus:outline-none"
+        className="w-full border border-gray-300 rounded-lg p-2 mb-4 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-800"
       />
       <div className="flex justify-end gap-3">
         <button

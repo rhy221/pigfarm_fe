@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSideBar";
 import QueryProvider from "@/providers/query-provider";
 import { Header } from "@/components/Header";
 import { Toaster } from "sonner";
+import { ChatWidget } from "@/components/ChatWidget";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -34,20 +39,16 @@ export default function RootLayout({
       >
         <QueryProvider>
           <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            {/* <SidebarTrigger /> */}
-            
-            <Header/>
-            <main className="min-h-screen w-full p-8">
-              {children}
-            </main>
-            <Toaster />
-            
-          </SidebarInset>
-            
-        </SidebarProvider>
-          
+            <AppSidebar />
+            <SidebarInset>
+              {/* <SidebarTrigger /> */}
+
+              <Header />
+              <main className="min-h-screen w-full p-8">{children}</main>
+              <Toaster />
+              <ChatWidget />
+            </SidebarInset>
+          </SidebarProvider>
         </QueryProvider>
       </body>
     </html>

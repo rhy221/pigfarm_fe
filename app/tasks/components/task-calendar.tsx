@@ -162,9 +162,14 @@ function DayCell({
           {date.getDate()}
         </span>
         {dayTasks.length > 0 && (
-          <Badge variant="secondary" className="text-xs">
-            {dayTasks.length}
-          </Badge>
+          <div className="flex gap-1">
+            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+              {dayTasks.filter(t => t.status === 'completed').length}
+            </Badge>
+            <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">
+              {dayTasks.filter(t => t.status !== 'completed').length}
+            </Badge>
+          </div>
         )}
       </div>
 
@@ -191,29 +196,14 @@ function DayCell({
               }}
             >
               {shiftTasks.length > 0 ? (
-                <div className="flex flex-col gap-0.5">
-                  {shiftTasks.slice(0, isCompact ? 1 : 2).map((task) => (
-                    <div
-                      key={task.id}
-                      className={cn(
-                        "text-xs truncate rounded px-1 py-0.5 border",
-                        TASK_TYPE_COLORS[task.taskType]
-                      )}
-                      title={`${task.taskDescription} - ${task.employeeName}`}
-                    >
-                      <span className="font-medium">{task.barnName}</span>
-                      {!isCompact && (
-                        <span className="text-[10px] ml-1 opacity-70">
-                          {task.employeeName.split(" ").pop()}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {shiftTasks.length > (isCompact ? 1 : 2) && (
-                    <span className="text-[10px] text-muted-foreground pl-1">
-                      +{shiftTasks.length - (isCompact ? 1 : 2)} khác
-                    </span>
-                  )}
+                <div className="flex items-center justify-center gap-1 h-full">
+                  <span className="text-xs font-semibold text-green-600">
+                    {shiftTasks.filter(t => t.status === 'completed').length}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">/</span>
+                  <span className="text-xs font-semibold text-orange-600">
+                    {shiftTasks.filter(t => t.status !== 'completed').length}
+                  </span>
                 </div>
               ) : (
                 <span className="text-[10px] text-muted-foreground italic">
@@ -330,6 +320,8 @@ function DayView({ date, tasks, onAddTask, onViewTask }: DayViewProps) {
                         className={cn(
                           "flex items-center justify-between p-3 rounded-lg border cursor-pointer",
                           "hover:shadow-md transition-shadow",
+                          task.status === "completed" &&
+                            "opacity-60 bg-gray-50",
                           TASK_TYPE_COLORS[task.taskType]
                         )}
                         onClick={() => onViewTask(task)}
@@ -343,9 +335,17 @@ function DayView({ date, tasks, onAddTask, onViewTask }: DayViewProps) {
                               {TASK_TYPE_LABELS[task.taskType]}
                             </Badge>
                           </div>
-                          <p className="font-medium">{task.taskDescription}</p>
+                          <p
+                            className={cn(
+                              "font-medium",
+                              task.status === "completed" &&
+                                "line-through text-muted-foreground"
+                            )}
+                          >
+                            {task.taskDescription}
+                          </p>
                           <p className="text-sm text-muted-foreground">
-                            Nhân viên: {task.employeeName}
+                            Nhân viên: {task.userName}
                           </p>
                         </div>
                         <Badge
@@ -458,20 +458,6 @@ export function TaskCalendar({
           <div className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-sm border-l-2 border-l-indigo-400 bg-indigo-50"></span>
             <span>Đêm</span>
-          </div>
-          <span className="mx-2 text-muted-foreground">|</span>
-          <span className="font-medium">Loại:</span>
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-sm bg-green-100 border border-green-200"></span>
-            <span>Cho ăn</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-sm bg-blue-100 border border-blue-200"></span>
-            <span>Vệ sinh</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-sm bg-purple-100 border border-purple-200"></span>
-            <span>Tiêm vắc-xin</span>
           </div>
         </div>
       </div>

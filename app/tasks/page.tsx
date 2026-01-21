@@ -28,20 +28,20 @@ export default function TasksPage() {
     isMobile ? "week" : "month"
   );
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [pens, setPens] = useState<any[]>([]);
 
   // Fetch tasks from API
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [tasksData, employeesData, pensData] = await Promise.all([
+        const [tasksData, usersData, pensData] = await Promise.all([
           taskApi.getTasks() || [],
           taskApi.getEmployees() || [],
           taskApi.getPens() || [],
         ]);
 
-        interface ApiEmployee {
+        interface ApiUser {
           id: string;
           name: string;
         }
@@ -53,7 +53,7 @@ export default function TasksPage() {
 
         // Ensure we have arrays
         const safeTasksData = Array.isArray(tasksData) ? tasksData : [];
-        const safeEmployeesData = Array.isArray(employeesData) ? employeesData : [];
+        const safeUsersData = Array.isArray(usersData) ? usersData : [];
         const safePensData = Array.isArray(pensData) ? pensData : [];
 
         // Transform API data to match Task interface
@@ -61,8 +61,8 @@ export default function TasksPage() {
           id: task.id,
           date: task.date || new Date().toISOString().split("T")[0],
           shift: (task.shift as ShiftType) || "morning",
-          employeeId: task.employeeId || "",
-          employeeName: task.employeeName || "Chưa phân công",
+          userId: task.userId || "",
+          userName: task.userName || "Chưa phân công",
           barnId: task.barnId || "",
           barnName: task.barnName || "Chưa chọn",
           taskType: (task.taskType as any) || "other",
@@ -74,8 +74,8 @@ export default function TasksPage() {
         }));
 
         setTasks(transformedTasks);
-        setEmployees(
-          safeEmployeesData.map((e: any) => ({
+        setUsers(
+          safeUsersData.map((e: any) => ({
             id: e.id,
             name: e.name,
             role: e.role || "employee",
@@ -196,6 +196,27 @@ export default function TasksPage() {
     }
   };
 
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+
+      await taskApi.updateTask(taskId, {
+        status: "completed",
+      });
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? { ...t, status: "completed", updatedAt: new Date().toISOString() }
+            : t
+        )
+      );
+    } catch (error) {
+      console.error("Error completing task:", error);
+    }
+  };
+
   const handleSaveTask = async (
     taskData: Omit<Task, "id" | "createdAt" | "updatedAt"> & { id?: string }
   ) => {
@@ -205,7 +226,7 @@ export default function TasksPage() {
         await taskApi.updateTask(taskData.id, {
           taskDescription: taskData.taskDescription,
           barnId: taskData.barnId,
-          employeeId: taskData.employeeId,
+          userId: taskData.userId,
           taskType: taskData.taskType,
           status: taskData.status,
           notes: taskData.notes,
@@ -225,7 +246,7 @@ export default function TasksPage() {
         const newTask = await taskApi.createTask({
           taskDescription: taskData.taskDescription,
           barnId: taskData.barnId,
-          employeeId: taskData.employeeId,
+          userId: taskData.userId,
           taskType: taskData.taskType,
           status: taskData.status,
           notes: taskData.notes,
@@ -237,8 +258,8 @@ export default function TasksPage() {
           id: newTask.id,
           date: newTask.date,
           shift: newTask.shift as ShiftType,
-          employeeId: newTask.employeeId,
-          employeeName: newTask.employeeName,
+          userId: newTask.userId,
+          userName: newTask.userName,
           barnId: newTask.barnId,
           barnName: newTask.barnName,
           taskType: newTask.taskType as any,
@@ -366,7 +387,7 @@ export default function TasksPage() {
         task={selectedTask}
         defaultDate={selectedDate}
         defaultShift={selectedShift}
-        employees={employees}
+        users={users}
         barns={pens}
         onSave={handleSaveTask}
       />
@@ -377,6 +398,7 @@ export default function TasksPage() {
         task={selectedTask}
         onEdit={handleEditTask}
         onDelete={handleDeleteTask}
+        onComplete={handleCompleteTask}
       />
 
       <DayTasksDialog
@@ -387,7 +409,10 @@ export default function TasksPage() {
           selectedDayDate
             ? tasks.filter((t) => {
                 const year = selectedDayDate.getFullYear();
-                const month = String(selectedDayDate.getMonth() + 1).padStart(2, "0");
+                const month = String(selectedDayDate.getMonth() + 1).padStart(
+                  2,
+                  "0"
+                );
                 const day = String(selectedDayDate.getDate()).padStart(2, "0");
                 const dateKey = `${year}-${month}-${day}`;
                 return t.date === dateKey;

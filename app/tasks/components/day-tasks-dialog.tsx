@@ -64,10 +64,13 @@ export function DayTasksDialog({
 
   const shifts: ShiftType[] = ["morning", "afternoon", "night"];
 
-  const tasksByShift = shifts.reduce((acc, shift) => {
-    acc[shift] = tasks.filter((t) => t.shift === shift);
-    return acc;
-  }, {} as Record<ShiftType, Task[]>);
+  const tasksByShift = shifts.reduce(
+    (acc, shift) => {
+      acc[shift] = tasks.filter((t) => t.shift === shift);
+      return acc;
+    },
+    {} as Record<ShiftType, Task[]>
+  );
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("vi-VN", {
@@ -80,7 +83,7 @@ export function DayTasksDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>Công việc ngày {formatDate(date)}</DialogTitle>
           <DialogDescription>
@@ -117,6 +120,9 @@ export function DayTasksDialog({
                       className={cn(
                         "p-3 rounded-lg border cursor-pointer transition-all",
                         "hover:shadow-md hover:scale-[1.02]",
+                        task.status === "completed"
+                          ? "opacity-60 bg-gray-50"
+                          : "",
                         TASK_TYPE_COLORS[task.taskType]
                       )}
                       onClick={() => {
@@ -140,13 +146,19 @@ export function DayTasksDialog({
                           </div>
 
                           {/* Description */}
-                          <p className="font-medium text-sm mb-1 line-clamp-2">
+                          <p
+                            className={cn(
+                              "font-medium text-sm mb-1 line-clamp-2",
+                              task.status === "completed" &&
+                                "line-through text-muted-foreground"
+                            )}
+                          >
                             {task.taskDescription}
                           </p>
 
                           {/* Employee & Barn */}
                           <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                            <span>👤 {task.employeeName}</span>
+                            <span>👤 {task.userName}</span>
                             <span>🏠 {task.barnName}</span>
                           </div>
 

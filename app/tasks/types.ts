@@ -14,7 +14,7 @@ export type TaskType =
 
 export type TaskStatus = "pending" | "in_progress" | "completed" | "cancelled";
 
-export interface Employee {
+export interface User {
   id: string;
   name: string;
   role: UserRole;
@@ -37,8 +37,8 @@ export interface Task {
   shift: ShiftType;
   barnId: string;
   barnName: string;
-  employeeId: string;
-  employeeName: string;
+  userId: string;
+  userName: string;
   taskType: TaskType;
   taskDescription: string;
   status: TaskStatus;

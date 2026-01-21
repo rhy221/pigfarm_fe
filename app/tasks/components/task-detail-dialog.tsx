@@ -43,6 +43,8 @@ interface TaskDetailDialogProps {
   task: Task | null;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
+  onComplete?: (taskId: string) => void;
+  readonly?: boolean;
 }
 
 // Task type colors
@@ -77,6 +79,8 @@ export function TaskDetailDialog({
   task,
   onEdit,
   onDelete,
+  onComplete,
+  readonly = false,
 }: TaskDetailDialogProps) {
   if (!task) return null;
 
@@ -111,7 +115,7 @@ export function TaskDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
@@ -182,7 +186,7 @@ export function TaskDetailDialog({
                 <p className="text-sm text-muted-foreground">
                   Nhân viên phụ trách
                 </p>
-                <p className="font-medium">{task.employeeName}</p>
+                <p className="font-medium">{task.userName}</p>
               </div>
             </div>
 
@@ -208,22 +212,38 @@ export function TaskDetailDialog({
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => onEdit(task)}
-          >
-            <Pencil className="h-4 w-4 mr-2" />
-            Chỉnh sửa
-          </Button>
+          {task.status !== "completed" && onComplete && (
+            <Button
+              variant="default"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                onComplete(task.id);
+                onOpenChange(false);
+              }}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Hoàn thành
+            </Button>
+          )}
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="w-full sm:w-auto">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Xóa
+          {!readonly && (
+            <>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => onEdit(task)}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Chỉnh sửa
               </Button>
-            </AlertDialogTrigger>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full sm:w-auto">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Xóa
+                  </Button>
+                </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Xác nhận xóa?</AlertDialogTitle>
@@ -243,6 +263,8 @@ export function TaskDetailDialog({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

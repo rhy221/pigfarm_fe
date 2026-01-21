@@ -30,7 +30,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   Task,
-  Employee,
+  User,
   Barn,
   ShiftType,
   TaskType,
@@ -47,7 +47,7 @@ interface AddEditTaskDialogProps {
   task: Task | null;
   defaultDate?: string | null;
   defaultShift?: ShiftType | null;
-  employees: Employee[];
+  users: User[];
   barns: Barn[];
   onSave: (
     task: Omit<Task, "id" | "createdAt" | "updatedAt"> & { id?: string }
@@ -60,7 +60,7 @@ export function AddEditTaskDialog({
   task,
   defaultDate,
   defaultShift,
-  employees,
+  users,
   barns,
   onSave,
 }: AddEditTaskDialogProps) {
@@ -88,7 +88,7 @@ export function AddEditTaskDialog({
   const [date, setDate] = useState<Date | undefined>(getInitialDate);
   const [shift, setShift] = useState<ShiftType>(getInitialShift);
   const [barnId, setBarnId] = useState<string>(task?.barnId || "");
-  const [employeeId, setEmployeeId] = useState<string>(task?.employeeId || "");
+  const [userId, setUserId] = useState<string>(task?.userId || "");
   const [taskType, setTaskType] = useState<TaskType>(
     task?.taskType || "feeding"
   );
@@ -107,7 +107,7 @@ export function AddEditTaskDialog({
         setDate(new Date(year, month - 1, day));
         setShift(task.shift);
         setBarnId(task.barnId);
-        setEmployeeId(task.employeeId);
+        setUserId(task.userId);
         setTaskType(task.taskType);
         setTaskDescription(task.taskDescription);
         setStatus(task.status);
@@ -121,7 +121,7 @@ export function AddEditTaskDialog({
         }
         setShift(defaultShift || "morning");
         setBarnId("");
-        setEmployeeId("");
+        setUserId("");
         setTaskType("feeding");
         setTaskDescription("");
         setStatus("pending");
@@ -131,39 +131,39 @@ export function AddEditTaskDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, task?.id]);
 
-  // Filter employees based on task type (role permissions)
-  const filteredEmployees = employees.filter((emp) => {
-    const role = emp.role || "employee"; // Default to employee if role is undefined
+  // Filter users based on task type (role permissions)
+  const filteredUsers = users.filter((user) => {
+    const role = user.role || "employee"; // Default to employee if role is undefined
     const allowedTaskTypes = ROLE_PERMISSIONS[role];
     return allowedTaskTypes?.includes(taskType) ?? true;
   });
 
-  // When task type changes, check if current employee is still valid
+  // When task type changes, check if current user is still valid
   const handleTaskTypeChange = (newTaskType: TaskType) => {
     setTaskType(newTaskType);
 
-    // Check if current employee is allowed for this task type
-    if (employeeId) {
-      const employee = employees.find((e) => e.id === employeeId);
-      if (employee) {
-        const role = employee.role || "employee";
+    // Check if current user is allowed for this task type
+    if (userId) {
+      const user = users.find((e) => e.id === userId);
+      if (user) {
+        const role = user.role || "employee";
         const allowedTaskTypes = ROLE_PERMISSIONS[role];
         if (!allowedTaskTypes?.includes(newTaskType)) {
-          setEmployeeId("");
+          setUserId("");
         }
       }
     }
   };
 
   const handleSave = () => {
-    if (!date || !barnId || !employeeId || !taskDescription.trim()) {
+    if (!date || !barnId || !userId || !taskDescription.trim()) {
       return; // Basic validation
     }
 
     const barn = barns.find((b) => b.id === barnId);
-    const employee = employees.find((e) => e.id === employeeId);
+    const user = users.find((e) => e.id === userId);
 
-    if (!barn || !employee) return;
+    if (!barn || !user) return;
 
     // Format date as YYYY-MM-DD in local timezone (avoid UTC conversion)
     const year = date.getFullYear();
@@ -177,8 +177,8 @@ export function AddEditTaskDialog({
       shift,
       barnId,
       barnName: barn.name,
-      employeeId,
-      employeeName: employee.name,
+      userId,
+      userName: user.name,
       taskType,
       taskDescription: taskDescription.trim(),
       status,
@@ -200,7 +200,7 @@ export function AddEditTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Chỉnh sửa phân công" : "Thêm phân công mới"}
@@ -214,11 +214,11 @@ export function AddEditTaskDialog({
 
         <div className="grid gap-4 py-4">
           {/* Date picker */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="date" className="text-right">
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+            <Label htmlFor="date" className="sm:text-right">
               Ngày <span className="text-red-500">*</span>
             </Label>
-            <div className="col-span-3">
+            <div className="sm:col-span-3">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -245,15 +245,15 @@ export function AddEditTaskDialog({
           </div>
 
           {/* Shift select */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="shift" className="text-right">
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+            <Label htmlFor="shift" className="sm:text-right">
               Ca làm <span className="text-red-500">*</span>
             </Label>
             <Select
               value={shift}
               onValueChange={(v) => setShift(v as ShiftType)}
             >
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger className="sm:col-span-3">
                 <SelectValue placeholder="Chọn ca làm" />
               </SelectTrigger>
               <SelectContent>
@@ -267,12 +267,12 @@ export function AddEditTaskDialog({
           </div>
 
           {/* Barn select */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="barn" className="text-right">
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+            <Label htmlFor="barn" className="sm:text-right">
               Chuồng <span className="text-red-500">*</span>
             </Label>
             <Select value={barnId} onValueChange={setBarnId}>
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger className="sm:col-span-3">
                 <SelectValue placeholder="Chọn chuồng" />
               </SelectTrigger>
               <SelectContent>
@@ -286,12 +286,15 @@ export function AddEditTaskDialog({
           </div>
 
           {/* Task type select */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="taskType" className="text-right whitespace-nowrap">
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+            <Label
+              htmlFor="taskType"
+              className="sm:text-right whitespace-nowrap"
+            >
               Loại công việc <span className="text-red-500">*</span>
             </Label>
             <Select value={taskType} onValueChange={handleTaskTypeChange}>
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger className="sm:col-span-3">
                 <SelectValue placeholder="Chọn loại công việc" />
               </SelectTrigger>
               <SelectContent>
@@ -304,23 +307,23 @@ export function AddEditTaskDialog({
             </Select>
           </div>
 
-          {/* Employee select */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="employee" className="text-right">
+          {/* User select */}
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+            <Label htmlFor="user" className="sm:text-right">
               Nhân viên <span className="text-red-500">*</span>
             </Label>
-            <Select value={employeeId} onValueChange={setEmployeeId}>
-              <SelectTrigger className="col-span-3">
+            <Select value={userId} onValueChange={setUserId}>
+              <SelectTrigger className="sm:col-span-3">
                 <SelectValue placeholder="Chọn nhân viên" />
               </SelectTrigger>
               <SelectContent>
-                {filteredEmployees.length > 0 ? (
-                  filteredEmployees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name} (
-                      {employee.role === "veterinarian"
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} (
+                      {user.role === "veterinarian"
                         ? "Bác sĩ"
-                        : employee.role === "admin"
+                        : user.role === "admin"
                           ? "Quản lý"
                           : "Nhân viên"}
                       )
@@ -333,16 +336,16 @@ export function AddEditTaskDialog({
                 )}
               </SelectContent>
             </Select>
-            {filteredEmployees.length === 0 && (
-              <p className="col-span-3 col-start-2 text-xs text-muted-foreground">
+            {filteredUsers.length === 0 && (
+              <p className="sm:col-span-3 sm:col-start-2 text-xs text-muted-foreground">
                 Không có nhân viên có quyền thực hiện loại công việc này
               </p>
             )}
           </div>
 
           {/* Task description */}
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+            <Label htmlFor="description" className="sm:text-right">
               Mô tả <span className="text-red-500">*</span>
             </Label>
             <Input
@@ -350,21 +353,21 @@ export function AddEditTaskDialog({
               value={taskDescription}
               onChange={(e) => setTaskDescription(e.target.value)}
               placeholder="Nhập mô tả công việc"
-              className="col-span-3"
+              className="sm:col-span-3"
             />
           </div>
 
           {/* Status (only in edit mode) */}
           {isEditing && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
+            <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-center sm:gap-4">
+              <Label htmlFor="status" className="sm:text-right">
                 Trạng thái
               </Label>
               <Select
                 value={status}
                 onValueChange={(v) => setStatus(v as TaskStatus)}
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger className="sm:col-span-3">
                   <SelectValue placeholder="Chọn trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
@@ -379,8 +382,8 @@ export function AddEditTaskDialog({
           )}
 
           {/* Notes */}
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="notes" className="text-right pt-2">
+          <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:items-start sm:gap-4">
+            <Label htmlFor="notes" className="sm:text-right sm:pt-2">
               Ghi chú
             </Label>
             <Textarea
@@ -388,7 +391,7 @@ export function AddEditTaskDialog({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Nhập ghi chú (không bắt buộc)"
-              className="col-span-3"
+              className="sm:col-span-3"
               rows={3}
             />
           </div>
@@ -400,9 +403,7 @@ export function AddEditTaskDialog({
           </Button>
           <Button
             onClick={handleSave}
-            disabled={
-              !date || !barnId || !employeeId || !taskDescription.trim()
-            }
+            disabled={!date || !barnId || !userId || !taskDescription.trim()}
           >
             {isEditing ? "Cập nhật" : "Tạo phân công"}
           </Button>

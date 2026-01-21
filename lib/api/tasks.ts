@@ -6,8 +6,8 @@ export interface TaskResponse {
   shift: "morning" | "afternoon" | "night";
   barnId: string;
   barnName: string;
-  employeeId: string;
-  employeeName: string;
+  userId: string;
+  userName: string;
   taskType: string;
   taskDescription: string;
   status: string;
@@ -20,7 +20,7 @@ export interface CreateTaskDto {
   date: string;
   shift: string;
   barnId: string;
-  employeeId: string;
+  userId: string;
   taskType: string;
   taskDescription: string;
   status?: string;
@@ -60,9 +60,9 @@ export const taskApi = {
     return response.data;
   },
 
-  // Get employees
+  // Get users (employees)
   getEmployees: async () => {
-    const response = await http.get("/work/employees");
+    const response = await http.get("/work/users");
     return response.data;
   },
 

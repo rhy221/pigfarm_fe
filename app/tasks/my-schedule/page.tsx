@@ -75,7 +75,7 @@ export default function MySchedulePage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [user, setUser] = useState<Employee | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   // Fetch data
   useEffect(() => {
@@ -106,8 +106,8 @@ export default function MySchedulePage() {
           id: task.id,
           date: task.date || new Date().toISOString().split("T")[0],
           shift: (task.shift as ShiftType) || "morning",
-          employeeId: task.employeeId || "",
-          employeeName: task.employeeName || "Chưa phân công",
+          userId: task.userId || "",
+          userName: task.userName || "Chưa phân công",
           barnId: task.barnId || "",
           barnName: task.barnName || "Chưa chọn",
           taskType: (task.taskType as any) || "other",
@@ -140,7 +140,7 @@ export default function MySchedulePage() {
       // Check if task type is allowed for this role
       const isAllowedType = allowedTaskTypes.includes(task.taskType);
       // Check if task is assigned to this user
-      const isAssignedToMe = task.employeeId === user.id;
+      const isAssignedToMe = task.userId === user.id;
 
       return isAllowedType && isAssignedToMe;
     });
@@ -242,7 +242,26 @@ export default function MySchedulePage() {
     setSelectedTask(task);
     setIsDetailDialogOpen(true);
   };
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
 
+      await taskApi.updateTask(taskId, {
+        status: "completed",
+      });
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId
+            ? { ...t, status: "completed", updatedAt: new Date().toISOString() }
+            : t
+        )
+      );
+    } catch (error) {
+      console.error("Error completing task:", error);
+    }
+  };
   // Role display
   const roleLabels: Record<string, string> = {
     admin: "Quản lý",
@@ -396,6 +415,8 @@ export default function MySchedulePage() {
         task={selectedTask}
         onEdit={() => {}} // Disabled for employee view
         onDelete={() => {}} // Disabled for employee view
+        onComplete={handleCompleteTask}
+        readonly={true}
       />
     </div>
   );
@@ -592,12 +613,21 @@ function WeekScheduleView({ dates, tasks, onViewTask }: WeekScheduleViewProps) {
                     className={cn(
                       "mb-1 p-2 rounded border-l-2 cursor-pointer text-xs",
                       "hover:shadow transition-shadow",
+                      task.status === "completed" && "opacity-60 bg-gray-50",
                       SHIFT_COLORS[task.shift],
                       TASK_TYPE_COLORS[task.taskType]
                     )}
                     onClick={() => onViewTask(task)}
                   >
-                    <p className="font-medium truncate">{task.barnName}</p>
+                    <p
+                      className={cn(
+                        "font-medium truncate",
+                        task.status === "completed" &&
+                          "line-through text-muted-foreground"
+                      )}
+                    >
+                      {task.barnName}
+                    </p>
                     <p className="text-[10px] text-muted-foreground truncate">
                       {SHIFT_LABELS[task.shift]}
                     </p>

@@ -185,7 +185,7 @@ export async function fetchVaccineSuggestions(): Promise<VaccineSuggestion[]> {
  * ===================================================== */
 export async function fetchAvailablePens(): Promise<{id: string, name: string}[]> {
   try {
-    const res = await fetch(`${API_URL}/health/pens`, {
+    const res = await fetch(`${API_URL}/vaccination/active-pens`, {
       cache: "no-store",
     })
 

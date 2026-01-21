@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Dialog,
   DialogContent,
@@ -10,96 +10,214 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { feedingApi, FeedingFormulaPayload2, FeedingProduct } from "@/app/api/feeding"
+import { Trash2, Plus } from "lucide-react"
 
-type FeedingFormula = {
+/* ================= TYPES ================= */
+type IngredientItem = {
+  productId: string
+  percentage: number
+}
+
+type FeedingFormulaForm = {
   name: string
-  amount: string
-  stage: string
-  ingredients: string
-  feedingTime: string
+  amountPerPig: number
+  startDay: number
+  items: IngredientItem[]
 }
 
 type Props = {
   open: boolean
   onClose: () => void
-  onSubmit: (data: FeedingFormula) => void
+  onSuccess: (data: FeedingFormulaForm) => void
 }
 
+/* ================= COMPONENT ================= */
 export default function AddFeedingFormulaModal({
   open,
   onClose,
-  onSubmit,
+  onSuccess,
 }: Props) {
-  const [form, setForm] = useState<FeedingFormula>({
+  const [products, setProducts] = useState<FeedingProduct[]>([])
+  const [form, setForm] = useState<FeedingFormulaForm>({
     name: "",
-    amount: "",
-    stage: "",
-    ingredients: "",
-    feedingTime: "",
+    amountPerPig: 0,
+    startDay: 0,
+    items: [],
   })
 
-  function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) {
-    setForm({ ...form, [e.target.name]: e.target.value })
+  /* ===== load feed products ===== */
+  useEffect(() => {
+    feedingApi.fetchFeedProducts().then(setProducts)
+  }, [])
+
+  /* ===== handlers ===== */
+  const addIngredient = () => {
+    setForm(prev => ({
+      ...prev,
+      items: [...prev.items, { productId: "", percentage: 0 }],
+    }))
   }
 
-  function handleSubmit() {
-    if (!form.name || !form.amount || !form.stage) return
-    onSubmit(form)
+  const updateIngredient = (
+    index: number,
+    field: keyof IngredientItem,
+    value: any
+  ) => {
+    const items = [...form.items]
+    items[index] = { ...items[index], [field]: value }
+    setForm({ ...form, items })
+  }
+
+  const removeIngredient = (index: number) => {
     setForm({
-      name: "",
-      amount: "",
-      stage: "",
-      ingredients: "",
-      feedingTime: "",
+      ...form,
+      items: form.items.filter((_, i) => i !== index),
     })
-    onClose()
   }
 
+  const handleSubmit = async () => {
+    console.log("🔥 handleSubmit CALLED")
+    if (!form.name || !form.amountPerPig || !form.startDay) return
+    if (form.items.length === 0) return
+
+    const payload: FeedingFormulaPayload2 = {
+      name: form.name,
+      startDay: form.startDay,
+      amountPerPig: form.amountPerPig,
+      items: form.items.map(i => ({
+        productId: i.productId,
+        percentage: i.percentage,
+      })),
+    }
+    console.log("📤 [Create Feeding Formula] Payload gửi lên:", payload)
+    try {
+      await feedingApi.createFormula(payload)
+
+      // reset form
+      setForm({
+        name: "",
+        amountPerPig: 0,
+        startDay: 0,
+        items: [],
+      })
+
+      onClose()
+    } catch (err) {
+      console.error("Create feeding formula failed", err)
+    }
+  }
+
+  /* ================= RENDER ================= */
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>➕ Thêm công thức ăn</DialogTitle>
+          <DialogTitle>Thêm công thức ăn</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* ===== NAME ===== */}
           <Input
-            name="name"
-            placeholder="Tên công thức (vd: Cám gạo)"
+            placeholder="Tên công thức"
             value={form.name}
-            onChange={handleChange}
+            onChange={e => setForm({ ...form, name: e.target.value })}
           />
 
+          {/* ===== AMOUNT ===== */}
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min={0}
+              placeholder="Định lượng"
+              value={form.amountPerPig || ""}
+              onChange={e =>
+                setForm({ ...form, amountPerPig: Number(e.target.value) })
+              }
+            />
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              g / con
+            </span>
+          </div>
+
+          {/* ===== START DAY ===== */}
           <Input
-            name="amount"
-            placeholder="Định lượng (vd: 300 gram/con)"
-            value={form.amount}
-            onChange={handleChange}
+            type="number"
+            min={0}
+            placeholder="Ngày bắt đầu"
+            value={form.startDay || ""}
+            onChange={e =>
+              setForm({ ...form, startDay: Number(e.target.value) })
+            }
           />
 
-          <Input
-            name="stage"
-            placeholder="Giai đoạn (vd: Mới về đến 30kg)"
-            value={form.stage}
-            onChange={handleChange}
-          />
+          {/* ===== INGREDIENTS ===== */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Thành phần</span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={addIngredient}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Thêm thành phần
+              </Button>
+            </div>
 
-          <Textarea
-            name="ingredients"
-            placeholder="Thành phần (vd: 50% Cám • 50% Bột cá)"
-            value={form.ingredients}
-            onChange={handleChange}
-          />
+            {form.items.map((item, index) => (
+              <div key={index} className="flex gap-2 items-center">
+                <Select
+                  value={item.productId}
+                  onValueChange={v =>
+                    updateIngredient(index, "productId", v)
+                  }
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Chọn nguyên liệu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-          <Input
-            name="feedingTime"
-            placeholder="Giờ cho ăn (vd: 6h - 12h - 18h)"
-            value={form.feedingTime}
-            onChange={handleChange}
-          />
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  placeholder="%"
+                  className="w-24"
+                  value={item.percentage || ""}
+                  onChange={e =>
+                    updateIngredient(
+                      index,
+                      "percentage",
+                      Number(e.target.value)
+                    )
+                  }
+                />
+
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => removeIngredient(index)}
+                >
+                  <Trash2 className="w-4 h-4 text-red-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <DialogFooter className="mt-4">
@@ -107,6 +225,7 @@ export default function AddFeedingFormulaModal({
             Hủy
           </Button>
           <Button
+            type="button"
             className="bg-emerald-600 hover:bg-emerald-700"
             onClick={handleSubmit}
           >

@@ -1,4 +1,24 @@
- import { Banknote, BrushCleaning, Clipboard, LogOutIcon, Pill, Settings, SquarePen, Syringe, Users, Utensils, Warehouse } from "lucide-react"
+"use client";
+import {
+  Banknote,
+  BrushCleaning,
+  Calendar,
+  Clipboard,
+  Home,
+  House,
+  Inbox,
+  LogOut,
+  LogOutIcon,
+  Pill,
+  Search,
+  Settings,
+  Sprout,
+  SquarePen,
+  Syringe,
+  Users,
+  Utensils,
+  Warehouse,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -9,49 +29,219 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import { NavMain } from "./nav-main";
+import { NavProjects } from "./nav-projects";
 
+// Menu items.
 const items = [
-  { title: "Heo & Chuồng", url: "#", icon: SquarePen, key: "HEO_CHUONG" },
-  { title: "Vắc-xin", url: "#", icon: Syringe, key: "VAC_XIN" },
-  { title: "Heo bệnh", url: "/health", icon: Pill, key: "HEO_BENH" },
-  { title: "Xuất chuồng", url: "/export", icon: Settings, key: "XUAT_CHUONG" },
-  { title: "Kho", url: "#", icon: Warehouse, key: "KHO" },
-  { title: "Khẩu phần", url: "#", icon: Utensils, key: "KHAU_PHAN" },
-  { title: "Vệ sinh", url: "#", icon: BrushCleaning, key: "VE_SINH" },
-  { title: "Chi phí", url: "#", icon: Banknote, key: "CHI_PHI" },
-  { title: "Phân công", url: "#", icon: Users, key: "PHAN_CONG" },
-  { title: "Báo cáo", url: "#", icon: Clipboard, key: "BAO_CAO" },
-  { title: "Hệ thống và phân quyền", url: "/settings", icon: Settings, key: "SETTINGS" },
-  { title: "Đăng xuất", url: "#", icon: LogOutIcon, key: "LOGOUT" },
-]
+  {
+    title: "Heo & Chuồng",
+    url: "/barns",
+    icon: SquarePen,
+  },
+  {
+    title: "Vắc-xin",
+    url: "/vaccines",
+    icon: Syringe,
+  },
+  {
+    title: "Heo bệnh",
+    url: "/health",
+    icon: Pill,
+  },
+  {
+    title: "Xuất chuồng",
+    url: "/export",
+    icon: Settings,
+  },
+  {
+    title: "Kho",
+    url: "/inventory",
+    icon: Warehouse,
+  },
+  {
+    title: "Khẩu phần",
+    url: "/feeding",
+    icon: Utensils,
+  },
+  {
+    title: "Vệ sinh",
+    url: "/sanitation",
+    icon: BrushCleaning,
+  },
+  {
+    title: "Chi phí",
+    url: "/costs",
+    icon: Banknote,
+  },
+  {
+    title: "Môi trường",
+    url: "/environment",
+    icon: Sprout,
+  },
+  {
+    title: "Phân công",
+    url: "/tasks",
+    icon: Users,
+  },
+  {
+    title: "Báo cáo",
+    url: "/reports",
+    icon: Clipboard,
+  },
+  {
+    title: "Hệ thống và phân quyền",
+    url: "#",
+    icon: Settings,
+  },
+  {
+    title: "Đăng xuất",
+    url: "#",
+    icon: LogOutIcon,
+  },
+];
 
-export function AppSidebar({ userPermissions = [] }: { userPermissions?: string[] }) {
-  const filteredItems = items.filter(item => 
-    item.key === "LOGOUT" || userPermissions.includes(item.key)
-  );
+const data = {
+  // user: {
+  //   name: "shadcn",
+  //   email: "m@example.com",
+  //   avatar: "/avatars/shadcn.jpg",
+  // },
+  // teams: [
+  //   {
+  //     name: "Acme Inc",
+  //     logo: GalleryVerticalEnd,
+  //     plan: "Enterprise",
+  //   },
+  //   {
+  //     name: "Acme Corp.",
+  //     logo: AudioWaveform,
+  //     plan: "Startup",
+  //   },
+  //   {
+  //     name: "Evil Corp.",
+  //     logo: Command,
+  //     plan: "Free",
+  //   },
+  // ],
+  navMain: [
+    {
+      title: "Heo & Chuồng",
+      url: "#",
+      icon: SquarePen,
+      isActive: true,
+    },
+    {
+      title: "Vắc-xin",
+      url: "/vaccines",
+      icon: Syringe,
+    },
+    {
+      title: "Heo bệnh",
+      url: "/health",
+      icon: Pill,
+    },
+    {
+      title: "Xuất chuồng",
+      url: "/export",
+      icon: Settings,
+    },
+    {
+      title: "Kho",
+      url: "/inventory",
+      icon: Warehouse,
+      items: [
+        // { title: 'Tồn kho', url: '/inventory' },
+        { title: "Kho hàng", url: "/inventory/warehouses" },
+        { title: "Sản phẩm", url: "/inventory/products" },
+        { title: "Phiếu nhập", url: "/inventory/receipts" },
+        { title: "Phiếu xuất", url: "/inventory/issues" },
+        { title: "Nhà cung cấp", url: "/inventory/suppliers" },
+        { title: "Lịch sử", url: "/inventory/history" },
+      ],
+    },
+    {
+      title: "Khẩu phần",
+      url: "/feeding",
+      icon: Utensils,
+    },
+    {
+      title: "Vệ sinh",
+      url: "/sanitation",
+      icon: BrushCleaning,
+    },
+    {
+      title: "Chi phí",
+      url: "/finance",
+      icon: Banknote,
+      items: [
+        // { title: 'Tổng quan', url: '/finance' },
+        { title: "Phiếu thu/chi", url: "/finance/transactions" },
+        { title: "Tài khoản quỹ", url: "/finance/accounts" },
+        { title: "Công nợ NCC", url: "/finance/supplier-debts" },
+        // { title: 'Hóa đơn tháng', url: '/finance/monthly-bills' },
+        // { title: 'Báo cáo', url: '/finance/reports' },
+      ],
+    },
+    {
+      title: "Phân công",
+      url: "/tasks",
+      icon: Users,
+      items: [
+        { title: "Danh sách công việc", url: "/tasks" },
+        { title: "Lịch của tôi", url: "/tasks/my-schedule" },
+      ],
+    },
+    {
+      title: "Báo cáo",
+      url: "/reports",
+      icon: Clipboard,
+      items: [
+        { title: "Tổng quan", url: "/reports" },
+        { title: "Báo cáo heo", url: "/reports/pigs" },
+        { title: "Báo cáo vắc-xin", url: "/reports/vaccines" },
+        { title: "Báo cáo tồn kho", url: "/reports/inventory" },
+        { title: "Báo cáo doanh thu", url: "/reports/revenue" },
+        { title: "Báo cáo chi phí", url: "/reports/expenses" },
+      ],
+    },
+    {
+      title: "Hệ thống và phân quyền",
+      url: "/settings",
+      icon: Settings,
+    },
+    {
+      title: "Đăng xuất",
+      url: "#",
+      icon: LogOutIcon,
+    },
+  ],
+  // projects: [
+  //   {
+  //     name: "Design Engineering",
+  //     url: "#",
+  //     icon: Frame,
+  //   },
+  //   {
+  //     name: "Sales & Marketing",
+  //     url: "#",
+  //     icon: PieChart,
+  //   },
+  //   {
+  //     name: "Travel",
+  //     url: "#",
+  //     icon: Map,
+  //   },
+  // ],
+};
 
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {filteredItems.map((item) => (
-                <SidebarMenuItem key={item.key}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <NavMain items={data.navMain} />
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }

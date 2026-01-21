@@ -16,6 +16,7 @@ import { Task, ViewMode, ShiftType } from "./types";
 import { TaskCalendar } from "./components/task-calendar";
 import { AddEditTaskDialog } from "./components/add-edit-task-dialog";
 import { TaskDetailDialog } from "./components/task-detail-dialog";
+import { DayTasksDialog } from "./components/day-tasks-dialog";
 import { taskApi } from "@/lib/api";
 
 export default function TasksPage() {
@@ -100,9 +101,11 @@ export default function TasksPage() {
   // Dialog states
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [isDayTasksDialogOpen, setIsDayTasksDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedShift, setSelectedShift] = useState<ShiftType | null>(null);
+  const [selectedDayDate, setSelectedDayDate] = useState<Date | null>(null);
 
   // Get current month/year display text
   const monthYearText = useMemo(() => {
@@ -175,6 +178,11 @@ export default function TasksPage() {
   const handleViewTask = (task: Task) => {
     setSelectedTask(task);
     setIsDetailDialogOpen(true);
+  };
+
+  const handleViewDayTasks = (date: Date) => {
+    setSelectedDayDate(date);
+    setIsDayTasksDialogOpen(true);
   };
 
   const handleDeleteTask = async (taskId: string) => {
@@ -346,8 +354,8 @@ export default function TasksPage() {
           currentDate={currentDate}
           viewMode={viewMode}
           tasks={tasks}
-          onAddTask={handleAddTask}
           onViewTask={handleViewTask}
+          onViewDayTasks={handleViewDayTasks}
         />
       </div>
 
@@ -369,6 +377,24 @@ export default function TasksPage() {
         task={selectedTask}
         onEdit={handleEditTask}
         onDelete={handleDeleteTask}
+      />
+
+      <DayTasksDialog
+        open={isDayTasksDialogOpen}
+        onOpenChange={setIsDayTasksDialogOpen}
+        date={selectedDayDate}
+        tasks={
+          selectedDayDate
+            ? tasks.filter((t) => {
+                const year = selectedDayDate.getFullYear();
+                const month = String(selectedDayDate.getMonth() + 1).padStart(2, "0");
+                const day = String(selectedDayDate.getDate()).padStart(2, "0");
+                const dateKey = `${year}-${month}-${day}`;
+                return t.date === dateKey;
+              })
+            : []
+        }
+        onViewTask={handleViewTask}
       />
     </div>
   );

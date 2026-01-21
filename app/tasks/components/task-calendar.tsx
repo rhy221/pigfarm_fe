@@ -18,8 +18,8 @@ interface TaskCalendarProps {
   currentDate: Date;
   viewMode: ViewMode;
   tasks: Task[];
-  onAddTask: (date?: string, shift?: ShiftType) => void;
   onViewTask: (task: Task) => void;
+  onViewDayTasks: (date: Date) => void;
 }
 
 // Helper to format date as YYYY-MM-DD
@@ -111,8 +111,8 @@ interface DayCellProps {
   isCurrentMonth: boolean;
   tasks: Task[];
   viewMode: ViewMode;
-  onAddTask: (date: string, shift?: ShiftType) => void;
   onViewTask: (task: Task) => void;
+  onViewDayTasks: (date: Date) => void;
 }
 
 function DayCell({
@@ -120,8 +120,8 @@ function DayCell({
   isCurrentMonth,
   tasks,
   viewMode,
-  onAddTask,
   onViewTask,
+  onViewDayTasks,
 }: DayCellProps) {
   const dateKey = formatDateKey(date);
   const dayTasks = tasks.filter((t) => t.date === dateKey);
@@ -154,20 +154,18 @@ function DayCell({
       <div className="flex items-center justify-between mb-1">
         <span
           className={cn(
-            "text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full",
+            "text-sm font-medium w-7 h-7 flex items-center justify-center rounded-full cursor-pointer hover:bg-primary/10",
             isToday(date) && "bg-primary text-primary-foreground"
           )}
+          onClick={() => onViewDayTasks(date)}
         >
           {date.getDate()}
         </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:opacity-100"
-          onClick={() => onAddTask(dateKey)}
-        >
-          <Plus className="h-3 w-3" />
-        </Button>
+        {dayTasks.length > 0 && (
+          <Badge variant="secondary" className="text-xs">
+            {dayTasks.length}
+          </Badge>
+        )}
       </div>
 
       {/* Shifts */}
@@ -188,7 +186,7 @@ function DayCell({
                 if (shiftTasks.length > 0) {
                   onViewTask(shiftTasks[0]);
                 } else {
-                  onAddTask(dateKey, shift);
+                  onViewDayTasks(date);
                 }
               }}
             >
@@ -393,26 +391,16 @@ export function TaskCalendar({
   currentDate,
   viewMode,
   tasks,
-  onAddTask,
   onViewTask,
+  onViewDayTasks,
 }: TaskCalendarProps) {
-  // Day view
-  if (viewMode === "day") {
-    return (
-      <DayView
-        date={currentDate}
-        tasks={tasks}
-        onAddTask={onAddTask}
-        onViewTask={onViewTask}
-      />
-    );
-  }
-
   // Get dates based on view mode
   const dates =
     viewMode === "month"
       ? getMonthDates(currentDate)
-      : getWeekDates(currentDate);
+      : viewMode === "week"
+        ? getWeekDates(currentDate)
+        : [currentDate];
 
   // Week day headers
   const weekDays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
@@ -448,8 +436,8 @@ export function TaskCalendar({
               isCurrentMonth={isCurrentMonth(date, currentDate)}
               tasks={tasks}
               viewMode={viewMode}
-              onAddTask={onAddTask}
               onViewTask={onViewTask}
+              onViewDayTasks={onViewDayTasks}
             />
           </div>
         ))}

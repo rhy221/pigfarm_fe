@@ -1,20 +1,19 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Button } from "@/components/ui/button"
-import { MoreVertical } from "lucide-react"
-import { useRouter } from "next/navigation"
-
+import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { MoreVertical } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type Pen = {
-  id: string
-  name: string
-  current: number
-  capacity: number
-  temperature: number
-  humidity: number
-  status: "normal" | "warning" | "danger"
-}
+  id: string;
+  name: string;
+  current: number;
+  capacity: number;
+  temperature: number;
+  humidity: number;
+  status: "normal" | "warning" | "danger";
+};
 
 const stats = {
   totalPigs: 1240,
@@ -22,7 +21,7 @@ const stats = {
   tempAlert: 3,
   humidityAlert: 2,
   newPigs7Days: 86,
-}
+};
 
 const pens: Pen[] = [
   {
@@ -52,7 +51,7 @@ const pens: Pen[] = [
     humidity: 65,
     status: "normal",
   },
-]
+];
 
 const statusMap = {
   normal: {
@@ -67,10 +66,10 @@ const statusMap = {
     label: "Nguy hiểm",
     color: "bg-red-100 text-red-700",
   },
-}
+};
 
 export default function DashboardPage() {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <div className="space-y-6">
@@ -92,7 +91,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {pens.map(pen => (
+        {pens.map((pen) => (
           <div
             key={pen.id}
             className="rounded-xl border bg-background p-4 shadow-sm transition hover:shadow-md"
@@ -121,8 +120,8 @@ export default function DashboardPage() {
                     pen.temperature >= 35
                       ? "text-red-600"
                       : pen.temperature >= 30
-                      ? "text-yellow-600"
-                      : "text-green-600"
+                        ? "text-yellow-600"
+                        : "text-green-600"
                   }`}
                 >
                   {pen.temperature}°C
@@ -156,7 +155,7 @@ export default function DashboardPage() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 /* ===== SUB COMPONENT ===== */
@@ -166,9 +165,9 @@ function StatCard({
   value,
   alert = false,
 }: {
-  title: string
-  value: number
-  alert?: boolean
+  title: string;
+  value: number;
+  alert?: boolean;
 }) {
   return (
     <div
@@ -179,5 +178,5 @@ function StatCard({
       <p className="text-sm text-muted-foreground">{title}</p>
       <p className="mt-1 text-2xl font-bold">{value}</p>
     </div>
-  )
+  );
 }

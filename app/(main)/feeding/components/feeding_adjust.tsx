@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableHeader,
@@ -8,41 +8,41 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from "@/components/ui/table"
-import { useEffect, useState } from "react"
-import { feedingApi } from "@/app/api/feeding"
-import { FeedingFormulaPayload } from "@/app/api/feeding"
-import AddFeedingFormulaModal from "@/app/feeding/components/add_feeding"
-import { Trash2 } from "lucide-react"
+} from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import { feedingApi } from "@/app/api/feeding";
+import { FeedingFormulaPayload } from "@/app/api/feeding";
+import { Trash2 } from "lucide-react";
+import AddFeedingFormulaModal from "./add_feeding";
 
 /* ================= TYPES ================= */
 type FormulaItem = {
-  productId: string
-  productName: string
-  percentage: number
-}
+  productId: string;
+  productName: string;
+  percentage: number;
+};
 
 type FormulaRow = {
-  id: string
-  name: string
-  startDay: number
-  amountPerPig: number
-  items: FormulaItem[]
-  feedingTime: string
-}
+  id: string;
+  name: string;
+  startDay: number;
+  amountPerPig: number;
+  items: FormulaItem[];
+  feedingTime: string;
+};
 
 type ProductOption = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 export default function FeedingAdjust() {
-  const [formulas, setFormulas] = useState<FormulaRow[]>([])
-  const [editingFormulas, setEditingFormulas] = useState<FormulaRow[]>([])
-  const [products, setProducts] = useState<ProductOption[]>([])
-  const [isEditing, setIsEditing] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [openModal, setOpenModal] = useState(false)
+  const [formulas, setFormulas] = useState<FormulaRow[]>([]);
+  const [editingFormulas, setEditingFormulas] = useState<FormulaRow[]>([]);
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
 
   /* ================= UPDATE CELL ================= */
   const updateCell = <K extends keyof FormulaRow>(
@@ -50,12 +50,10 @@ export default function FeedingAdjust() {
     key: K,
     value: FormulaRow[K]
   ) => {
-    setEditingFormulas(prev =>
-      prev.map((row, i) =>
-        i === index ? { ...row, [key]: value } : row
-      )
-    )
-  }
+    setEditingFormulas((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [key]: value } : row))
+    );
+  };
 
   /* ================= ITEM HELPERS ================= */
   const updateItem = (
@@ -64,93 +62,90 @@ export default function FeedingAdjust() {
     key: "productId" | "percentage",
     value: any
   ) => {
-    const items = [...editingFormulas[formulaIndex].items]
+    const items = [...editingFormulas[formulaIndex].items];
 
     if (key === "productId") {
-      const product = products.find(p => p.id === value)
+      const product = products.find((p) => p.id === value);
       items[itemIndex] = {
         ...items[itemIndex],
         productId: value,
         productName: product?.name || "",
-      }
+      };
     } else {
       items[itemIndex] = {
         ...items[itemIndex],
         percentage: value,
-      }
+      };
     }
 
-    updateCell(formulaIndex, "items", items)
-  }
+    updateCell(formulaIndex, "items", items);
+  };
 
   const addItem = (formulaIndex: number) => {
     updateCell(formulaIndex, "items", [
       ...editingFormulas[formulaIndex].items,
       { productId: "", productName: "", percentage: 0 },
-    ])
-  }
+    ]);
+  };
 
   const removeItem = (formulaIndex: number, itemIndex: number) => {
     updateCell(
       formulaIndex,
       "items",
-      editingFormulas[formulaIndex].items.filter(
-        (_, i) => i !== itemIndex
-      )
-    )
-  }
+      editingFormulas[formulaIndex].items.filter((_, i) => i !== itemIndex)
+    );
+  };
 
   /* ================= SAVE ================= */
   const handleSave = async () => {
-    if (isSaving) return
-    
+    if (isSaving) return;
+
     try {
-      setIsSaving(true)
+      setIsSaving(true);
 
       for (const f of editingFormulas) {
         const payload: FeedingFormulaPayload = {
           name: f.name,
           startDay: f.startDay,
           amountPerPig: f.amountPerPig,
-          items: f.items.map(i => ({
+          items: f.items.map((i) => ({
             productId: i.productId,
             percentage: i.percentage,
           })),
-        }
-        await feedingApi.updateFormula(f.id, payload)
+        };
+        await feedingApi.updateFormula(f.id, payload);
       }
 
-      setIsEditing(false)
-      await fetchFormulas()
+      setIsEditing(false);
+      await fetchFormulas();
     } catch (err) {
-      console.error("Save failed", err)
+      console.error("Save failed", err);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleDelete = async (id: string) => {
-    if (isSaving || isEditing) return
+    if (isSaving || isEditing) return;
 
-    if (!confirm("Bạn có chắc muốn xóa công thức này không?")) return
+    if (!confirm("Bạn có chắc muốn xóa công thức này không?")) return;
 
     try {
-      console.log("🗑️ Delete formula id:", id)
+      console.log("🗑️ Delete formula id:", id);
 
-      setIsSaving(true)
-      await feedingApi.deleteFormula(id)
-      await fetchFormulas()
+      setIsSaving(true);
+      await feedingApi.deleteFormula(id);
+      await fetchFormulas();
     } catch (err) {
-      console.error("Delete formula failed", err)
+      console.error("Delete formula failed", err);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
-
+  };
 
   /* ================= FETCH ================= */
   const fetchFormulas = async () => {
-    const res = await feedingApi.getFormulas()
+    const res = await feedingApi.getFormulas();
 
     const mapped: FormulaRow[] = res.map((f: any) => ({
       id: f.id,
@@ -163,16 +158,16 @@ export default function FeedingAdjust() {
         percentage: Number(d.percentage),
       })),
       feedingTime: "--",
-    }))
+    }));
 
-    setFormulas(mapped)
-    setEditingFormulas(mapped)
-  }
+    setFormulas(mapped);
+    setEditingFormulas(mapped);
+  };
 
   useEffect(() => {
-    fetchFormulas()
-    feedingApi.fetchFeedProducts().then(setProducts)
-  }, [])
+    fetchFormulas();
+    feedingApi.fetchFeedProducts().then(setProducts);
+  }, []);
 
   /* ================= RENDER ================= */
   return (
@@ -194,9 +189,7 @@ export default function FeedingAdjust() {
             <TableHead className="text-white">Định lượng</TableHead>
             <TableHead className="text-white">Giai đoạn</TableHead>
             <TableHead className="text-white">Thành phần</TableHead>
-            <TableHead className="text-white text-center w-12">
-              Xóa
-            </TableHead>
+            <TableHead className="text-white text-center w-12">Xóa</TableHead>
             {/* <TableHead className="text-white">Giờ cho ăn</TableHead> */}
           </TableRow>
         </TableHeader>
@@ -210,9 +203,7 @@ export default function FeedingAdjust() {
                   <input
                     className="border rounded px-2 py-1 w-full"
                     value={f.name}
-                    onChange={e =>
-                      updateCell(index, "name", e.target.value)
-                    }
+                    onChange={(e) => updateCell(index, "name", e.target.value)}
                   />
                 ) : (
                   f.name
@@ -226,12 +217,8 @@ export default function FeedingAdjust() {
                     type="number"
                     className="border rounded px-2 py-1 w-24"
                     value={f.amountPerPig}
-                    onChange={e =>
-                      updateCell(
-                        index,
-                        "amountPerPig",
-                        Number(e.target.value)
-                      )
+                    onChange={(e) =>
+                      updateCell(index, "amountPerPig", Number(e.target.value))
                     }
                   />
                 ) : (
@@ -246,12 +233,8 @@ export default function FeedingAdjust() {
                     type="number"
                     className="border rounded px-2 py-1 w-24"
                     value={f.startDay}
-                    onChange={e =>
-                      updateCell(
-                        index,
-                        "startDay",
-                        Number(e.target.value)
-                      )
+                    onChange={(e) =>
+                      updateCell(index, "startDay", Number(e.target.value))
                     }
                   />
                 ) : (
@@ -269,17 +252,12 @@ export default function FeedingAdjust() {
                       <select
                         className="border rounded px-2 py-1 w-40"
                         value={item.productId}
-                        onChange={e =>
-                          updateItem(
-                            index,
-                            idx,
-                            "productId",
-                            e.target.value
-                          )
+                        onChange={(e) =>
+                          updateItem(index, idx, "productId", e.target.value)
                         }
                       >
                         <option value="">-- Chọn SP --</option>
-                        {products.map(p => (
+                        {products.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
                           </option>
@@ -290,7 +268,7 @@ export default function FeedingAdjust() {
                         type="number"
                         className="border rounded px-2 py-1 w-20"
                         value={item.percentage}
-                        onChange={e =>
+                        onChange={(e) =>
                           updateItem(
                             index,
                             idx,
@@ -303,9 +281,7 @@ export default function FeedingAdjust() {
 
                       <button
                         className="text-red-500"
-                        onClick={() =>
-                          removeItem(index, idx)
-                        }
+                        onClick={() => removeItem(index, idx)}
                       >
                         ✕
                       </button>
@@ -352,8 +328,8 @@ export default function FeedingAdjust() {
             variant="destructive"
             disabled={isSaving}
             onClick={() => {
-              setEditingFormulas(formulas)
-              setIsEditing(false)
+              setEditingFormulas(formulas);
+              setIsEditing(false);
             }}
           >
             Hủy bỏ
@@ -369,21 +345,17 @@ export default function FeedingAdjust() {
               : (setEditingFormulas(formulas), setIsEditing(true))
           }
         >
-          {isEditing
-            ? isSaving
-              ? "Đang lưu..."
-              : "Lưu"
-            : "Chỉnh sửa"}
+          {isEditing ? (isSaving ? "Đang lưu..." : "Lưu") : "Chỉnh sửa"}
         </Button>
       </div>
       <AddFeedingFormulaModal
         open={openModal}
         onClose={() => setOpenModal(false)}
         onSuccess={async () => {
-          setOpenModal(false)
-          await fetchFormulas()
+          setOpenModal(false);
+          await fetchFormulas();
         }}
       />
     </div>
-  )
+  );
 }

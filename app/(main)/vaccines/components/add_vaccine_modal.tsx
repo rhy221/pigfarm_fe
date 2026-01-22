@@ -32,7 +32,6 @@ export default function AddVaccineModal({
   const [inputType, setInputType] = useState<"system" | "manual">("system")
 
   const [date, setDate] = useState("")
-  const [time, setTime] = useState("")
   const [vaccineName, setVaccineName] = useState("")
   const [stage, setStage] = useState(1)
   const [selectedColor, setSelectedColor] = useState("#52d195")
@@ -64,7 +63,6 @@ export default function AddVaccineModal({
     setSelectedPens([])
     setInputType("system")
     setDate("")
-    setTime("")
     setVaccineName("")
     setStage(1)
     setSelectedColor("#52d195")
@@ -82,7 +80,7 @@ export default function AddVaccineModal({
   /* ================= SUBMIT ================= */
 
   const handleSubmit = async () => {
-    if (!date || !time || !vaccineName || selectedPens.length === 0) {
+    if (!date || !vaccineName || selectedPens.length === 0) {
       alert("Vui lòng nhập đầy đủ thông tin")
       return
     }
@@ -90,9 +88,11 @@ export default function AddVaccineModal({
     try {
       setLoading(true)
 
+      const scheduledDateInfo = new Date(`${date}T00:00:00`); 
+
       await createVaccinationSchedule({
-        date,
-        time,
+        scheduledDate: scheduledDateInfo.toISOString(), 
+        
         vaccineName,
         stage,
         color: selectedColor,
@@ -103,7 +103,8 @@ export default function AddVaccineModal({
       onSuccess?.()
       onClose()
     } catch (error) {
-      alert("Tạo lịch tiêm thất bại")
+      console.error("API Error:", error);
+      alert("Tạo lịch tiêm thất bại: Vui lòng kiểm tra lại thông tin.")
     } finally {
       setLoading(false)
     }
@@ -183,12 +184,6 @@ export default function AddVaccineModal({
               type="date"
               value={date}
               onChange={e => setDate(e.target.value)}
-              className="border rounded p-2"
-            />
-            <input
-              type="time"
-              value={time}
-              onChange={e => setTime(e.target.value)}
               className="border rounded p-2"
             />
           </div>

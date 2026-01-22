@@ -8,6 +8,23 @@ import { ExportDetailItem } from "../type";
 import AddExportModal, { SelectedItem } from "./AddExportModal";
 import CageDetailModal from "./CageDetailModal";
 
+const locationData = {
+  "Tp. Hà Nội": ["Hàng Bài", "Hàng Trống", "Láng Thượng", "Ô Chợ Dừa", "Dịch Vọng", "Mai Dịch", "Kim Liên", "Ngọc Khánh", "Thụy Khuê", "Phú Thượng"],
+  "Tp. Hồ Chí Minh": ["Gò Vấp", "Thủ Đức", "Linh Xuân", "Bình Tiên", "Bình Phú", "Hóc Môn", "Bình Chánh", "Bến Cát", "Vĩnh Tân", "Vũng Tàu"],
+  "Tỉnh Đồng Tháp": ["Cao Lãnh", "Sa Đéc", "Hồng Ngự", "Long Khánh", "Thường Phước", "Tân Hồng", "Lai Vung", "Lấp Vò", "Mỹ Tho", "Cai Lậy"],
+  "Tp. Đà Nẵng": ["Hải Châu", "Hòa Cường", "Thanh Khê", "An Khê", "An Hải", "Sơn Trà", "Ngũ Hành Sơn", "Hòa Khánh", "Hải Vân", "Liên Chiểu"],
+  "TP. Cần Thơ": ["Ninh Kiều", "An Bình", "An Khánh", "Tân An", "Thới Bình", "Bình Thủy", "Long Hòa", "Long Tuyền", "Trà An", "Trà Nóc"],
+  "Tỉnh An Giang": ["Long Xuyên", "Châu Đốc", "Tân Châu", "An Phú", "Châu Phú", "Châu Thành", "Thoại Sơn", "Tri Tôn", "Tịnh Biên", "Phú Tân"],
+  "Tỉnh Vĩnh Long": ["Trà Vinh", "Bình Minh", "Long Hồ", "Mang Thít", "Vũng Liêm", "Tam Bình", "Trà Ôn", "Bình Tân", "Tân Quới", "Thuận An"],
+  "Tỉnh Cà Mau": ["Bạc Liêu", "U Minh", "Thới Bình", "Trần Văn Thời", "Cái Nước", "Đầm Dơi", "Năm Căn", "Phú Tân", "Ngọc Hiển", "Khánh Bình"],
+   "Tỉnh Đắk Lắk": ["Buôn Ma Thuột", "Tân Lập", "Ea Kao", "Hòa Phú", "Krông Ana", "Krông Năng", "Ea H’leo", "Cư Kuin", "Buôn Hồ", "Ea Kar"],
+  "Tỉnh Khánh Hòa": ["Nha Trang", "Bắc Nha Trang", "Tây Nha Trang", "Nam Nha Trang", "Cam Ranh", "Ba Ngòi", "Cam Đức", "Ninh Hòa", "Vạn Giã", "Diên Khánh"],
+  "Tp. Huế": ["Phong Điền", "Phong Thái", "Phong Dinh", "Phong Phú", "Kim Long", "Hương Long", "Hương An", "Dương Nỗ", "Thuận Hóa", "Phú Xuân"],
+  "Tp. Hải Phòng": ["Hồng Bàng", "Ngô Quyền", "Lê Chân", "Hải An", "Kiến An", "Dương Kinh", "Đồ Sơn", "An Dương", "Thủy Nguyên", "Cát Hải"],
+  "Tỉnh Hà Tĩnh": ["Thạch Lạc", "Hồng Lĩnh", "Kỳ Anh", "Cẩm Xuyên", "Thạch Hà", "Can Lộc", "Nghi Xuân", "Đức Thọ", "Hương Sơn", "Hương Khê"],
+  "Tỉnh Lâm Đồng": ["Đà Lạt", "Bảo Lộc", "Đức Trọng", "Di Linh", "Lâm Hà", "Đơn Dương", "Đạ Huoai", "Đạ Tẻh", "Cát Tiên", "Lạc Dương"]
+};
+
 const AddExportReceipt: React.FC = () => {
   const router = useRouter();
   const formatter = new Intl.NumberFormat("vi-VN");
@@ -20,7 +37,7 @@ const AddExportReceipt: React.FC = () => {
     sdt: "",
     soNha: "",
     tinhThanh: "Tp. Hồ Chí Minh",
-    phuongXa: "Phường Thủ Đức",
+    phuongXa: "Gò Vấp",
   });
 
   useEffect(() => {
@@ -39,6 +56,13 @@ const AddExportReceipt: React.FC = () => {
     };
     fetchNextCode();
   }, []);
+
+  useEffect(() => {
+    const wards = locationData[formData.tinhThanh as keyof typeof locationData];
+    if (wards && !wards.includes(formData.phuongXa)) {
+      setFormData(prev => ({ ...prev, phuongXa: wards[0] }));
+    }
+  }, [formData.tinhThanh]);
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [items, setItems] = useState<ExportDetailItem[]>([]);
@@ -82,12 +106,6 @@ const AddExportReceipt: React.FC = () => {
       return;
     }
 
-    // const invalidItem = items.find(item => Number(item.tongTrongLuong) <= 0);
-    // if (invalidItem) {
-    //     alert(`Chuồng ${invalidItem.chuong} chưa nhập tổng trọng lượng!`);
-    //     return;
-    // }
-
     try {
       const payload = {
         receipt_code: formData.dotXuat,
@@ -97,7 +115,7 @@ const AddExportReceipt: React.FC = () => {
         full_address: `${formData.soNha}, ${formData.phuongXa}, ${formData.tinhThanh}`,
         details: items.map(item => ({
           pen_id: (item as any).chuong_id,
-          total_weight: Number(item.tongTrongLuong),
+          total_weight: 0,
           unit_price: Number(item.donGia),
           pig_ids: (item as any).pig_ids || []
         }))
@@ -179,7 +197,7 @@ const AddExportReceipt: React.FC = () => {
           <div className="space-y-5">
             <div className="flex items-center">
               <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Đợt xuất</label>
-              <input type="text" disabled readOnly value={formData.dotXuat} onChange={(e) => setFormData({ ...formData, dotXuat: e.target.value })} className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+              <input type="text" disabled readOnly value={formData.dotXuat} className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
             </div>
             <div className="flex flex-col flex-1">
               <div className="flex items-center">
@@ -198,9 +216,29 @@ const AddExportReceipt: React.FC = () => {
             <div className="flex items-start">
               <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)] pt-2">Địa chỉ</label>
               <div className="flex-1 space-y-4">
-                <div className="flex flex-col"><div className="flex items-center gap-3"><span className="text-[11px] italic w-44 text-gray-500">Số nhà, đường...</span><input type="text" value={formData.soNha} onChange={(e) => { setFormData({ ...formData, soNha: e.target.value }); setErrors({ ...errors, soNha: "" }); }} className={`flex-1 border ${errors.soNha ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500`} /></div>{errors.soNha && <p className="text-red-500 text-[11px] ml-44 mt-1">{errors.soNha}</p>}</div>
-                <div className="flex items-center gap-3"><span className="text-[11px] italic w-44 text-gray-500">Tỉnh/Thành phố</span><select className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none bg-white" value={formData.tinhThanh} onChange={(e) => setFormData({ ...formData, tinhThanh: e.target.value })}><option>Tp. Hồ Chí Minh</option><option>Hà Nội</option></select></div>
-                <div className="flex items-center gap-3"><span className="text-[11px] italic w-44 text-gray-500">Xã/Phường</span><select className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none bg-white" value={formData.phuongXa} onChange={(e) => setFormData({ ...formData, phuongXa: e.target.value })}><option>Phường Thủ Đức</option></select></div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] italic w-44 text-gray-500">Số nhà, đường...</span>
+                    <input type="text" value={formData.soNha} onChange={(e) => { setFormData({ ...formData, soNha: e.target.value }); setErrors({ ...errors, soNha: "" }); }} className={`flex-1 border ${errors.soNha ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500`} />
+                  </div>
+                  {errors.soNha && <p className="text-red-500 text-[11px] ml-44 mt-1">{errors.soNha}</p>}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] italic w-44 text-gray-500">Tỉnh/Thành phố</span>
+                  <select className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none bg-white cursor-pointer" value={formData.tinhThanh} onChange={(e) => setFormData({ ...formData, tinhThanh: e.target.value })}>
+                    {Object.keys(locationData).map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] italic w-44 text-gray-500">Xã/Phường/Đặc khu</span>
+                  <select className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none bg-white cursor-pointer" value={formData.phuongXa} onChange={(e) => setFormData({ ...formData, phuongXa: e.target.value })}>
+                    {locationData[formData.tinhThanh as keyof typeof locationData].map(ward => (
+                      <option key={ward} value={ward}>{ward}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -227,12 +265,10 @@ const AddExportReceipt: React.FC = () => {
                 <th className="w-[50px] px-6 py-4 text-center font-bold"><input type="checkbox" checked={allChecked} onChange={(e) => setItems(items.map((item) => ({ ...item, checked: e.target.checked })))} className="h-5 w-5 rounded border-gray-300 text-emerald-600" /></th>
                 <th className="px-6 py-3 text-center font-semibold">STT</th>
                 <th className="px-6 py-3 text-center font-semibold">Chuồng</th>
-                <th className="px-6 py-3 text-center font-semibold">Trọng lượng (kg)</th> 
                 <th className="px-6 py-3 text-center font-semibold">Đơn giá (VNĐ/kg)</th>
                 <th className="px-6 py-3 text-center font-semibold tracking-wider"></th>
               </tr>
             </thead>
-
             <tbody className="divide-y divide-gray-100">
               {items.map((item, index) => (
                 <tr key={item.stt} className="hover:bg-gray-50 transition group">
@@ -241,18 +277,6 @@ const AddExportReceipt: React.FC = () => {
                   </td>
                   <td className="px-6 py-3 text-center text-gray-500">{item.stt}</td>
                   <td className="px-6 py-3 text-center text-emerald-900 font-medium">{item.chuong}</td>
-                  <td className="px-6 py-3 text-center">
-                    <input
-                        type="number"
-                        value={item.tongTrongLuong}
-                        onChange={(e) => {
-                            const newItems = [...items];
-                            newItems[index].tongTrongLuong = Number(e.target.value);
-                            setItems(newItems);
-                        }}
-                        className="w-24 text-center border border-gray-300 rounded px-2 py-1 outline-none focus:border-emerald-500"
-                    />
-                  </td>
                   <td className="px-6 py-3 text-center">
                     {editingIndex === index ? (
                       <input type="number" value={item.donGia} autoFocus onChange={(e) => { const newItems = [...items]; newItems[index].donGia = Number(e.target.value); setItems(newItems); }} onBlur={() => setEditingIndex(null)} onKeyDown={(e) => { if (e.key === "Enter") setEditingIndex(null); }} className="w-32 text-center border border-emerald-500 rounded px-2 py-1 outline-none" />
@@ -269,7 +293,7 @@ const AddExportReceipt: React.FC = () => {
                 </tr>
               ))}
               {isTableEmpty && (
-                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400 italic">Danh sách chi tiết đang trống. Vui lòng thêm chuồng để tiếp tục.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-400 italic">Danh sách chi tiết đang trống. Vui lòng thêm chuồng để tiếp tục.</td></tr>
               )}
             </tbody>
           </table>

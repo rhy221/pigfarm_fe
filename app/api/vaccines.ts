@@ -248,4 +248,17 @@ export async function addTemplateItem(data: any) {
   });
   if (!res.ok) throw new Error("Failed to add template item");
   return res.json();
+
+}
+
+export async function revertVaccination(id: string) {
+  const res = await fetch(`${API_URL}/vaccination/revert/${id}`, {
+    method: "DELETE",
+  })
+
+  if (!res.ok) {
+    throw new Error("Failed to revert vaccination")
+  }
+  
+  return res.json()
 }

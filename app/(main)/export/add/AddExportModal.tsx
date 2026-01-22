@@ -28,11 +28,30 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
         .then((res) => res.json())
         .then((data) => {
           if (data && Object.keys(data).length > 0) {
-            setBreedData(data);
-            const firstBreed = Object.keys(data)[0];
-            setSelectedBreed(firstBreed);
-            if (data[firstBreed] && data[firstBreed].length > 0) {
-              setCurrentCageId(data[firstBreed][0].id);
+            const filteredData: Record<string, any[]> = {};
+
+            Object.keys(data).forEach((breed) => {
+              const validCages = data[breed].filter((cage: any) => 
+                !cage.pen_name.trim().toLowerCase().startsWith('c')
+              );
+
+              if (validCages.length > 0) {
+                filteredData[breed] = validCages;
+              }
+            });
+
+            setBreedData(filteredData);
+            
+            const breeds = Object.keys(filteredData);
+            if (breeds.length > 0) {
+              const firstBreed = breeds[0];
+              setSelectedBreed(firstBreed);
+              if (filteredData[firstBreed] && filteredData[firstBreed].length > 0) {
+                setCurrentCageId(filteredData[firstBreed][0].id);
+              }
+            } else {
+              setSelectedBreed("");
+              setCurrentCageId("");
             }
           }
         })

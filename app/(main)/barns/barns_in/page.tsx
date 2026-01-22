@@ -51,6 +51,9 @@ export default function PigIntakePage() {
     id: string
     batch_name: string
     arrival_date: string
+    breed_id?: string 
+    days_old?: number
+    vaccineIds?: string[] 
   }[]>([])
 
   /* ===== FORM ===== */
@@ -85,15 +88,25 @@ export default function PigIntakePage() {
 
   /* ================= FETCH ================= */
   React.useEffect(() => {
-    barnsApi.getPens().then(data => {
-      setEmptyBarns(data.map(p => ({ id: p.id, pen_name: p.name })))
+      barnsApi.getEmptyMeatPens().then((data: any[]) => {
+      setEmptyBarns(data.map((p: any) => ({ id: p.id, pen_name: p.name })))
       setLoadingBarns(false)
     })
     barnsApi.getBreeds().then(setBreeds)
     barnsApi.getVaccines().then(setVaccines)
-    barnsApi.getPigBatches().then(data => 
-      setBatches(data.map(b => ({ id: b.id, batch_name: b.name, arrival_date: b.arrivalDate })))
-    )
+
+    barnsApi.getPigBatches().then((data: any[]) => {
+      setBatches(data.map(b => ({
+      id: b.id,
+      batch_name: b.name || b.batch_name || "Lứa không tên", 
+      
+      arrival_date: b.arrivalDate || b.arrival_date, 
+      
+      breed_id: b.breedId || b.breed_id || "",
+      days_old: b.daysOld || b.days_old,
+      vaccineIds: b.vaccineIds || []
+    })))
+    })
   }, [])
 
   /* ================= STEP 1: IMPORT ================= */
@@ -171,6 +184,32 @@ export default function PigIntakePage() {
     setRows(prev => prev.map(r => (r.id === id ? { ...r, [field]: value } : r)))
   }
 
+  const handleSelectBatch = (selectedBatch: any) => {
+    setBatch(selectedBatch.id)
+    setIsNewBatch(false)
+
+    if (selectedBatch.breed_id) {
+        setBreedId(selectedBatch.breed_id)
+    }
+
+    if (selectedBatch.arrival_date) {
+        const dateStr = typeof selectedBatch.arrival_date === 'string'
+            ? selectedBatch.arrival_date.split("T")[0]
+            : new Date(selectedBatch.arrival_date).toISOString().split("T")[0]
+        setArrivalDate(dateStr)
+    }
+
+    if (selectedBatch.days_old !== undefined) {
+        setDaysOld(selectedBatch.days_old)
+    }
+
+    if (selectedBatch.vaccineIds && Array.isArray(selectedBatch.vaccineIds)) {
+        setVaccineIds(selectedBatch.vaccineIds)
+    } else {
+        setVaccineIds([])
+    }
+  }
+
   /* ================= RENDER ================= */
   return (
     <div className="space-y-6">
@@ -198,26 +237,29 @@ export default function PigIntakePage() {
               <DropdownMenuContent className="w-[260px]">
                 {batches.map(b => (
                   <DropdownMenuItem
-                    key={b.id}
-                    onClick={() => {
-                      setBatch(b.id)
-                      setIsNewBatch(false)
-                    }}
-                  >
-                    <div className="flex flex-col">
-                      <span>{b.batch_name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(b.arrival_date).toLocaleDateString("vi-VN")}
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
+                  key={b.id}
+                  onClick={() => handleSelectBatch(b)}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{b.batch_name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {b.arrival_date 
+                        ? new Date(b.arrival_date).toLocaleDateString("vi-VN") 
+                        : "--/--/----"}
+                    </span>
+                  </div>
+                </DropdownMenuItem>
                 ))}
 
                 <DropdownMenuItem
                   onClick={() => {
-                    setBatch("")
-                    setIsNewBatch(true)
-                  }}
+                  setBatch("")
+                  setIsNewBatch(true)
+                  setBreedId("")       
+                  setArrivalDate("")  
+                  setDaysOld(0)        
+                  setVaccineIds([])    
+                }}
                   className="text-primary"
                 >
                   ➕ Tạo lứa mới
@@ -259,7 +301,11 @@ export default function PigIntakePage() {
           <Field label="Giống">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between"
+                  disabled={!isNewBatch && !!batch} 
+                >
                   {breeds.find(b => b.id === breedId)?.name || "Chọn giống"}
                   <ChevronDown className="size-4 opacity-60" />
                 </Button>
@@ -337,11 +383,23 @@ export default function PigIntakePage() {
           </Field>
 
           <Field label="Ngày nhập">
-            <input type="date" className="input" value={arrivalDate} onChange={e => setArrivalDate(e.target.value)} />
-          </Field>
+          <input 
+            type="date" 
+            className="input disabled:opacity-70 disabled:bg-slate-100" 
+            value={arrivalDate} 
+            onChange={e => setArrivalDate(e.target.value)} 
+            disabled={!isNewBatch && !!batch} 
+          />
+        </Field>
 
           <Field label="Ngày tuổi">
-            <input type="number" className="input" value={daysOld} onChange={e => setDaysOld(+e.target.value)} />
+            <input 
+              type="number" 
+              className="input disabled:opacity-70 disabled:bg-slate-100" 
+              value={daysOld} 
+              onChange={e => setDaysOld(+e.target.value)} 
+              disabled={!isNewBatch && !!batch} // 🔒 Khóa
+            />
           </Field>
           
 

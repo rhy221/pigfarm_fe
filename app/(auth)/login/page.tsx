@@ -121,7 +121,7 @@ export default function LoginPage() {
                 <label className="text-sm font-bold text-gray-700">
                   Mật khẩu <span className="text-red-500">*</span>
                 </label>
-                <a href="#" className="text-xs font-semibold text-[#5da68a] hover:underline">Quên mật khẩu?</a>
+                {/* <a href="#" className="text-xs font-semibold text-[#5da68a] hover:underline">Quên mật khẩu?</a> */}
               </div>
               <input
                 type="password"

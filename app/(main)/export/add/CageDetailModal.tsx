@@ -32,7 +32,7 @@ const CageDetailModal: React.FC<CageDetailModalProps> = ({ isOpen, onClose, cage
             setDetails(rawList.map((pig: any, index: number) => ({
               stt: index + 1,
               id: pig.id, 
-              maSo: pig.ear_tag_number || "N/A",
+              maSo: pig.id || "N/A",
               checked: false,
               giongHeo: pig.pig_breeds?.breed_name || "N/A"
             })));

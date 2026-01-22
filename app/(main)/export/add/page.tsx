@@ -7,6 +7,35 @@ import { useRouter } from "next/navigation";
 import { ExportDetailItem } from "../type";
 import AddExportModal, { SelectedItem } from "./AddExportModal";
 import CageDetailModal from "./CageDetailModal";
+import { api } from "@/lib/api-client";
+import { Spinner } from "@/components/ui/spinner";
+import { useCashAccounts } from "@/hooks/use-finance";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// Type cho response từ POST /sales
+interface SaleReceipt {
+  id: string;
+  receipt_code: string | null;
+  export_date: string | null;
+  customer_name: string | null;
+  total_amount: number | null;
+}
 
 const AddExportReceipt: React.FC = () => {
   const router = useRouter();
@@ -47,6 +76,25 @@ const AddExportReceipt: React.FC = () => {
   const [isCageDetailOpen, setIsCageDetailOpen] = useState(false);
   const [selectedCage, setSelectedCage] = useState<any>(null);
 
+  // State cho loading và dialog phiếu thu
+  const [isSaving, setIsSaving] = useState(false);
+  const [showCollectionDialog, setShowCollectionDialog] = useState(false);
+  const [savedSaleData, setSavedSaleData] = useState<{
+    id: string;
+    totalAmount: number;
+  } | null>(null);
+  const [collectionForm, setCollectionForm] = useState({
+    cashAccountId: "",
+    collectionDate: new Date().toISOString().split("T")[0],
+    amount: 0,
+    description: "",
+    notes: "",
+  });
+  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
+
+  // Fetch danh sách tài khoản tiền mặt
+  const { data: cashAccounts = [] } = useCashAccounts();
+
   const allChecked = items.length > 0 && items.every((item) => item.checked);
   const hasSelectedItems = items.some((item) => item.checked);
   const isTableEmpty = items.length === 0;
@@ -82,13 +130,9 @@ const AddExportReceipt: React.FC = () => {
       return;
     }
 
-    // const invalidItem = items.find(item => Number(item.tongTrongLuong) <= 0);
-    // if (invalidItem) {
-    //     alert(`Chuồng ${invalidItem.chuong} chưa nhập tổng trọng lượng!`);
-    //     return;
-    // }
-
     try {
+      setIsSaving(true);
+
       const payload = {
         receipt_code: formData.dotXuat,
         export_date: new Date(formData.ngayXuat),
@@ -103,21 +147,66 @@ const AddExportReceipt: React.FC = () => {
         }))
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      const savedData = await api.post<SaleReceipt>("/sales", payload);
+
+      // Tính tổng tiền
+      // const totalAmount = items.reduce(
+      //   (sum, item) => sum + Number(item.tongTrongLuong) * Number(item.donGia),
+      //   0
+      // );
+
+      // // Lưu data và hiện dialog
+      // setSavedSaleData({ id: savedData.id, totalAmount });
+      // setCollectionForm(prev => ({
+      //   ...prev,
+      //   amount: totalAmount,
+      //   description: `Thu tiền phiếu xuất ${formData.dotXuat}`,
+      //   collectionDate: formData.ngayXuat,
+      // }));
+      // setShowCollectionDialog(true);
+      router.push("/export");
+    } catch (error: any) {
+      const message = error?.response?.data?.message;
+      alert(`Lỗi: ${Array.isArray(message) ? message.join(", ") : message || "Không thể kết nối"}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCreateCollection = async () => {
+    if (!collectionForm.cashAccountId) {
+      alert("Vui lòng chọn tài khoản thu");
+      return;
+    }
+
+    try {
+      setIsCreatingCollection(true);
+
+      await api.post("/api/finance/pig-sale-collections", {
+        customerName: formData.tenKhachHang,
+        pigShippingId: savedSaleData?.id,
+        cashAccountId: collectionForm.cashAccountId,
+        collectionDate: collectionForm.collectionDate,
+        amount: collectionForm.amount,
+        description: collectionForm.description,
+        notes: collectionForm.notes || undefined,
       });
 
-      if (response.ok) {
-        router.push("/export");
-      } else {
-        const errorData = await response.json();
-        alert(`Lỗi: ${Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message}`);
-      }
-    } catch (error) {
-      alert("Không thể kết nối đến máy chủ");
+      setShowCollectionDialog(false);
+      router.push("/export");
+    } catch (error: any) {
+      alert(
+        "Lỗi tạo phiếu thu: " +
+          (error?.response?.data?.message || "Không thể kết nối")
+      );
+    } finally {
+      setIsCreatingCollection(false);
     }
+  };
+
+  const handleSkipCollection = () => {
+    setShowCollectionDialog(false);
+    router.push("/export");
   };
 
   const handleAddCagesFromModal = (selectedItems: SelectedItem[]) => {
@@ -170,8 +259,17 @@ const AddExportReceipt: React.FC = () => {
       <div className="mb-10">
         <div className="flex items-center justify-between mb-6 border-b pb-1 border-gray-200">
           <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">Thông tin</h2>
-          <button onClick={handleSave} disabled={isTableEmpty} className={`px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${isTableEmpty ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>
-            Lưu
+          <button
+            onClick={handleSave}
+            disabled={isTableEmpty || isSaving}
+            className={`px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 flex items-center gap-2 ${
+              isTableEmpty || isSaving
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                : "bg-emerald-600 text-white hover:bg-emerald-700"
+            }`}
+          >
+            {isSaving && <Spinner className="h-4 w-4" />}
+            {isSaving ? "Đang lưu..." : "Lưu"}
           </button>
         </div>
 
@@ -293,6 +391,103 @@ const AddExportReceipt: React.FC = () => {
 
       <AddExportModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddCagesFromModal} />
       <CageDetailModal isOpen={isCageDetailOpen} onClose={() => setIsCageDetailOpen(false)} cageData={selectedCage || {}} onConfirmSelection={handleConfirmPigSelection} />
+
+      {/* Dialog tạo phiếu thu */}
+      <Dialog open={showCollectionDialog} onOpenChange={setShowCollectionDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tạo phiếu thu</DialogTitle>
+            <DialogDescription>
+              Phiếu xuất đã được lưu thành công. Bạn có muốn tạo phiếu thu ngay không?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Tài khoản thu */}
+            <div className="space-y-2">
+              <Label>Tài khoản thu *</Label>
+              <Select
+                value={collectionForm.cashAccountId}
+                onValueChange={(value) =>
+                  setCollectionForm((prev) => ({ ...prev, cashAccountId: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn tài khoản" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cashAccounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ngày thu */}
+            <div className="space-y-2">
+              <Label>Ngày thu *</Label>
+              <input
+                type="date"
+                value={collectionForm.collectionDate}
+                onChange={(e) =>
+                  setCollectionForm((prev) => ({ ...prev, collectionDate: e.target.value }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            {/* Số tiền */}
+            <div className="space-y-2">
+              <Label>Số tiền *</Label>
+              <input
+                type="number"
+                value={collectionForm.amount}
+                onChange={(e) =>
+                  setCollectionForm((prev) => ({ ...prev, amount: Number(e.target.value) }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                min="0"
+              />
+              <p className="text-xs text-gray-500">
+                Tổng tiền phiếu xuất: {formatter.format(savedSaleData?.totalAmount || 0)} VNĐ
+              </p>
+            </div>
+
+            {/* Diễn giải */}
+            <div className="space-y-2">
+              <Label>Diễn giải</Label>
+              <input
+                type="text"
+                value={collectionForm.description}
+                onChange={(e) =>
+                  setCollectionForm((prev) => ({ ...prev, description: e.target.value }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleSkipCollection}
+              disabled={isCreatingCollection}
+            >
+              Bỏ qua
+            </Button>
+            <Button
+              onClick={handleCreateCollection}
+              disabled={isCreatingCollection || !collectionForm.cashAccountId}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isCreatingCollection && <Spinner className="mr-2 h-4 w-4" />}
+              {isCreatingCollection ? "Đang tạo..." : "Tạo phiếu thu"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

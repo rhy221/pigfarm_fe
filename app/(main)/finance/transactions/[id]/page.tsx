@@ -103,10 +103,10 @@ export default function TransactionDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Breadcrumb */}
-      <PageBreadcrumb items={[
+      {/* <PageBreadcrumb items={[
         ...BREADCRUMB_CONFIGS.transactions,
         { label: transaction.transactionCode, href: `/finance/transactions/${id}` }
-      ]} />
+      ]} /> */}
 
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

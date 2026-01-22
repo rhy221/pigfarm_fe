@@ -176,11 +176,11 @@ export default function EditTransactionPage({ params }: PageProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Breadcrumb */}
-        <PageBreadcrumb items={[
+        {/* <PageBreadcrumb items={[
           ...BREADCRUMB_CONFIGS.transactions,
           { label: transaction.transactionCode, href: `/finance/transactions/${id}` },
           { label: 'Chỉnh sửa', href: `/finance/transactions/${id}/edit` }
-        ]} />
+        ]} /> */}
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">

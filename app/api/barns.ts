@@ -252,4 +252,21 @@ getPigsByPenId: async (penId: string): Promise<Pig[]> => {
     if (!res.ok) throw new Error("Failed to fetch diseases")
     return res.json()
   },
+
+  getEmptyMeatPens: async (): Promise<{ id: string; name: string }[]> => {
+    const res = await fetch(`${API_URL}/pig/regular-pens`)
+    if (!res.ok) throw new Error("Failed to fetch empty meat pens")
+    
+    const data = await res.json()
+    return data.map((p: any) => ({
+      id: p.id,
+      name: p.pen_name || p.name 
+    }))
+  },
+
+  getPensForTransfer: async () => {
+    const res = await fetch(`${API_URL}/pig/transfer-pens`)
+    if (!res.ok) throw new Error("Failed to fetch transfer pens")
+    return res.json()
+  },
 }

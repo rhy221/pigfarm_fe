@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { ExportReceipt, ExportDetailItem } from "./type";
 import { X } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 
 interface ExportDetailModalProps {
   isOpen: boolean;
@@ -23,7 +22,6 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
   onSave,
 }) => {
   const [currentStatus, setCurrentStatus] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (receipt) setCurrentStatus(receipt.tinhTrangThanhToan);
@@ -43,11 +41,10 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
   const handleUpdate = async () => {
     if (receipt) {
       try {
-        setIsSaving(true);
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${(receipt as any).id}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          body: JSON.stringify({ 
             payment_status: currentStatus,
             details: detailItems.map(item => ({
               id: (item as any).id,
@@ -63,8 +60,6 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
         }
       } catch (error) {
         alert("Không thể kết nối đến máy chủ");
-      } finally {
-        setIsSaving(false);
       }
     }
   };
@@ -82,19 +77,19 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
         <div className="px-6 py-3">
           <div className="flex justify-between items-center mb-6 border-b pb-1 border-gray-200">
             <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">Thông tin</h2>
-            <button
-              onClick={handleUpdate}
-              disabled={isTableEmpty || isSaving}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${
-                isTableEmpty || isSaving
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700"
-              }`}
-            >
-              {isSaving && <Spinner className="h-4 w-4" />}
-              {isSaving ? "Đang lưu..." : "Lưu"}
-            </button>
+              {currentStatus !== "Đã thanh toán" && (
+                <button
+                  onClick={handleUpdate}
+                  disabled={isTableEmpty}
+                  className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${
+                    isTableEmpty ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"
+                  }`}
+                >
+                  Lưu
+                </button>
+              )}
           </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-8 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
             <div className="flex items-center gap-4">
@@ -128,7 +123,6 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
               >
                 <option value="Chuẩn bị xuất chuồng">Chuẩn bị xuất chuồng</option>
                 <option value="Đã thanh toán">Đã thanh toán</option>
-                <option value="Chưa thanh toán">Chưa thanh toán</option>
               </select>
             </div>
           </div>
@@ -152,9 +146,13 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
                     <td className="px-6 py-4 text-center">
                       <input
                         type="number"
+                        min="0"
                         value={item.tongTrongLuong || ""}
                         placeholder="0"
-                        onChange={(e) => onWeightChange(index, Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          onWeightChange(index, value < 0 ? 0 : value);
+                        }}
                         className="w-28 border border-gray-200 rounded-lg px-3 py-1.5 text-center focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-700 shadow-inner"
                       />
                     </td>

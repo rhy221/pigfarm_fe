@@ -17,8 +17,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu"
-import { ArrowLeft, ChevronDown, Loader2 } from "lucide-react"
 import { barnsApi } from "@/app/api/barns"
+import { ArrowLeft, ChevronDown, Loader2, X, Plus } from "lucide-react"
 
 /* ================= TYPES ================= */
 type PigRow = {
@@ -70,6 +70,19 @@ export default function PigIntakePage() {
   /* ===== DATA ===== */
   const [rows, setRows] = React.useState<PigRow[]>([])
 
+  /* ===== HANDLERS VACCINE ===== */
+  const handleSelectVaccine = (id: string) => {
+    if (!vaccineIds.includes(id)) {
+      setVaccineIds([...vaccineIds, id])
+    }
+  }
+
+  const handleRemoveVaccine = (id: string) => {
+    setVaccineIds(vaccineIds.filter(v => v !== id))
+  }
+
+  const availableVaccines = vaccines.filter(v => !vaccineIds.includes(v.id))
+
   /* ================= FETCH ================= */
   React.useEffect(() => {
     barnsApi.getPens().then(data => {
@@ -78,7 +91,9 @@ export default function PigIntakePage() {
     })
     barnsApi.getBreeds().then(setBreeds)
     barnsApi.getVaccines().then(setVaccines)
-    barnsApi.getPigBatches().then(setBatches)
+    barnsApi.getPigBatches().then(data => 
+      setBatches(data.map(b => ({ id: b.id, batch_name: b.name, arrival_date: b.arrivalDate })))
+    )
   }, [])
 
   /* ================= STEP 1: IMPORT ================= */
@@ -263,6 +278,64 @@ export default function PigIntakePage() {
             </DropdownMenu>
           </Field>
 
+          <Field label="Vaccine đã tiêm">
+            <div className="w-full space-y-3">
+              {/* 1. Nút Dropdown để thêm vaccine */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between border-dashed">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <Plus className="size-4" /> Thêm loại vaccine
+                    </span>
+                    <ChevronDown className="size-4 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                
+                <DropdownMenuContent className="w-[300px]" align="start">
+                  {availableVaccines.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground text-center">
+                      Đã chọn hết các loại vaccine
+                    </div>
+                  ) : (
+                    availableVaccines.map(v => (
+                      <DropdownMenuItem
+                        key={v.id}
+                        onClick={() => handleSelectVaccine(v.id)}
+                        className="cursor-pointer"
+                      >
+                        {v.name}
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {vaccineIds.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {vaccineIds.map(id => {
+                    const vaccine = vaccines.find(v => v.id === id)
+                    if (!vaccine) return null
+                    
+                    return (
+                      <div 
+                        key={id} 
+                        className="flex items-center gap-1 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium border animate-in fade-in zoom-in duration-200"
+                      >
+                        {vaccine.name}
+                        <button
+                          onClick={() => handleRemoveVaccine(id)}
+                          className="ml-1 rounded-full hover:bg-black/10 p-0.5 transition-colors"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </Field>
+
           <Field label="Ngày nhập">
             <input type="date" className="input" value={arrivalDate} onChange={e => setArrivalDate(e.target.value)} />
           </Field>
@@ -270,6 +343,7 @@ export default function PigIntakePage() {
           <Field label="Ngày tuổi">
             <input type="number" className="input" value={daysOld} onChange={e => setDaysOld(+e.target.value)} />
           </Field>
+          
 
           <Field label="Số lượng">
             <input type="number" className="input" value={count} onChange={e => setCount(+e.target.value)} />

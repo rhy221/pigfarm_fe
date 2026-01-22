@@ -73,16 +73,18 @@ export default function BarnsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard title="🐖 Tổng số heo" value={stats?.totalPigs || 0} />
         <StatCard title="🏠 Chuồng hoạt động" value={stats?.activePens || 0} />
+        
         <StatCard
           title="🌡 Chuồng vượt nhiệt"
-          value={stats?.tempAlert || 0}
+          value={(stats as any)?.overheatedPens || 0} 
           alert
         />
         <StatCard
           title="💧 Chuồng vượt ẩm"
-          value={stats?.humidityAlert || 0}
+          value={(stats as any)?.highHumidityPens || 0} 
           alert
         />
+        
         <StatCard
           title="➕ Heo mới (7 ngày)"
           value={stats?.newPigs7Days || 0}

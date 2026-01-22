@@ -128,21 +128,12 @@ const SickPigManagement: React.FC = () => {
                   <td className="px-4 py-6 text-center text-gray-600">{item.diseases?.name}</td>
                   <td className="px-4 py-6 text-center">{new Date(item.created_at).toLocaleDateString("vi-VN")}</td>
                   <td className="px-4 py-6 text-center">
-                    <Link 
-                        href={{
-                          pathname: "/health/treatment",
-                          query: { 
-                            id: item.id,
-                            chuong: item.pens?.pen_name,
-                            soLuong: item._count?.pigs_in_treatment || 0,
-                            loaiBenh: item.diseases?.name,
-                            ngayPhatHien: new Date(item.created_at).toLocaleDateString("vi-VN")
-                          }
-                        }}
+                    <button 
+                      onClick={() => handleOpenDetail(item)}
                       className="text-emerald-600 font-medium hover:underline cursor-pointer"
                     >
                       Chi tiết
-                    </Link>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -206,7 +197,9 @@ const SickPigManagement: React.FC = () => {
                           ...item, 
                           chuong: item.pens?.pen_name,
                           loaiBenh: item.diseases?.name,
-                          soLuong: item.pigs_in_treatment?.length || 0 
+                          ngayPhatHien: new Date(item.created_at).toLocaleDateString("vi-VN"),
+                          soLuong: item.pigs_in_treatment?.length || 0,
+                          pigs_in_treatment: item.pigs_in_treatment 
                         });
                         setIsHistoryModalOpen(true);
                       }}

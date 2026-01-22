@@ -102,12 +102,12 @@ export default function InventoryHistoryPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <PageBreadcrumb
+      {/* <PageBreadcrumb
         items={[
           { label: 'Quản lý Kho', href: '/inventory' },
           { label: 'Lịch sử kho' },
         ]}
-      />
+      /> */}
 
       {/* Header */}
       <div className="flex items-center justify-between">

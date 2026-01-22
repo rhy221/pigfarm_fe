@@ -236,7 +236,7 @@ export default function StockReceiptForm({ receiptId }: StockReceiptFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Breadcrumb */}
-        <PageBreadcrumb items={BREADCRUMB_CONFIGS.receiptNew} />
+        {/* <PageBreadcrumb items={BREADCRUMB_CONFIGS.receiptNew} /> */}
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">

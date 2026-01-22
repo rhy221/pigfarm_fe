@@ -277,11 +277,11 @@ useEffect(() => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Breadcrumb */}
-        <PageBreadcrumb items={[
+        {/* <PageBreadcrumb items={[
           ...BREADCRUMB_CONFIGS.receipts,
           { label: receipt.receiptCode, href: `/inventory/receipts/${id}` },
           { label: 'Chỉnh sửa', href: `/inventory/receipts/${id}/edit` }
-        ]} />
+        ]} /> */}
 
         {/* Header */}
         <div className="flex items-center justify-between">

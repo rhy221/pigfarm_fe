@@ -275,7 +275,7 @@ useEffect(() => {
   return (
     <Form {...form}>
         {/* Breadcrumb */}
-        <PageBreadcrumb items={BREADCRUMB_CONFIGS.issueNew} />
+        {/* <PageBreadcrumb items={BREADCRUMB_CONFIGS.issueNew} /> */}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between">

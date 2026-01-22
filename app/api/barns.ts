@@ -16,8 +16,8 @@ export type Pen = {
 export type DashboardStats = {
   totalPigs: number
   activePens: number
-  tempAlert: number
-  humidityAlert: number
+  overheatedPens: number 
+  highHumidityPens: number 
   newPigs7Days: number
 }
 
@@ -125,9 +125,8 @@ export const barnsApi = {
   getIsolationPens: async (): Promise<{ id: string; name: string }[]> => {
     const res = await fetch(`${API_URL}/pig/isolation-pens`)
     if (!res.ok) throw new Error("Failed to fetch isolation pens")
-
     const data = await res.json()
-
+    
     return data.map((item: any) => ({
       id: item.id,
       name: item.pen_name || item.name || "Chuồng cách ly",
@@ -205,18 +204,15 @@ getPigsByPenId: async (penId: string): Promise<Pig[]> => {
 
     // GET /pig/batches
     getPigBatches: async () => {
-      const res = await fetch(`${API_URL}/pig/batches`)
+    const res = await fetch(`${API_URL}/pig/batches`) 
+    if (!res.ok) throw new Error("Lỗi lấy danh sách lứa heo")
 
-      if (!res.ok) {
-        throw new Error("Lỗi lấy danh sách lứa heo")
-      }
-
-      return res.json() as Promise<{
-        id: string
-        batch_name: string
-        arrival_date: string
-      }[]>
-    },
+    return res.json() as Promise<{
+      id: string
+      name: string       
+      arrivalDate: string 
+    }[]>
+  },
 
     // ===== CHUYỂN CHUỒNG (THƯỜNG / CÁCH LY) =====
     // POST /pig/transfer
@@ -224,7 +220,8 @@ getPigsByPenId: async (penId: string): Promise<Pig[]> => {
       pigIds: string[]
       targetPenId: string
       isIsolation: boolean
-      diseasedAt?: string
+      diseaseDate?: string 
+      diseaseName?: string 
       diseaseId?: string
       symptoms?: string
     }) => {
@@ -243,4 +240,16 @@ getPigsByPenId: async (penId: string): Promise<Pig[]> => {
 
       return res.json()
     },
+
+    getRegularPens: async (): Promise<{ id: string; name: string }[]> => {
+    const res = await fetch(`${API_URL}/pig/regular-pens`)
+    if (!res.ok) throw new Error("Failed to fetch regular pens")
+    
+    return res.json()
+  },
+  getDiseases: async (): Promise<{ id: string; name: string }[]> => {
+    const res = await fetch(`${API_URL}/pig/diseases`)
+    if (!res.ok) throw new Error("Failed to fetch diseases")
+    return res.json()
+  },
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { ExportReceipt, ExportDetailItem } from "./type";
 import { X } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ExportDetailModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
   onSave,
 }) => {
   const [currentStatus, setCurrentStatus] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (receipt) setCurrentStatus(receipt.tinhTrangThanhToan);
@@ -41,10 +43,11 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
   const handleUpdate = async () => {
     if (receipt) {
       try {
+        setIsSaving(true);
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${(receipt as any).id}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             payment_status: currentStatus,
             details: detailItems.map(item => ({
               id: (item as any).id,
@@ -60,6 +63,8 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
         }
       } catch (error) {
         alert("Không thể kết nối đến máy chủ");
+      } finally {
+        setIsSaving(false);
       }
     }
   };
@@ -79,12 +84,15 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
             <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">Thông tin</h2>
             <button
               onClick={handleUpdate}
-              disabled={isTableEmpty}
+              disabled={isTableEmpty || isSaving}
               className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${
-                isTableEmpty ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"
+                isTableEmpty || isSaving
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                  : "bg-emerald-600 text-white hover:bg-emerald-700"
               }`}
             >
-              Lưu
+              {isSaving && <Spinner className="h-4 w-4" />}
+              {isSaving ? "Đang lưu..." : "Lưu"}
             </button>
           </div>
 

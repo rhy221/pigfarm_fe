@@ -209,7 +209,7 @@ const data = {
         { title: "Báo cáo heo", url: "/reports/pigs" },
         { title: "Báo cáo vắc-xin", url: "/reports/vaccines" },
         { title: "Báo cáo tồn kho", url: "/reports/inventory" },
-        { title: "Báo cáo thu Chi", url: "/reports/expenses" },
+        { title: "Báo cáo thu chi", url: "/reports/expenses" },
       ],
       key: "BAO_CAO",
     },

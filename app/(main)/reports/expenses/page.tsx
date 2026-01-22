@@ -96,20 +96,20 @@ export default function FinancePage() {
   return (
     <div className="space-y-6 animate-fade-in">
 
-      <PageBreadcrumb items={BREADCRUMB_CONFIGS.finance} />
+      {/* <PageBreadcrumb items={BREADCRUMB_CONFIGS.finance} /> */}
       
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      {/* <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Quản lý Chi phí</h1>
           <p className="text-muted-foreground">Theo dõi thu chi và sổ quỹ của trang trại</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2"> */}
           {/* <Button variant="outline">
             <FileDown className="mr-2 h-4 w-4" />
             Xuất báo cáo
           </Button> */}
-          <Link href="/finance/transactions/new?type=expense">
+          {/* <Link href="/finance/transactions/new?type=expense">
             <Button variant="outline">
               <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500" />
               Phiếu chi
@@ -122,7 +122,7 @@ export default function FinancePage() {
             </Button>
           </Link>
         </div>
-      </div>
+      </div> */}
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 stagger-children">

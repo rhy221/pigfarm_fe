@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react" 
 import CalendarDay from "./vaccine_calendarday"
 import VaccineSidePanel from "./vaccine_panel"
 import { fetchVaccinationCalendar } from "@/app/api/vaccines"
@@ -26,11 +26,12 @@ export default function Calendar() {
 
   /* ================= EVENTS ================= */
   const [events, setEvents] = useState<CalendarEvent[]>([])
-
+  const [loading, setLoading] = useState(false) 
   useEffect(() => {
     fetchVaccinationCalendar(currentMonth, currentYear)
       .then(setEvents)
       .catch(console.error)
+      .finally(() => setLoading(false)) 
   }, [currentMonth, currentYear])
 
   /* ================= CALENDAR GRID ================= */
@@ -128,8 +129,15 @@ export default function Calendar() {
         </div>
 
         {/* GRID */}
-        <div className="border rounded-xl overflow-hidden bg-white">
-          <div className="grid grid-cols-7 bg-slate-50 border-b">
+        <div className="border rounded-xl overflow-hidden bg-white relative min-h-[600px]">
+          {loading && (
+            <div className="absolute inset-0 bg-white/60 z-50 backdrop-blur-[1px] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
+                    <span className="text-sm font-medium text-emerald-700">Đang tính toán lịch tiêm...</span>
+                </div>
+            </div>
+          )}          <div className="grid grid-cols-7 bg-slate-50 border-b">
             {WEEKDAYS.map(day => (
               <div
                 key={day}
@@ -163,10 +171,9 @@ export default function Calendar() {
                   <CalendarDay
                     day={day}
                     events={dayEvents}
-                    isSelected={
-                      selectedDate?.getDate() === day &&
-                      (selectedDate?.getMonth() ?? -1) + 1 === currentMonth
-                    }
+                    isSelected={selectedDate?.getDate() === day && (selectedDate?.getMonth() ?? -1) + 1 === currentMonth}
+                    currentMonth={currentMonth}
+                    currentYear={currentYear}
                   />
                 </div>
               )

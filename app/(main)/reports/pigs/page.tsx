@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { reportApi } from "@/lib/api";
+import { useHerdReport } from "@/hooks/use-reports";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -26,6 +27,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { exportToPDF, formatNumberForPDF } from "@/lib/pdf-export";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 
@@ -43,6 +45,16 @@ interface PenData {
   sickCount: number;
   deadCount: number;
   shippedCount: number;
+}
+
+interface HerdTableItem {
+  id: number;
+  stt: number;
+  chuong: string;
+  soHeoKhoe: number;
+  soHeoBinh: number;
+  soHeoChết: number;
+  soHeoXuatChuong: number;
 }
 
 interface HerdReportData {
@@ -67,66 +79,31 @@ export default function PigReportsPage() {
   const [selectedPen, setSelectedPen] = useState("all");
   const [selectedBatch, setSelectedBatch] = useState("all");
   const [activeTab, setActiveTab] = useState("herd");
-  const [reportData, setReportData] = useState<HerdReportData | null>(null);
   const [allPens, setAllPens] = useState<PenData[]>([]); // Store all pens for filter
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Fetch report using custom hook
+  const { data: reportData, isLoading: loading } = useHerdReport({
+    month:
+      selectedMonth === "all"
+        ? `${selectedYear}-all`
+        : `${selectedYear}-${selectedMonth.padStart(2, "0")}`,
+    pen: selectedPen === "all" ? undefined : selectedPen,
+    batch: selectedBatch === "all" ? undefined : selectedBatch,
+  });
+
+  // Effect to populate allPens for the filter dropdown
   useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        setLoading(true);
-
-        // Logic: If current month/year selected, use today.
-        // Else, use the last day of the selected month to get the "closing" report.
-        let targetDateStr = "";
-        const isCurrent =
-          parseInt(selectedYear) === new Date().getFullYear() &&
-          parseInt(selectedMonth) === new Date().getMonth() + 1;
-
-        if (isCurrent) {
-          targetDateStr = new Date().toISOString().split("T")[0];
-        } else {
-          // Get last day of selected month
-          const lastDay = new Date(
-            parseInt(selectedYear),
-            parseInt(selectedMonth),
-            0
-          );
-          targetDateStr = format(lastDay, "yyyy-MM-dd");
-        }
-
-        // Prepare query params
-        const params: any = {};
-        if (targetDateStr) params.date = targetDateStr;
-        if (selectedPen !== "all") params.pen = selectedPen;
-        if (selectedBatch !== "all") params.batch = selectedBatch;
-
-        const data = await reportApi.getHerdReport(params);
-        console.log("Herd report data:", data);
-        console.log("Pens count:", data?.pens?.length || 0);
-
-        setReportData(data);
-
-        // Populate filter options only if we don't have them yet (and we are not currently filtering by pen, which would restrict the list)
-        if (data?.pens && selectedPen === "all" && allPens.length === 0) {
-          setAllPens(data.pens);
-        } else if (
-          data?.pens &&
-          selectedPen === "all" &&
-          data.pens.length > allPens.length
-        ) {
-          // Update if we somehow got more pens
-          setAllPens(data.pens);
-        }
-      } catch (error) {
-        console.error("Error fetching herd report:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchReport();
-  }, [selectedMonth, selectedYear, selectedPen, selectedBatch, activeTab]); // Add dependencies
+    if (reportData?.pens && selectedPen === "all" && allPens.length === 0) {
+      setAllPens(reportData.pens);
+    } else if (
+      reportData?.pens &&
+      selectedPen === "all" &&
+      reportData.pens.length > allPens.length
+    ) {
+      setAllPens(reportData.pens);
+    }
+  }, [reportData, selectedPen, allPens.length]);
 
   const handleSubmit = () => {
     setSubmitting(true);
@@ -138,13 +115,40 @@ export default function PigReportsPage() {
   };
 
   const handleExportPDF = () => {
-    alert("Xuất PDF (chức năng sẽ được triển khai sau)");
+    const periodText =
+      selectedMonth === "all"
+        ? `Năm ${selectedYear}`
+        : `Tháng ${selectedMonth}/${selectedYear}`;
+
+    if (activeTab === "herd") {
+      exportToPDF({
+        title: "Bao cao Dan heo",
+        subtitle: `Ky: ${periodText}`,
+        columns: [
+          { header: "STT", dataKey: "stt", width: 15 },
+          { header: "Chuong", dataKey: "chuong", width: 40 },
+          { header: "Heo khoe", dataKey: "soHeoKhoe", width: 25 },
+          { header: "Heo benh", dataKey: "soHeoBinh", width: 25 },
+          { header: "Heo chet", dataKey: "soHeoChết", width: 25 },
+          { header: "Heo xuat", dataKey: "soHeoXuatChuong", width: 25 },
+        ],
+        data: herdTableSource,
+        summaryData: [
+          {
+            label: "Tong so heo",
+            value: formatNumberForPDF(reportData?.totalPigs || 0),
+          },
+        ],
+        filename: `bao-cao-dan-heo-${selectedYear}-${selectedMonth}.pdf`,
+        orientation: "portrait",
+      });
+    }
   };
 
   // Map backend data to frontend format
   const mappedHerdTable = useMemo(() => {
     return (
-      reportData?.pens?.map((pen, index) => ({
+      reportData?.pens?.map((pen: PenData, index: number) => ({
         id: index + 1,
         stt: index + 1,
         chuong: pen.penName || pen.penId,
@@ -159,18 +163,22 @@ export default function PigReportsPage() {
   // Calculate chart data from API response
   const totalHealthy =
     reportData?.pens?.reduce(
-      (sum: number, p) => sum + (p.healthyCount || 0),
+      (sum: number, p: PenData) => sum + (p.healthyCount || 0),
       0
     ) || 0;
   const totalSick =
-    reportData?.pens?.reduce((sum: number, p) => sum + (p.sickCount || 0), 0) ||
-    0;
+    reportData?.pens?.reduce(
+      (sum: number, p: PenData) => sum + (p.sickCount || 0),
+      0
+    ) || 0;
   const totalDead =
-    reportData?.pens?.reduce((sum: number, p) => sum + (p.deadCount || 0), 0) ||
-    0;
+    reportData?.pens?.reduce(
+      (sum: number, p: PenData) => sum + (p.deadCount || 0),
+      0
+    ) || 0;
   const totalShipped =
     reportData?.pens?.reduce(
-      (sum: number, p) => sum + (p.shippedCount || 0),
+      (sum: number, p: PenData) => sum + (p.shippedCount || 0),
       0
     ) || 0;
 
@@ -229,6 +237,7 @@ export default function PigReportsPage() {
             <SelectValue placeholder="Chọn tháng" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
               // Disable future months if current year is selected
               const isDisabled =
@@ -294,11 +303,13 @@ export default function PigReportsPage() {
         </Button>
 
         <div className="ml-auto text-sm text-gray-500 italic">
-          * Dữ liệu được tính đến{" "}
-          {parseInt(selectedYear) === currentYear &&
-          parseInt(selectedMonth) === currentMonth
-            ? "hôm nay"
-            : "cuối tháng"}
+          * Dữ liệu được tính{" "}
+          {selectedMonth === "all"
+            ? `trong năm ${selectedYear}`
+            : parseInt(selectedYear) === currentYear &&
+                parseInt(selectedMonth) === currentMonth
+              ? "đến hôm nay"
+              : "đến cuối tháng"}
         </div>
       </div>
 
@@ -401,21 +412,30 @@ export default function PigReportsPage() {
             <div className="p-6 bg-green-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Tổng số heo khỏe</p>
               <p className="text-3xl font-bold">
-                {herdTableSource.reduce((sum, item) => sum + item.soHeoKhoe, 0)}
+                {herdTableSource.reduce(
+                  (sum: number, item: HerdTableItem) => sum + item.soHeoKhoe,
+                  0
+                )}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
             <div className="p-6 bg-yellow-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Tổng số heo bệnh</p>
               <p className="text-3xl font-bold">
-                {herdTableSource.reduce((sum, item) => sum + item.soHeoBinh, 0)}
+                {herdTableSource.reduce(
+                  (sum: number, item: HerdTableItem) => sum + item.soHeoBinh,
+                  0
+                )}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
             <div className="p-6 bg-red-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Tổng số heo chết</p>
               <p className="text-3xl font-bold">
-                {herdTableSource.reduce((sum, item) => sum + item.soHeoChết, 0)}
+                {herdTableSource.reduce(
+                  (sum: number, item: HerdTableItem) => sum + item.soHeoChết,
+                  0
+                )}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
@@ -423,7 +443,8 @@ export default function PigReportsPage() {
               <p className="text-sm opacity-90 mb-1">Đã xuất chuồng</p>
               <p className="text-3xl font-bold">
                 {herdTableSource.reduce(
-                  (sum, item) => sum + item.soHeoXuatChuong,
+                  (sum: number, item: HerdTableItem) =>
+                    sum + item.soHeoXuatChuong,
                   0
                 )}
               </p>
@@ -524,7 +545,7 @@ export default function PigReportsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {herdTableSource.map((row) => (
+                {herdTableSource.map((row: HerdTableItem) => (
                   <TableRow key={row.id}>
                     <TableCell>{row.stt}</TableCell>
                     <TableCell className="font-medium">{row.chuong}</TableCell>
@@ -559,21 +580,30 @@ export default function PigReportsPage() {
             <div className="p-6 bg-green-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Tổng số heo khỏe</p>
               <p className="text-3xl font-bold">
-                {herdTableSource.reduce((sum, item) => sum + item.soHeoKhoe, 0)}
+                {herdTableSource.reduce(
+                  (sum: number, item: HerdTableItem) => sum + item.soHeoKhoe,
+                  0
+                )}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
             <div className="p-6 bg-yellow-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Tổng số heo bệnh</p>
               <p className="text-3xl font-bold">
-                {herdTableSource.reduce((sum, item) => sum + item.soHeoBinh, 0)}
+                {herdTableSource.reduce(
+                  (sum: number, item: HerdTableItem) => sum + item.soHeoBinh,
+                  0
+                )}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
             <div className="p-6 bg-red-500 text-white rounded-lg shadow-lg">
               <p className="text-sm opacity-90 mb-1">Tổng số heo chết</p>
               <p className="text-3xl font-bold">
-                {herdTableSource.reduce((sum, item) => sum + item.soHeoChết, 0)}
+                {herdTableSource.reduce(
+                  (sum: number, item: HerdTableItem) => sum + item.soHeoChết,
+                  0
+                )}
               </p>
               <p className="text-xs opacity-75 mt-1">Con</p>
             </div>
@@ -581,7 +611,8 @@ export default function PigReportsPage() {
               <p className="text-sm opacity-90 mb-1">Đã xuất chuồng</p>
               <p className="text-3xl font-bold">
                 {herdTableSource.reduce(
-                  (sum, item) => sum + item.soHeoXuatChuong,
+                  (sum: number, item: HerdTableItem) =>
+                    sum + item.soHeoXuatChuong,
                   0
                 )}
               </p>

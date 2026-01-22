@@ -26,7 +26,7 @@ import {
   STATUS_LABELS,
   DAY_OF_WEEK_LABELS,
   ROLE_PERMISSIONS,
-  Employee,
+  User as UserType,
 } from "../types";
 import { TaskDetailDialog } from "../components/task-detail-dialog";
 
@@ -75,7 +75,7 @@ export default function MySchedulePage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserType | null>(null);
 
   // Fetch data
   useEffect(() => {

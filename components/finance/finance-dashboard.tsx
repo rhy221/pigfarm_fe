@@ -2,27 +2,50 @@
 // FINANCE DASHBOARD COMPONENT
 // =====================================================
 
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import { useState } from "react";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { vi } from "date-fns/locale";
 import {
   useDashboardStats,
   useTransactions,
   useCashBookReport,
   useFinancialSummary,
   useCashAccounts,
-} from '@/hooks/use-finance';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+} from "@/hooks/use-finance";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Wallet,
   TrendingUp,
@@ -35,10 +58,10 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   Search,
-} from 'lucide-react';
-import { formatCurrency, cn } from '@/lib/utils';
-import Link from 'next/link';
-import { TransactionType } from '@/types/finance';
+} from "lucide-react";
+import { formatCurrency, cn } from "@/lib/utils";
+import Link from "next/link";
+import { TransactionType } from "@/types/finance";
 
 interface FinanceDashboardProps {
   // : string;
@@ -49,28 +72,30 @@ export default function FinanceDashboard() {
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
   });
-  const [selectedAccount, setSelectedAccount] = useState<string>('all');
-  const [transactionType, setTransactionType] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedAccount, setSelectedAccount] = useState<string>("all");
+  const [transactionType, setTransactionType] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
 
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: accounts } = useCashAccounts();
-  const { data: transactions, isLoading: transactionsLoading } = useTransactions({
-    
-    cashAccountId: selectedAccount !== 'all' ? selectedAccount : undefined,
-    transactionType: transactionType !== 'all' ? (transactionType as TransactionType) : undefined,
-    fromDate: format(dateRange.from, 'yyyy-MM-dd'),
-    toDate: format(dateRange.to, 'yyyy-MM-dd'),
-    search: searchTerm || undefined,
-    page,
-    limit: 20,
-  });
+  const { data: transactions, isLoading: transactionsLoading } =
+    useTransactions({
+      cashAccountId: selectedAccount !== "all" ? selectedAccount : undefined,
+      transactionType:
+        transactionType !== "all"
+          ? (transactionType as TransactionType)
+          : undefined,
+      fromDate: format(dateRange.from, "yyyy-MM-dd"),
+      toDate: format(dateRange.to, "yyyy-MM-dd"),
+      search: searchTerm || undefined,
+      page,
+      limit: 20,
+    });
 
   const { data: summary } = useFinancialSummary({
-    
-    fromDate: format(dateRange.from, 'yyyy-MM-dd'),
-    toDate: format(dateRange.to, 'yyyy-MM-dd'),
+    fromDate: format(dateRange.from, "yyyy-MM-dd"),
+    toDate: format(dateRange.to, "yyyy-MM-dd"),
   });
 
   return (
@@ -79,7 +104,9 @@ export default function FinanceDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Quản lý chi phí</h1>
-          <p className="text-muted-foreground">Theo dõi thu chi và sổ quỹ của trang trại</p>
+          <p className="text-muted-foreground">
+            Theo dõi thu chi và sổ quỹ của trang trại
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
@@ -120,7 +147,9 @@ export default function FinanceDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Thu trong tháng</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Thu trong tháng
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -133,7 +162,9 @@ export default function FinanceDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Chi trong tháng</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Chi trong tháng
+            </CardTitle>
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
@@ -181,10 +212,12 @@ export default function FinanceDashboard() {
                   <div>
                     <p className="font-medium">{account.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {account.type === 'cash' ? 'Tiền mặt' : 'Ngân hàng'}
+                      {account.type === "cash" ? "Tiền mặt" : "Ngân hàng"}
                     </p>
                   </div>
-                  <p className="text-lg font-bold">{formatCurrency(account.balance)}</p>
+                  <p className="text-lg font-bold">
+                    {formatCurrency(account.balance)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -218,10 +251,15 @@ export default function FinanceDashboard() {
 
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-[280px] justify-start text-left font-normal">
+                    <Button
+                      variant="outline"
+                      className="w-[280px] justify-start text-left font-normal"
+                    >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(dateRange.from, 'dd/MM/yyyy', { locale: vi })} -{' '}
-                      {format(dateRange.to, 'dd/MM/yyyy', { locale: vi })}
+                      {format(dateRange.from, "dd/MM/yyyy", {
+                        locale: vi,
+                      })}{" "}
+                      - {format(dateRange.to, "dd/MM/yyyy", { locale: vi })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -238,7 +276,10 @@ export default function FinanceDashboard() {
                   </PopoverContent>
                 </Popover>
 
-                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                <Select
+                  value={selectedAccount}
+                  onValueChange={setSelectedAccount}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Tài khoản" />
                   </SelectTrigger>
@@ -252,7 +293,10 @@ export default function FinanceDashboard() {
                   </SelectContent>
                 </Select>
 
-                <Select value={transactionType} onValueChange={setTransactionType}>
+                <Select
+                  value={transactionType}
+                  onValueChange={setTransactionType}
+                >
                   <SelectTrigger className="w-[150px]">
                     <SelectValue placeholder="Loại" />
                   </SelectTrigger>
@@ -271,7 +315,8 @@ export default function FinanceDashboard() {
             <CardHeader>
               <CardTitle>Danh sách giao dịch</CardTitle>
               <CardDescription>
-                Hiển thị {transactions?.data?.length || 0} / {transactions?.total || 0} giao dịch
+                Hiển thị {transactions?.data?.length || 0} /{" "}
+                {transactions?.total || 0} giao dịch
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -303,29 +348,41 @@ export default function FinanceDashboard() {
                   ) : (
                     transactions?.data?.map((tx) => (
                       <TableRow key={tx.id}>
-                        <TableCell className="font-mono text-sm">{tx.transactionCode}</TableCell>
-                        <TableCell>
-                          {format(new Date(tx.transactionDate), 'dd/MM/yyyy', { locale: vi })}
+                        <TableCell className="font-mono text-sm">
+                          {tx.transactionCode}
                         </TableCell>
                         <TableCell>
-                          {tx.transactionType === 'income' ? (
-                            <Badge className="bg-green-100 text-green-700">Thu</Badge>
+                          {format(new Date(tx.transactionDate), "dd/MM/yyyy", {
+                            locale: vi,
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          {tx.transactionType === "income" ? (
+                            <Badge className="bg-green-100 text-green-700">
+                              Thu
+                            </Badge>
                           ) : (
-                            <Badge className="bg-red-100 text-red-700">Chi</Badge>
+                            <Badge className="bg-red-100 text-red-700">
+                              Chi
+                            </Badge>
                           )}
                         </TableCell>
-                        <TableCell>{tx.category?.name || '-'}</TableCell>
-                        <TableCell>{tx.contactName || '-'}</TableCell>
+                        <TableCell>
+                          {tx.transactionCategories?.name || "-"}
+                        </TableCell>
+                        <TableCell>{tx.contactName || "-"}</TableCell>
                         <TableCell className="max-w-[200px] truncate">
-                          {tx.description || '-'}
+                          {tx.description || "-"}
                         </TableCell>
                         <TableCell
                           className={cn(
-                            'text-right font-medium',
-                            tx.transactionType === 'income' ? 'text-green-600' : 'text-red-600'
+                            "text-right font-medium",
+                            tx.transactionType === "income"
+                              ? "text-green-600"
+                              : "text-red-600"
                           )}
                         >
-                          {tx.transactionType === 'income' ? '+' : '-'}
+                          {tx.transactionType === "income" ? "+" : "-"}
                           {formatCurrency(tx.amount)}
                         </TableCell>
                       </TableRow>
@@ -352,7 +409,9 @@ export default function FinanceDashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setPage((p) => Math.min(transactions.totalPages, p + 1))}
+                      onClick={() =>
+                        setPage((p) => Math.min(transactions.totalPages, p + 1))
+                      }
                       disabled={page === transactions.totalPages}
                     >
                       Sau
@@ -373,7 +432,7 @@ export default function FinanceDashboard() {
         </TabsContent>
 
         <TabsContent value="monthly-bills">
-          <MonthlyBillsTab  />
+          <MonthlyBillsTab />
         </TabsContent>
       </Tabs>
     </div>
@@ -381,17 +440,10 @@ export default function FinanceDashboard() {
 }
 
 // Sub-components
-function CashBookTab({
-
-  dateRange,
-}: {
- 
-  dateRange: { from: Date; to: Date };
-}) {
+function CashBookTab({ dateRange }: { dateRange: { from: Date; to: Date } }) {
   const { data: cashBook, isLoading } = useCashBookReport({
-    
-    fromDate: format(dateRange.from, 'yyyy-MM-dd'),
-    toDate: format(dateRange.to, 'yyyy-MM-dd'),
+    fromDate: format(dateRange.from, "yyyy-MM-dd"),
+    toDate: format(dateRange.to, "yyyy-MM-dd"),
   });
 
   if (isLoading) {
@@ -403,8 +455,8 @@ function CashBookTab({
       <CardHeader>
         <CardTitle>Sổ quỹ</CardTitle>
         <CardDescription>
-          Từ {format(dateRange.from, 'dd/MM/yyyy', { locale: vi })} đến{' '}
-          {format(dateRange.to, 'dd/MM/yyyy', { locale: vi })}
+          Từ {format(dateRange.from, "dd/MM/yyyy", { locale: vi })} đến{" "}
+          {format(dateRange.to, "dd/MM/yyyy", { locale: vi })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -412,7 +464,9 @@ function CashBookTab({
         <div className="grid gap-4 md:grid-cols-4 mb-6">
           <div className="p-4 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">Đầu kỳ</p>
-            <p className="text-xl font-bold">{formatCurrency(cashBook?.openingBalance || 0)}</p>
+            <p className="text-xl font-bold">
+              {formatCurrency(cashBook?.openingBalance || 0)}
+            </p>
           </div>
           <div className="p-4 bg-green-50 rounded-lg">
             <p className="text-sm text-green-600">Tổng thu</p>
@@ -458,15 +512,25 @@ function CashBookTab({
             {cashBook?.transactions?.map((tx) => (
               <TableRow key={tx.id}>
                 <TableCell>
-                  {format(new Date(tx.transactionDate), 'dd/MM/yyyy', { locale: vi })}
+                  {format(new Date(tx.transactionDate), "dd/MM/yyyy", {
+                    locale: vi,
+                  })}
                 </TableCell>
-                <TableCell className="font-mono text-sm">{tx.transactionCode}</TableCell>
-                <TableCell>{tx.description || tx.category?.name || '-'}</TableCell>
+                <TableCell className="font-mono text-sm">
+                  {tx.transactionCode}
+                </TableCell>
+                <TableCell>
+                  {tx.description || tx.transactionCategories?.name || "-"}
+                </TableCell>
                 <TableCell className="text-right text-green-600">
-                  {tx.transactionType === 'income' ? formatCurrency(tx.amount) : '-'}
+                  {tx.transactionType === "income"
+                    ? formatCurrency(tx.amount)
+                    : "-"}
                 </TableCell>
                 <TableCell className="text-right text-red-600">
-                  {tx.transactionType === 'expense' ? formatCurrency(tx.amount) : '-'}
+                  {tx.transactionType === "expense"
+                    ? formatCurrency(tx.amount)
+                    : "-"}
                 </TableCell>
                 <TableCell className="text-right font-medium">
                   {formatCurrency(tx.runningBalance || 0)}
@@ -506,20 +570,28 @@ function FinancialSummaryTab({ summary }: { summary: any }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-green-600">Thu theo danh mục</CardTitle>
-          <CardDescription>Tổng: {formatCurrency(summary.totalIncome)}</CardDescription>
+          <CardDescription>
+            Tổng: {formatCurrency(summary.totalIncome)}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {incomeCategories.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">Không có dữ liệu</p>
+            <p className="text-center text-muted-foreground py-4">
+              Không có dữ liệu
+            </p>
           ) : (
             <div className="space-y-3">
               {incomeCategories.map(([id, cat]: [string, any]) => (
                 <div key={id} className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">{cat.name}</p>
-                    <p className="text-sm text-muted-foreground">{cat.count} giao dịch</p>
+                    <p className="text-sm text-muted-foreground">
+                      {cat.count} giao dịch
+                    </p>
                   </div>
-                  <p className="font-bold text-green-600">{formatCurrency(cat.amount)}</p>
+                  <p className="font-bold text-green-600">
+                    {formatCurrency(cat.amount)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -531,20 +603,28 @@ function FinancialSummaryTab({ summary }: { summary: any }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-red-600">Chi theo danh mục</CardTitle>
-          <CardDescription>Tổng: {formatCurrency(summary.totalExpense)}</CardDescription>
+          <CardDescription>
+            Tổng: {formatCurrency(summary.totalExpense)}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {expenseCategories.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">Không có dữ liệu</p>
+            <p className="text-center text-muted-foreground py-4">
+              Không có dữ liệu
+            </p>
           ) : (
             <div className="space-y-3">
               {expenseCategories.map(([id, cat]: [string, any]) => (
                 <div key={id} className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">{cat.name}</p>
-                    <p className="text-sm text-muted-foreground">{cat.count} giao dịch</p>
+                    <p className="text-sm text-muted-foreground">
+                      {cat.count} giao dịch
+                    </p>
                   </div>
-                  <p className="font-bold text-red-600">{formatCurrency(cat.amount)}</p>
+                  <p className="font-bold text-red-600">
+                    {formatCurrency(cat.amount)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -562,7 +642,9 @@ function MonthlyBillsTab() {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Hóa đơn tháng</CardTitle>
-            <CardDescription>Theo dõi các chi phí cố định hàng tháng</CardDescription>
+            <CardDescription>
+              Theo dõi các chi phí cố định hàng tháng
+            </CardDescription>
           </div>
           <Link href="/finance/monthly-bills/new">
             <Button>

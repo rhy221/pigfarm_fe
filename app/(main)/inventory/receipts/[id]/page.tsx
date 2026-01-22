@@ -140,10 +140,10 @@ export default function StockReceiptDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Breadcrumb */}
-      <PageBreadcrumb items={[
+      {/* <PageBreadcrumb items={[
         ...BREADCRUMB_CONFIGS.receipts,
         { label: receipt.receiptCode, href: `/inventory/receipts/${id}` }
-      ]} />
+      ]} /> */}
 
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

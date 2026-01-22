@@ -318,11 +318,11 @@ export default function EditStockIssuePage({ params }: PageProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 animate-fade-in">
         {/* Breadcrumb */}
-        <PageBreadcrumb items={[
+        {/* <PageBreadcrumb items={[
           ...BREADCRUMB_CONFIGS.issues,
           { label: issue.issueCode, href: `/inventory/issues/${id}` },
           { label: 'Chỉnh sửa', href: `/inventory/issues/${id}/edit` }
-        ]} />
+        ]} /> */}
 
         {/* Header */}
         <div className="flex items-center justify-between">

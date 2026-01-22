@@ -161,7 +161,7 @@ export default function WarehousesPage() {
   return (
     <div className="space-y-6 animate-fade-in">
         {/* Breadcrumb */}
-      <PageBreadcrumb items={BREADCRUMB_CONFIGS.warehouses} />
+      {/* <PageBreadcrumb items={BREADCRUMB_CONFIGS.warehouses} /> */}
 
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

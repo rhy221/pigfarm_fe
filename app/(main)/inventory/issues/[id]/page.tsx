@@ -142,10 +142,10 @@ export default function StockIssueDetailPage({ params }: PageProps) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Breadcrumb */}
-      <PageBreadcrumb items={[
+      {/* <PageBreadcrumb items={[
         ...BREADCRUMB_CONFIGS.issues,
         { label: issue.issueCode, href: `/inventory/issues/${id}` }
-      ]} />
+      ]} /> */}
 
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

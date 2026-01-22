@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { reportApi } from "@/lib/api";
+import { useVaccineReport } from "@/hooks/use-reports";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -19,18 +20,33 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FileDown } from "lucide-react";
+import {
+  exportToPDF,
+  formatCurrencyForPDF,
+  formatNumberForPDF,
+} from "@/lib/pdf-export";
 
 interface VaccineDetail {
   vaccineName: string;
   diseaseName: string;
   cost: number;
-  pigsVaccinated: number;
-  pigsSick: number;
+  totalVaccinated: number;
+  sickCount: number;
   effectivenessRate: number;
 }
 
 interface VaccineReportData {
   details?: VaccineDetail[];
+}
+
+interface VaccineItem {
+  id: number;
+  tenVaccine: string;
+  loaiBenh: string;
+  chiPhi: number;
+  soHeoTiem: number;
+  soHeoMacBenh: number;
+  tiLeKhoi: number;
 }
 
 export default function VaccinesReportPage() {
@@ -46,10 +62,17 @@ export default function VaccinesReportPage() {
   const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedVaccine, setSelectedVaccine] = useState("all");
-  const [reportData, setReportData] = useState<VaccineReportData | null>(null);
   const [allVaccines, setAllVaccines] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Fetch report using custom hook
+  const { data: reportData, isLoading: loading } = useVaccineReport({
+    month:
+      selectedMonth === "all"
+        ? `${selectedYear}-all`
+        : `${selectedYear}-${selectedMonth.padStart(2, "0")}`,
+    vaccine: selectedVaccine === "all" ? undefined : selectedVaccine,
+  });
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -63,30 +86,6 @@ export default function VaccinesReportPage() {
     fetchInitialData();
   }, []);
 
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        setLoading(true);
-        const currentMonthStr = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
-
-        const params: any = { month: currentMonthStr };
-
-        // Add filter params
-        if (selectedVaccine !== "all") {
-          params.vaccine = selectedVaccine;
-        }
-
-        const data = await reportApi.getVaccineReport(params);
-        setReportData(data);
-      } catch (error) {
-        console.error("Error fetching vaccine report:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchReport();
-  }, [selectedMonth, selectedYear, selectedVaccine]);
-
   const handleSubmit = () => {
     setSubmitting(true);
     setSelectedMonth(tempMonth);
@@ -96,13 +95,32 @@ export default function VaccinesReportPage() {
   };
 
   const handleExportPDF = () => {
-    alert("Xuất PDF (chức năng sẽ được triển khai sau)");
+    const periodText =
+      selectedMonth === "all"
+        ? `Năm ${selectedYear}`
+        : `Tháng ${selectedMonth}/${selectedYear}`;
+
+    exportToPDF({
+      title: "Bao cao Hieu qua Vaccine",
+      subtitle: `Ky: ${periodText}`,
+      columns: [
+        { header: "Ten vaccine", dataKey: "tenVaccine", width: 45 },
+        { header: "Loai benh", dataKey: "loaiBenh", width: 40 },
+        { header: "Chi phi", dataKey: "chiPhi", width: 30 },
+        { header: "So heo tiem", dataKey: "soHeoTiem", width: 25 },
+        { header: "So mac benh", dataKey: "soHeoMacBenh", width: 25 },
+        { header: "Ti le khoi (%)", dataKey: "tiLeKhoi", width: 25 },
+      ],
+      data: filteredData,
+      filename: `bao-cao-vaccine-${selectedYear}-${selectedMonth}.pdf`,
+      orientation: "landscape",
+    });
   };
 
   // Map backend data to frontend format (no client-side filtering needed)
   const filteredData = useMemo(() => {
     return (
-      reportData?.details?.map((detail, index) => ({
+      reportData?.details?.map((detail: VaccineDetail, index: number) => ({
         id: index + 1,
         tenVaccine: detail.vaccineName || "N/A",
         loaiBenh: detail.diseaseName || "N/A",
@@ -114,10 +132,16 @@ export default function VaccinesReportPage() {
     );
   }, [reportData]);
 
-  const totalCost = filteredData.reduce((sum, item) => sum + item.chiPhi, 0);
-  const totalPigs = filteredData.reduce((sum, item) => sum + item.soHeoTiem, 0);
+  const totalCost = filteredData.reduce(
+    (sum: number, item: VaccineItem) => sum + item.chiPhi,
+    0
+  );
+  const totalPigs = filteredData.reduce(
+    (sum: number, item: VaccineItem) => sum + item.soHeoTiem,
+    0
+  );
   const totalSick = filteredData.reduce(
-    (sum, item) => sum + item.soHeoMacBenh,
+    (sum: number, item: VaccineItem) => sum + item.soHeoMacBenh,
     0
   );
 
@@ -163,6 +187,7 @@ export default function VaccinesReportPage() {
             <SelectValue placeholder="Chọn tháng" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
               const isDisabled =
                 parseInt(tempYear) === currentYear && month > currentMonth;
@@ -241,7 +266,10 @@ export default function VaccinesReportPage() {
         </Button>
 
         <div className="ml-auto text-sm text-gray-500 italic hidden lg:block">
-          * Dữ liệu tổng hợp trong tháng {selectedMonth}/{selectedYear}
+          * Dữ liệu tổng hợp{" "}
+          {selectedMonth === "all"
+            ? `trong năm ${selectedYear}`
+            : `trong tháng ${selectedMonth}/${selectedYear}`}
         </div>
       </div>
 
@@ -267,7 +295,7 @@ export default function VaccinesReportPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.map((row) => (
+            {filteredData.map((row: VaccineItem) => (
               <TableRow key={row.id}>
                 <TableCell className="font-medium">{row.tenVaccine}</TableCell>
                 <TableCell>{row.loaiBenh}</TableCell>
@@ -332,13 +360,13 @@ export default function VaccinesReportPage() {
               • Vắc-xin có hiệu quả cao nhất:{" "}
               <span className="font-semibold">
                 {
-                  filteredData.reduce((max, item) =>
+                  filteredData.reduce((max: VaccineItem, item: VaccineItem) =>
                     item.tiLeKhoi > max.tiLeKhoi ? item : max
                   ).tenVaccine
                 }{" "}
                 (
                 {filteredData
-                  .reduce((max, item) =>
+                  .reduce((max: VaccineItem, item: VaccineItem) =>
                     item.tiLeKhoi > max.tiLeKhoi ? item : max
                   )
                   .tiLeKhoi.toFixed(2)}

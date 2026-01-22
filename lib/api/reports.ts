@@ -4,6 +4,7 @@ export const reportApi = {
   // Herd Report
   getHerdReport: async (params?: {
     date?: string;
+    month?: string;
     pen?: string;
     batch?: string;
   }) => {
@@ -17,7 +18,11 @@ export const reportApi = {
   },
 
   // Inventory Report
-  getInventoryReport: async (params?: { month?: string; warehouseId?: string }) => {
+  getInventoryReport: async (params?: {
+    month?: string;
+    warehouseId?: string;
+    categoryId?: string;
+  }) => {
     const query = new URLSearchParams(
       Object.fromEntries(
         Object.entries(params || {}).filter(([, v]) => v != null)
@@ -52,6 +57,7 @@ export const reportApi = {
     month?: string;
     category?: string;
     status?: string;
+    type?: string;
   }) => {
     const query = new URLSearchParams(
       Object.fromEntries(
@@ -177,4 +183,3 @@ export const reportApi = {
     return response.data;
   },
 };
-

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { reportApi } from "@/lib/api";
 import { useWarehouses, useWarehouseCategories } from "@/hooks/use-inventory";
+import { useInventoryReport } from "@/hooks/use-reports";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -25,6 +26,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { exportToPDF, formatNumberForPDF } from "@/lib/pdf-export";
 import {
   LineChart,
   Line,
@@ -76,10 +78,6 @@ export default function InventoryReportPage() {
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
   const [selectedWarehouse, setSelectedWarehouse] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [reportData, setReportData] = useState<InventoryReportData | null>(
-    null
-  );
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   // Fetch warehouses and categories using hooks
@@ -88,31 +86,22 @@ export default function InventoryReportPage() {
   const { data: categoriesData } = useWarehouseCategories();
   const categories = categoriesData || [];
 
-  // Fetch report when component mounts or filters change
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        setLoading(true);
-        const currentMonthStr = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
+  // Fetch trends data only once on initial load (6 months trend)
+  const { data: trendsData } = useInventoryReport({
+    month: `${currentYear}-all`,
+    warehouseId: undefined,
+    categoryId: undefined,
+  });
 
-        const params: any = { month: currentMonthStr };
-        if (selectedWarehouse !== "all") {
-          params.warehouseId = selectedWarehouse;
-        }
-        if (selectedCategory !== "all") {
-          params.categoryId = selectedCategory;
-        }
-
-        const data = await reportApi.getInventoryReport(params);
-        setReportData(data);
-      } catch (error) {
-        console.error("Error fetching inventory report:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchReport();
-  }, [selectedMonth, selectedYear, selectedWarehouse, selectedCategory]);
+  // Fetch filtered report data
+  const { data: reportData, isLoading: loading } = useInventoryReport({
+    month:
+      selectedMonth === "all"
+        ? `${selectedYear}-all`
+        : `${selectedYear}-${selectedMonth.padStart(2, "0")}`,
+    warehouseId: selectedWarehouse === "all" ? undefined : selectedWarehouse,
+    categoryId: selectedCategory === "all" ? undefined : selectedCategory,
+  });
 
   const handleSubmit = () => {
     setSubmitting(true);
@@ -124,13 +113,59 @@ export default function InventoryReportPage() {
   };
 
   const handleExportPDF = () => {
-    alert("Xuất PDF (chức năng sẽ được triển khai sau)");
+    const warehouseName =
+      warehouses.find((w) => w.id === selectedWarehouse)?.name || "Tất cả kho";
+    const categoryName =
+      categories.find((c) => c.id === selectedCategory)?.name || "Tất cả loại";
+    const periodText =
+      selectedMonth === "all"
+        ? `Năm ${selectedYear}`
+        : `Tháng ${selectedMonth}/${selectedYear}`;
+
+    const totalOpening = filteredData.reduce(
+      (sum: number, item: any) => sum + item.tonDau,
+      0
+    );
+    const totalReceived = filteredData.reduce(
+      (sum: number, item: any) => sum + item.nhap,
+      0
+    );
+    const totalIssued = filteredData.reduce(
+      (sum: number, item: any) => sum + item.xuat,
+      0
+    );
+    const totalClosing = filteredData.reduce(
+      (sum: number, item: any) => sum + item.tonCuoi,
+      0
+    );
+
+    exportToPDF({
+      title: "Bao cao Ton kho",
+      subtitle: `Kho: ${warehouseName} | Loai: ${categoryName} | Ky: ${periodText}`,
+      columns: [
+        { header: "Ma SP", dataKey: "maSP", width: 25 },
+        { header: "Vat tu / Nguyen lieu", dataKey: "vatTu", width: 60 },
+        { header: "Ton dau", dataKey: "tonDau", width: 20 },
+        { header: "Nhap", dataKey: "nhap", width: 20 },
+        { header: "Xuat", dataKey: "xuat", width: 20 },
+        { header: "Ton cuoi", dataKey: "tonCuoi", width: 20 },
+      ],
+      data: filteredData,
+      summaryData: [
+        { label: "Tong ton dau", value: formatNumberForPDF(totalOpening) },
+        { label: "Tong nhap", value: formatNumberForPDF(totalReceived) },
+        { label: "Tong xuat", value: formatNumberForPDF(totalIssued) },
+        { label: "Tong ton cuoi", value: formatNumberForPDF(totalClosing) },
+      ],
+      filename: `bao-cao-ton-kho-${selectedYear}-${selectedMonth}.pdf`,
+      orientation: "portrait",
+    });
   };
 
   // Map backend data to frontend format
   const filteredData = useMemo(() => {
     const mappedData =
-      reportData?.items?.map((item, index) => ({
+      reportData?.items?.map((item: InventoryItem, index: number) => ({
         id: index + 1,
         maSP: item.productCode || "N/A",
         vatTu: item.productName || "N/A",
@@ -146,8 +181,8 @@ export default function InventoryReportPage() {
   }, [reportData]);
 
   const chartData = useMemo(() => {
-    return reportData?.trends || [];
-  }, [reportData]);
+    return trendsData?.trends || [];
+  }, [trendsData]);
 
   // Generate Year Options (2020 - Current)
   const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) =>
@@ -176,6 +211,31 @@ export default function InventoryReportPage() {
         </Button>
       </div>
 
+      {/* Chart - Load once on initial page load */}
+      <div className="rounded-lg border bg-white p-6">
+        <h3 className="text-lg font-semibold mb-4">
+          Biến động tồn kho 6 tháng
+        </h3>
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" fontSize={12} />
+              <YAxis fontSize={12} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#53A88B"
+                strokeWidth={2}
+                dot={{ fill: "#53A88B", r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-center">
         <Select value={tempMonth} onValueChange={setTempMonth}>
@@ -183,6 +243,7 @@ export default function InventoryReportPage() {
             <SelectValue placeholder="Chọn tháng" />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
             {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
               // Disable future months if current year is selected
               const isDisabled =
@@ -276,33 +337,11 @@ export default function InventoryReportPage() {
         </Button>
 
         <div className="ml-auto text-sm text-gray-500 italic hidden sm:block">
-          * Dữ liệu chốt sổ đến cuối tháng {selectedMonth}/{selectedYear}
+          * Dữ liệu chốt sổ{" "}
+          {selectedMonth === "all"
+            ? `đến cuối năm ${selectedYear}`
+            : `đến cuối tháng ${selectedMonth}/${selectedYear}`}
         </div>
-      </div>
-
-      {/* Chart */}
-      <div className="rounded-lg border bg-white p-6">
-        <h3 className="text-lg font-semibold mb-4">
-          Biến động tồn kho 6 tháng
-        </h3>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" fontSize={12} />
-              <YAxis fontSize={12} />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#53A88B"
-                strokeWidth={2}
-                dot={{ fill: "#53A88B", r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartContainer>
       </div>
 
       {/* Table */}
@@ -325,7 +364,7 @@ export default function InventoryReportPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredData.map((row) => (
+            {filteredData.map((row: any) => (
               <TableRow key={row.id}>
                 <TableCell className="text-gray-600">{row.maSP}</TableCell>
                 <TableCell className="font-medium">{row.vatTu}</TableCell>
@@ -350,25 +389,37 @@ export default function InventoryReportPage() {
         <div className="p-4 bg-blue-50 rounded-lg">
           <p className="text-sm text-gray-600">Tổng tồn đầu</p>
           <p className="text-2xl font-bold text-blue-600">
-            {filteredData.reduce((sum, item) => sum + item.tonDau, 0)}
+            {filteredData.reduce(
+              (sum: number, item: any) => sum + item.tonDau,
+              0
+            )}
           </p>
         </div>
         <div className="p-4 bg-green-50 rounded-lg">
           <p className="text-sm text-gray-600">Tổng nhập</p>
           <p className="text-2xl font-bold text-green-600">
-            {filteredData.reduce((sum, item) => sum + item.nhap, 0)}
+            {filteredData.reduce(
+              (sum: number, item: any) => sum + item.nhap,
+              0
+            )}
           </p>
         </div>
         <div className="p-4 bg-orange-50 rounded-lg">
           <p className="text-sm text-gray-600">Tổng xuất</p>
           <p className="text-2xl font-bold text-orange-600">
-            {filteredData.reduce((sum, item) => sum + item.xuat, 0)}
+            {filteredData.reduce(
+              (sum: number, item: any) => sum + item.xuat,
+              0
+            )}
           </p>
         </div>
         <div className="p-4 bg-[#53A88B]/10 rounded-lg">
           <p className="text-sm text-gray-600">Tổng tồn cuối</p>
           <p className="text-2xl font-bold text-[#53A88B]">
-            {filteredData.reduce((sum, item) => sum + item.tonCuoi, 0)}
+            {filteredData.reduce(
+              (sum: number, item: any) => sum + item.tonCuoi,
+              0
+            )}
           </p>
         </div>
       </div>

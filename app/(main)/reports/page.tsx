@@ -1,11 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Warehouse,
-  Syringe,
-  Banknote,
-  TrendingUp,
-  PiggyBank,
-} from "lucide-react";
+import { Warehouse, Syringe, Banknote, PiggyBank } from "lucide-react";
 import Link from "next/link";
 
 const reports = [
@@ -31,18 +25,11 @@ const reports = [
     color: "text-purple-600",
   },
   {
-    title: "Doanh thu",
-    description: "Báo cáo doanh thu",
-    icon: TrendingUp,
-    href: "/reports/revenue",
-    color: "text-emerald-600",
-  },
-  {
-    title: "Chi phí",
-    description: "Báo cáo chi phí",
+    title: "Thu Chi",
+    description: "Báo cáo thu chi và doanh thu",
     icon: Banknote,
     href: "/reports/expenses",
-    color: "text-orange-600",
+    color: "text-emerald-600",
   },
 ];
 
@@ -54,7 +41,7 @@ export default function ReportsPage() {
         <p className="text-gray-600 mt-1">Chọn loại báo cáo bạn muốn xem</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {reports.map((report) => {
           const Icon = report.icon;
           return (

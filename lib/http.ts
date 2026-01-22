@@ -12,8 +12,7 @@ function decodeJwtPayload(token: string) {
 }
 
 export function isTokenExpired(token: string) {
-  
-  if(!token) return false;
+  if (!token) return false;
 
   const payload = decodeJwtPayload(token);
   if (!payload?.exp) return true;
@@ -27,7 +26,7 @@ class Http {
   constructor() {
     this.instance = axios.create({
       baseURL: envConfig.NEXT_PUBLIC_API_ENDPOINT,
-      timeout: 10000,
+      timeout: 30000, // Tăng timeout lên 30 giây cho các báo cáo phức tạp
       headers: {
         "Content-Type": "application/json",
       },
@@ -35,20 +34,16 @@ class Http {
 
     this.instance.interceptors.request.use(
       (config) => {
-        
         if (config.data instanceof FormData) {
-            config.headers["Content-Type"] = "multipart/form-data";
-          }
+          config.headers["Content-Type"] = "multipart/form-data";
+        }
         const token = localStorage.getItem("accessToken");
 
         if (token) {
           if (isTokenExpired(token)) {
             localStorage.removeItem("accessToken");
           } else {
-            config.headers.set(
-              "Authorization",
-              `Bearer ${token}`
-            );
+            config.headers.set("Authorization", `Bearer ${token}`);
           }
         }
 

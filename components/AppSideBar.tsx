@@ -209,8 +209,7 @@ const data = {
         { title: "Báo cáo heo", url: "/reports/pigs" },
         { title: "Báo cáo vắc-xin", url: "/reports/vaccines" },
         { title: "Báo cáo tồn kho", url: "/reports/inventory" },
-        { title: "Báo cáo doanh thu", url: "/reports/revenue" },
-        { title: "Báo cáo chi phí", url: "/reports/expenses" },
+        { title: "Báo cáo thu Chi", url: "/reports/expenses" },
       ],
       key: "BAO_CAO",
     },
@@ -220,36 +219,33 @@ const data = {
       icon: Settings,
       key: "SETTINGS",
     },
-    // {
-    //   title: "Đăng xuất",
-    //   url: "#",
-    //   icon: LogOutIcon,
-    //   key: "LOGOUT"
-    // },
   ],
-  // projects: [
-  //   {
-  //     name: "Design Engineering",
-  //     url: "#",
-  //     icon: Frame,
-  //   },
-  //   {
-  //     name: "Sales & Marketing",
-  //     url: "#",
-  //     icon: PieChart,
-  //   },
-  //   {
-  //     name: "Travel",
-  //     url: "#",
-  //     icon: Map,
-  //   },
-  // ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const authStore = useAuthStore();
   const userPermissions = authStore.userPermissions;
-  const filteredItems = data.navMain.filter((item) =>
+
+  // Kiểm tra xem user có phải admin không (có permission BAO_CAO)
+  const isAdmin = userPermissions.includes("BAO_CAO");
+
+  // Tạo navMain với điều chỉnh menu "Phân công" dựa trên role
+  const navMainWithRoleAdjustment = data.navMain.map((item) => {
+    if (item.key === "PHAN_CONG") {
+      return {
+        ...item,
+        items: isAdmin
+          ? [
+              { title: "Danh sách công việc", url: "/tasks" },
+              { title: "Lịch của tôi", url: "/tasks/my-schedule" },
+            ]
+          : [{ title: "Lịch của tôi", url: "/tasks/my-schedule" }],
+      };
+    }
+    return item;
+  });
+
+  const filteredItems = navMainWithRoleAdjustment.filter((item) =>
     userPermissions.includes(item.key)
   );
 

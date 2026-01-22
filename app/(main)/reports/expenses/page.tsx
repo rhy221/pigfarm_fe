@@ -1,370 +1,577 @@
-"use client";
+// =====================================================
+// FINANCE PAGE - app/(dashboard)/finance/page.tsx
+// =====================================================
 
-import { useState, useEffect, useMemo } from "react";
-import { reportApi } from "@/lib/api";
-import { Button } from "@/components/ui/button";
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { vi } from 'date-fns/locale';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Wallet,
+  TrendingUp,
+  TrendingDown,
+  CreditCard,
+  AlertCircle,
+  Plus,
+  FileDown,
+  CalendarIcon,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Search,
+  MoreHorizontal,
+  Eye,
+  Edit,
+} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { FileDown } from "lucide-react";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  useDashboardStats,
+  useTransactions,
+  useCashAccounts,
+  useCashBookReport,
+  useFinancialSummary,
+} from '@/hooks/use-finance';
+import { formatCurrency, cn } from '@/lib/utils';
+import { TransactionType } from '@/types/finance';
+import { BREADCRUMB_CONFIGS, PageBreadcrumb } from '@/components/page-breadcrumb';
+import { useRouter } from 'next/navigation';
 
-interface ExpenseReportData {
-  expenses?: Array<{
-    id: string;
-    category: string;
-    amount: number;
-    date: string;
-    status: string;
-  }>;
-}
+// const  = 'demo-farm-id';
 
-export default function ExpensesReportPage() {
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
+export default function FinancePage() {
+  const [dateRange, setDateRange] = useState({
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date()),
+  });
+  const [selectedAccount, setSelectedAccount] = useState<string>('all');
+  const [transactionType, setTransactionType] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState('transactions');
 
-  // Temporary filter states
-  const [tempMonth, setTempMonth] = useState(currentMonth.toString());
-  const [tempYear, setTempYear] = useState(currentYear.toString());
-  const [tempCategory, setTempCategory] = useState("all");
-  const [tempStatus, setTempStatus] = useState("all");
+  const router = useRouter();
+  const { data: stats } = useDashboardStats();
+  const { data: accounts } = useCashAccounts();
+  const { data: transactions, isLoading: transactionsLoading } = useTransactions({
+    // farmId: ,
+    cashAccountId: selectedAccount !== 'all' ? selectedAccount : undefined,
+    transactionType: transactionType !== 'all' ? (transactionType as TransactionType) : undefined,
+    fromDate: format(dateRange.from, 'yyyy-MM-dd'),
+    toDate: format(dateRange.to, 'yyyy-MM-dd'),
+    search: searchTerm || undefined,
+    page,
+    limit: 20,
+  });
 
-  // Applied filter states
-  const [selectedMonth, setSelectedMonth] = useState(currentMonth.toString());
-  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [reportData, setReportData] = useState<ExpenseReportData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const { data: cashBook } = useCashBookReport({
+    // farmId: ,
+    cashAccountId: selectedAccount !== 'all' ? selectedAccount : undefined,
+    fromDate: format(dateRange.from, 'yyyy-MM-dd'),
+    toDate: format(dateRange.to, 'yyyy-MM-dd'),
+  });
 
-  // Fetch report when component mounts or filters change
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        setLoading(true);
-        const currentMonthStr = `${selectedYear}-${selectedMonth.padStart(2, "0")}`;
-        const params: any = { month: currentMonthStr };
+  const { data: summary } = useFinancialSummary({
+    // farmId: ,
+    fromDate: format(dateRange.from, 'yyyy-MM-dd'),
+    toDate: format(dateRange.to, 'yyyy-MM-dd'),
+  });
 
-        // Add filter params
-        if (selectedCategory !== "all") {
-          params.category = selectedCategory;
-        }
-        if (selectedStatus !== "all") {
-          params.status =
-            selectedStatus === "Đã thanh toán" ? "paid" : "unpaid";
-        }
-
-        const data = await reportApi.getExpensesReport(params);
-        setReportData(data);
-      } catch (error) {
-        console.error("Error fetching expenses report:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchReport();
-  }, [selectedMonth, selectedYear, selectedCategory, selectedStatus]);
-
-  const handleSubmit = () => {
-    setSubmitting(true);
-    setSelectedMonth(tempMonth);
-    setSelectedYear(tempYear);
-    setSelectedCategory(tempCategory);
-    setSelectedStatus(tempStatus);
-    // Reset submitting after a short delay to show the loading effect
-    setTimeout(() => setSubmitting(false), 300);
-  };
-
-  const handleExportPDF = () => {
-    alert("Xuất PDF (chức năng sẽ được triển khai sau)");
-  };
-
-  // Map backend data to frontend format (no client-side filtering needed)
-  const filteredData = useMemo(() => {
-    return (
-      reportData?.expenses?.map((expense) => ({
-        id: expense.id,
-        maPhieu: expense.id,
-        ngayPhatSinh: expense.date,
-        loaiChiPhi: expense.category,
-        soTien: expense.amount,
-        tinhTrang:
-          expense.status === "paid" ? "Đã thanh toán" : "Chưa thanh toán",
-      })) || []
-    );
-  }, [reportData]);
-
-  const totalExpense = filteredData.reduce((sum, item) => sum + item.soTien, 0);
-  const paidExpense = filteredData
-    .filter((item) => item.tinhTrang === "Đã thanh toán")
-    .reduce((sum, item) => sum + item.soTien, 0);
-  const unpaidExpense = filteredData
-    .filter((item) => item.tinhTrang === "Chưa thanh toán")
-    .reduce((sum, item) => sum + item.soTien, 0);
-
-  // Generate Year Options (2020 - Current)
-  const years = Array.from({ length: currentYear - 2020 + 1 }, (_, i) =>
-    (currentYear - i).toString()
-  );
+  const profit = (stats?.monthlyIncome || 0) - (stats?.monthlyExpense || 0);
 
   return (
-    <div className="space-y-6">
-      {loading && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">Loading...</p>
-        </div>
-      )}
+    <div className="space-y-6 animate-fade-in">
+
+      <PageBreadcrumb items={BREADCRUMB_CONFIGS.finance} />
+      
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#53A88B]">Báo cáo Chi phí</h1>
-          <p className="text-gray-600 mt-1">
-            Theo dõi và quản lý chi phí hoạt động
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Quản lý Chi phí</h1>
+          <p className="text-muted-foreground">Theo dõi thu chi và sổ quỹ của trang trại</p>
         </div>
-        <Button
-          onClick={handleExportPDF}
-          className="gap-2 bg-[#53A88B] hover:bg-[#458F79]"
-        >
-          <FileDown className="w-4 h-4" />
-          Xuất PDF
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center">
-        <Select value={tempMonth} onValueChange={setTempMonth}>
-          <SelectTrigger className="w-[140px] cursor-pointer">
-            <SelectValue placeholder="Chọn tháng" />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
-              const isDisabled =
-                parseInt(tempYear) === currentYear && month > currentMonth;
-              return (
-                <SelectItem
-                  key={month}
-                  value={month.toString()}
-                  disabled={isDisabled}
-                >
-                  Tháng {month}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-
-        <Select value={tempYear} onValueChange={setTempYear}>
-          <SelectTrigger className="w-[140px] cursor-pointer">
-            <SelectValue placeholder="Chọn năm" />
-          </SelectTrigger>
-          <SelectContent>
-            {years.map((year) => (
-              <SelectItem key={year} value={year}>
-                Năm {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={tempCategory} onValueChange={setTempCategory}>
-          <SelectTrigger className="w-full sm:w-[200px] cursor-pointer">
-            <SelectValue placeholder="Loại chi phí" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả loại</SelectItem>
-            <SelectItem value="Thức ăn">Thức ăn</SelectItem>
-            <SelectItem value="Thuốc">Thuốc</SelectItem>
-            <SelectItem value="Vắc-xin">Vắc-xin</SelectItem>
-            <SelectItem value="Bảo trì">Bảo trì</SelectItem>
-            <SelectItem value="Điện nước">Điện nước</SelectItem>
-            <SelectItem value="Nhân công">Nhân công</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={tempStatus} onValueChange={setTempStatus}>
-          <SelectTrigger className="w-full sm:w-[200px] cursor-pointer">
-            <SelectValue placeholder="Tình trạng" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            <SelectItem value="Đã thanh toán">Đã thanh toán</SelectItem>
-            <SelectItem value="Chưa thanh toán">Chưa thanh toán</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Button
-          onClick={handleSubmit}
-          disabled={submitting || loading}
-          className="bg-[#53A88B] hover:bg-[#458F79] text-white disabled:opacity-50 cursor-pointer"
-        >
-          {submitting || loading ? (
-            <>
-              <svg
-                className="animate-spin h-4 w-4 mr-2"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Đang tải...
-            </>
-          ) : (
-            "Xem báo cáo"
-          )}
-        </Button>
-
-        <div className="ml-auto text-sm text-gray-500 italic hidden lg:block">
-          * Dữ liệu tổng hợp trong tháng {selectedMonth}/{selectedYear}
+        <div className="flex gap-2">
+          {/* <Button variant="outline">
+            <FileDown className="mr-2 h-4 w-4" />
+            Xuất báo cáo
+          </Button> */}
+          <Link href="/finance/transactions/new?type=expense">
+            <Button variant="outline">
+              <ArrowDownCircle className="mr-2 h-4 w-4 text-red-500" />
+              Phiếu chi
+            </Button>
+          </Link>
+          <Link href="/finance/transactions/new?type=income">
+            <Button>
+              <ArrowUpCircle className="mr-2 h-4 w-4" />
+              Phiếu thu
+            </Button>
+          </Link>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 bg-orange-50 rounded-lg">
-          <p className="text-sm text-gray-600">Tổng chi phí</p>
-          <p className="text-2xl font-bold text-orange-600">
-            {totalExpense.toLocaleString()} VNĐ
-          </p>
-        </div>
-        <div className="p-4 bg-green-50 rounded-lg">
-          <p className="text-sm text-gray-600">Đã thanh toán</p>
-          <p className="text-2xl font-bold text-green-600">
-            {paidExpense.toLocaleString()} VNĐ
-          </p>
-        </div>
-        <div className="p-4 bg-red-50 rounded-lg">
-          <p className="text-sm text-gray-600">Chưa thanh toán</p>
-          <p className="text-2xl font-bold text-red-600">
-            {unpaidExpense.toLocaleString()} VNĐ
-          </p>
-        </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 stagger-children">
+        <Card className="card-hover">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Tổng số dư</CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">
+              {formatCurrency(stats?.cashBalance || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.accounts?.length || 0} tài khoản
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="card-hover">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Thu trong tháng</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              +{formatCurrency(stats?.monthlyIncome || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">Tháng này</p>
+          </CardContent>
+        </Card>
+
+        <Card className="card-hover">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Chi trong tháng</CardTitle>
+            <TrendingDown className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              -{formatCurrency(stats?.monthlyExpense || 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">Tháng này</p>
+          </CardContent>
+        </Card>
+
+        <Card className={cn('card-hover', profit >= 0 ? 'border-green-200' : 'border-red-200')}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Lợi nhuận tháng</CardTitle>
+            {profit >= 0 ? (
+              <TrendingUp className="h-4 w-4 text-green-500" />
+            ) : (
+              <TrendingDown className="h-4 w-4 text-red-500" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className={cn('text-2xl font-bold', profit >= 0 ? 'text-green-600' : 'text-red-600')}>
+              {profit >= 0 ? '+' : ''}{formatCurrency(profit)}
+            </div>
+            <p className="text-xs text-muted-foreground">Thu - Chi</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Table */}
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead className="font-semibold">Mã phiếu</TableHead>
-              <TableHead className="font-semibold">Ngày phát sinh</TableHead>
-              <TableHead className="font-semibold">Loại chi phí</TableHead>
-              <TableHead className="font-semibold text-right">
-                Số tiền (VNĐ)
-              </TableHead>
-              <TableHead className="font-semibold">Tình trạng</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.map((row) => (
-              <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.maPhieu}</TableCell>
-                <TableCell>
-                  {new Date(row.ngayPhatSinh).toLocaleDateString("vi-VN")}
-                </TableCell>
-                <TableCell>{row.loaiChiPhi}</TableCell>
-                <TableCell className="text-right font-semibold">
-                  {row.soTien.toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={
-                      row.tinhTrang === "Đã thanh toán"
-                        ? "default"
-                        : "secondary"
-                    }
-                    className={
-                      row.tinhTrang === "Đã thanh toán"
-                        ? "bg-green-100 text-green-800 hover:bg-green-200"
-                        : "bg-red-100 text-red-800 hover:bg-red-200"
-                    }
-                  >
-                    {row.tinhTrang}
-                  </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Analysis */}
-      <div className="p-6 bg-linear-to-r from-[#53A88B]/10 to-[#53A88B]/5 rounded-lg">
-        <h3 className="text-lg font-semibold text-[#53A88B] mb-3">
-          Phân tích chi phí
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">
-              Chi phí theo loại:
-            </h4>
-            <div className="space-y-1 text-sm text-gray-600">
-              {Array.from(
-                new Set(filteredData.map((item) => item.loaiChiPhi))
-              ).map((category) => {
-                const categoryTotal = filteredData
-                  .filter((item) => item.loaiChiPhi === category)
-                  .reduce((sum, item) => sum + item.soTien, 0);
-                return (
-                  <div key={category} className="flex justify-between">
-                    <span>• {category}:</span>
-                    <span className="font-semibold">
-                      {categoryTotal.toLocaleString()} VNĐ
-                    </span>
+      {/* Account Balances */}
+      {stats?.accounts && stats.accounts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Số dư các tài khoản</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {stats.accounts.map((account) => (
+                <div
+                  key={account.id}
+                  className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      'h-10 w-10 rounded-full flex items-center justify-center',
+                      account.type === 'cash' ? 'bg-green-100' : 'bg-blue-100'
+                    )}>
+                      <Wallet className={cn(
+                        'h-5 w-5',
+                        account.type === 'cash' ? 'text-green-600' : 'text-blue-600'
+                      )} />
+                    </div>
+                    <div>
+                      <p className="font-medium">{account.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {account.type === 'cash' ? 'Tiền mặt' : 'Ngân hàng'}
+                      </p>
+                    </div>
                   </div>
-                );
-              })}
+                  <p className="text-lg font-bold">{formatCurrency(account.balance)}</p>
+                </div>
+              ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="transactions">Giao dịch</TabsTrigger>
+          <TabsTrigger value="cashbook">Sổ quỹ</TabsTrigger>
+          <TabsTrigger value="summary">Tổng hợp</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="transactions" className="space-y-4">
+          {/* Filters */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Tìm kiếm giao dịch..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full md:w-[280px] justify-start">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {format(dateRange.from, 'dd/MM/yyyy', { locale: vi })} -{' '}
+                      {format(dateRange.to, 'dd/MM/yyyy', { locale: vi })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="range"
+                      selected={{ from: dateRange.from, to: dateRange.to }}
+                      onSelect={(range) => {
+                        if (range?.from && range?.to) {
+                          setDateRange({ from: range.from, to: range.to });
+                        }
+                      }}
+                      numberOfMonths={2}
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                  <SelectTrigger className="w-full md:w-[180px]">
+                    <SelectValue placeholder="Tài khoản" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả TK</SelectItem>
+                    {accounts?.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={transactionType} onValueChange={setTransactionType}>
+                  <SelectTrigger className="w-full md:w-[150px]">
+                    <SelectValue placeholder="Loại" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả</SelectItem>
+                    <SelectItem value="income">Phiếu thu</SelectItem>
+                    <SelectItem value="expense">Phiếu chi</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Transactions Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Danh sách giao dịch</CardTitle>
+              <CardDescription>
+                Hiển thị {transactions?.data?.length || 0} / {transactions?.total || 0} giao dịch
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mã phiếu</TableHead>
+                      <TableHead>Ngày</TableHead>
+                      <TableHead>Loại</TableHead>
+                      <TableHead>Danh mục</TableHead>
+                      <TableHead>Đối tượng</TableHead>
+                      <TableHead>Mô tả</TableHead>
+                      <TableHead className="text-right">Số tiền</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactionsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                            Đang tải...
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : transactions?.data?.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8">
+                          <Wallet className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-muted-foreground">Không có giao dịch nào</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      transactions?.data?.map((tx) => (
+                        <TableRow key={tx.id} className="group">
+                          <TableCell className="font-mono text-sm">{tx.transactionCode}</TableCell>
+                          <TableCell>
+                            {format(new Date(tx.transactionDate), 'dd/MM/yyyy', { locale: vi })}
+                          </TableCell>
+                          <TableCell>
+                            {tx.transactionType === 'income' ? (
+                              <Badge className="badge-success">Thu</Badge>
+                            ) : (
+                              <Badge className="badge-danger">Chi</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>{tx.transactionCategories?.name || '-'}</TableCell>
+                          <TableCell>{tx.contactName || '-'}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            {tx.description || '-'}
+                          </TableCell>
+                          <TableCell className={cn(
+                            'text-right font-medium',
+                            tx.transactionType === 'income' ? 'text-green-600' : 'text-red-600'
+                          )}>
+                            {tx.transactionType === 'income' ? '+' : '-'}
+                            {formatCurrency(tx.amount)}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => router.push(`finance/transactions/${tx.id}`)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Xem chi tiết
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => router.push(`finance/transactions/${tx.id}/edit`)}>
+
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Chỉnh sửa
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {transactions && transactions.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Trang {page} / {transactions.totalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                    >
+                      Trước
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.min(transactions.totalPages, p + 1))}
+                      disabled={page === transactions.totalPages}
+                    >
+                      Sau
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="cashbook">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sổ quỹ</CardTitle>
+              <CardDescription>
+                Từ {format(dateRange.from, 'dd/MM/yyyy', { locale: vi })} đến{' '}
+                {format(dateRange.to, 'dd/MM/yyyy', { locale: vi })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Summary */}
+              <div className="grid gap-4 md:grid-cols-4 mb-6">
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">Đầu kỳ</p>
+                  <p className="text-xl font-bold">{formatCurrency(cashBook?.openingBalance || 0)}</p>
+                </div>
+                <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                  <p className="text-sm text-green-600">Tổng thu</p>
+                  <p className="text-xl font-bold text-green-700">
+                    +{formatCurrency(cashBook?.totalIncome || 0)}
+                  </p>
+                </div>
+                <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                  <p className="text-sm text-red-600">Tổng chi</p>
+                  <p className="text-xl font-bold text-red-700">
+                    -{formatCurrency(cashBook?.totalExpense || 0)}
+                  </p>
+                </div>
+                <div className="p-4 bg-primary/10 rounded-lg">
+                  <p className="text-sm text-primary">Cuối kỳ</p>
+                  <p className="text-xl font-bold text-primary">
+                    {formatCurrency(cashBook?.closingBalance || 0)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Cash Book Table */}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ngày</TableHead>
+                      <TableHead>Mã phiếu</TableHead>
+                      <TableHead>Diễn giải</TableHead>
+                      <TableHead className="text-right">Thu</TableHead>
+                      <TableHead className="text-right">Chi</TableHead>
+                      <TableHead className="text-right">Số dư</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow className="bg-muted/50">
+                      <TableCell colSpan={5} className="font-medium">Số dư đầu kỳ</TableCell>
+                      <TableCell className="text-right font-bold">
+                        {formatCurrency(cashBook?.openingBalance || 0)}
+                      </TableCell>
+                    </TableRow>
+                    {cashBook?.transactions?.map((tx) => (
+                      <TableRow key={tx.id}>
+                        <TableCell>
+                          {format(new Date(tx.transactionDate), 'dd/MM/yyyy', { locale: vi })}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{tx.transactionCode}</TableCell>
+                        <TableCell>{tx.description || tx.transactionCategories?.name || '-'}</TableCell>
+                        <TableCell className="text-right text-green-600">
+                          {tx.transactionType === 'income' ? formatCurrency(tx.amount) : '-'}
+                        </TableCell>
+                        <TableCell className="text-right text-red-600">
+                          {tx.transactionType === 'expense' ? formatCurrency(tx.amount) : '-'}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(tx.runningBalance || 0)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="bg-muted/50 font-bold">
+                      <TableCell colSpan={3}>Cộng phát sinh / Số dư cuối kỳ</TableCell>
+                      <TableCell className="text-right text-green-600">
+                        {formatCurrency(cashBook?.totalIncome || 0)}
+                      </TableCell>
+                      <TableCell className="text-right text-red-600">
+                        {formatCurrency(cashBook?.totalExpense || 0)}
+                      </TableCell>
+                      <TableCell className="text-right text-primary">
+                        {formatCurrency(cashBook?.closingBalance || 0)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="summary">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Income by Category */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-green-600">Thu theo danh mục</CardTitle>
+                <CardDescription>Tổng: {formatCurrency(summary?.totalIncome || 0)}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!summary?.incomeByCategory || Object.keys(summary.incomeByCategory).length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">Không có dữ liệu</p>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(summary.incomeByCategory).map(([id, cat]: [string, any]) => (
+                      <div key={id} className="flex items-center justify-between p-3 rounded-lg bg-green-50/50 dark:bg-green-950/20">
+                        <div>
+                          <p className="font-medium">{cat.name}</p>
+                          <p className="text-sm text-muted-foreground">{cat.count} giao dịch</p>
+                        </div>
+                        <p className="font-bold text-green-600">{formatCurrency(cat.amount)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Expense by Category */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-red-600">Chi theo danh mục</CardTitle>
+                <CardDescription>Tổng: {formatCurrency(summary?.totalExpense || 0)}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!summary?.expenseByCategory || Object.keys(summary.expenseByCategory).length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">Không có dữ liệu</p>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(summary.expenseByCategory).map(([id, cat]: [string, any]) => (
+                      <div key={id} className="flex items-center justify-between p-3 rounded-lg bg-red-50/50 dark:bg-red-950/20">
+                        <div>
+                          <p className="font-medium">{cat.name}</p>
+                          <p className="text-sm text-muted-foreground">{cat.count} giao dịch</p>
+                        </div>
+                        <p className="font-bold text-red-600">{formatCurrency(cat.amount)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-          <div>
-            <h4 className="font-medium text-gray-700 mb-2">Thống kê:</h4>
-            <div className="space-y-1 text-sm text-gray-600">
-              <div className="flex justify-between">
-                <span>• Số phiếu chi:</span>
-                <span className="font-semibold">{filteredData.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>• Chi phí trung bình:</span>
-                <span className="font-semibold">
-                  {(totalExpense / filteredData.length).toLocaleString()} VNĐ
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>• Tỉ lệ thanh toán:</span>
-                <span className="font-semibold">
-                  {((paidExpense / totalExpense) * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

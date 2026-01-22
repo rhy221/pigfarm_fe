@@ -1,31 +1,31 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { useEffect, useState } from "react";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
-import { barnsApi } from "@/app/api/barns"
-import { fetchVaccines } from "@/app/api/vaccines"
+import { barnsApi } from "@/app/api/barns";
+import { fetchVaccines } from "@/app/api/vaccines";
 
 /* ================= TYPES ================= */
 type Pen = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 type Vaccine = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 type Props = {
-  isOpen: boolean
-  onClose: () => void
-  selectedPigIds: string[]
-  currentBarnId: string
-  onTransferred: () => void
-}
+  isOpen: boolean;
+  onClose: () => void;
+  selectedPigIds: string[];
+  currentBarnId: string;
+  onTransferred: () => void;
+};
 
 /* ================= COMPONENT ================= */
 export default function TransferBarnModal({
@@ -35,97 +35,95 @@ export default function TransferBarnModal({
   currentBarnId,
   onTransferred,
 }: Props) {
-  const [type, setType] = useState<"normal" | "isolation">("normal")
-  const [loading, setLoading] = useState(false)
+  const [type, setType] = useState<"normal" | "isolation">("normal");
+  const [loading, setLoading] = useState(false);
 
-  const [pens, setPens] = useState<Pen[]>([])
-  const [vaccines, setVaccines] = useState<Vaccine[]>([])
+  const [pens, setPens] = useState<Pen[]>([]);
+  const [vaccines, setVaccines] = useState<Vaccine[]>([]);
 
-  const [targetPenId, setTargetPenId] = useState("")
-  const [diseaseDate, setDiseaseDate] = useState("")
-  const [vaccineId, setVaccineId] = useState("")
-  const [symptom, setSymptom] = useState("")
+  const [targetPenId, setTargetPenId] = useState("");
+  const [diseaseDate, setDiseaseDate] = useState("");
+  const [vaccineId, setVaccineId] = useState("");
+  const [symptom, setSymptom] = useState("");
 
   /* ================= FETCH PENS + VACCINES ================= */
   useEffect(() => {
-    if (!isOpen || !currentBarnId) return
+    if (!isOpen || !currentBarnId) return;
 
     const fetchData = async () => {
       try {
         const pensPromise =
-          type === "normal"
-            ? barnsApi.getPens()
-            : barnsApi.getIsolationPens()
+          type === "normal" ? barnsApi.getPens() : barnsApi.getIsolationPens();
 
         const [penData, vaccineData] = await Promise.all([
           pensPromise,
           fetchVaccines(),
-        ])
+        ]);
 
-        setPens(penData)
-        setVaccines(vaccineData)
+        setPens(penData);
+        setVaccines(vaccineData);
       } catch (err) {
-        console.error("Fetch transfer data error:", err)
+        console.error("Fetch transfer data error:", err);
       }
-    }
+    };
 
-    fetchData()
-  }, [isOpen, currentBarnId, type])
+    fetchData();
+  }, [isOpen, currentBarnId, type]);
 
   /* ================= RESET WHEN TYPE CHANGE ================= */
   useEffect(() => {
-    setTargetPenId("")
-    setDiseaseDate("")
-    setVaccineId("")
-    setSymptom("")
-  }, [type])
+    setTargetPenId("");
+    setDiseaseDate("");
+    setVaccineId("");
+    setSymptom("");
+  }, [type]);
 
   /* ================= SUBMIT ================= */
   const handleSubmit = async () => {
     if (selectedPigIds.length === 0) {
-      alert("Chưa chọn heo")
-      return
+      alert("Chưa chọn heo");
+      return;
     }
 
     if (!targetPenId) {
-      alert("Vui lòng chọn chuồng")
-      return
+      alert("Vui lòng chọn chuồng");
+      return;
     }
 
     if (type === "isolation" && (!diseaseDate || !vaccineId)) {
-      alert("Vui lòng nhập đầy đủ thông tin cách ly")
-      return
+      alert("Vui lòng nhập đầy đủ thông tin cách ly");
+      return;
     }
 
     try {
-      setLoading(true)
+      setLoading(true);
 
       const payload: any = {
-        pigIds: selectedPigIds,            // UUID[]
-        targetPenId,                      // UUID
-        isIsolation: type === "isolation" // boolean
-      }
+        pigIds: selectedPigIds, // UUID[]
+        targetPenId, // UUID
+        isIsolation: type === "isolation", // boolean
+      };
 
       if (type === "isolation") {
-        payload.diseaseDate = diseaseDate
-        payload.diseaseId = vaccineId
-        payload.symptoms = symptom
+        payload.diseaseDate = diseaseDate;
+        payload.diseaseId = vaccineId;
+        payload.symptoms = symptom;
       }
 
-      await barnsApi.transferPigs(payload)
+      await barnsApi.transferPigs(payload);
 
-      onTransferred()
+      onTransferred();
 
-      onClose()
+      onClose();
     } catch (err: any) {
-      console.error(err)
-      alert(err.message || "Chuyển chuồng thất bại")
+      console.error(err);
+      alert(err.message || "Chuyển chuồng thất bại");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   /* ================= UI ================= */
   return (
@@ -150,7 +148,7 @@ export default function TransferBarnModal({
             <label className="flex items-center gap-2 text-sm">
               <Checkbox
                 checked={type === "normal"}
-                onCheckedChange={v => v && setType("normal")}
+                onCheckedChange={(v) => v && setType("normal")}
               />
               Chuyển chuồng thường
             </label>
@@ -158,7 +156,7 @@ export default function TransferBarnModal({
             <label className="flex items-center gap-2 text-sm">
               <Checkbox
                 checked={type === "isolation"}
-                onCheckedChange={v => v && setType("isolation")}
+                onCheckedChange={(v) => v && setType("isolation")}
               />
               Chuyển sang chuồng cách ly
             </label>
@@ -172,10 +170,10 @@ export default function TransferBarnModal({
             <select
               className="w-full border rounded p-2 text-sm mt-1"
               value={targetPenId}
-              onChange={e => setTargetPenId(e.target.value)}
+              onChange={(e) => setTargetPenId(e.target.value)}
             >
               <option value="">-- Chọn chuồng --</option>
-              {pens.map(p => (
+              {pens.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
@@ -192,7 +190,7 @@ export default function TransferBarnModal({
                   type="date"
                   className="w-full border rounded p-2 text-sm"
                   value={diseaseDate}
-                  onChange={e => setDiseaseDate(e.target.value)}
+                  onChange={(e) => setDiseaseDate(e.target.value)}
                 />
               </div>
 
@@ -203,10 +201,10 @@ export default function TransferBarnModal({
                 <select
                   className="w-full border rounded p-2 text-sm"
                   value={vaccineId}
-                  onChange={e => setVaccineId(e.target.value)}
+                  onChange={(e) => setVaccineId(e.target.value)}
                 >
                   <option value="">-- Chọn vaccine --</option>
-                  {vaccines.map(v => (
+                  {vaccines.map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.name}
                     </option>
@@ -220,7 +218,7 @@ export default function TransferBarnModal({
                   className="w-full border rounded p-2 text-sm"
                   rows={3}
                   value={symptom}
-                  onChange={e => setSymptom(e.target.value)}
+                  onChange={(e) => setSymptom(e.target.value)}
                 />
               </div>
             </div>
@@ -238,5 +236,5 @@ export default function TransferBarnModal({
         </div>
       </div>
     </div>
-  )
+  );
 }

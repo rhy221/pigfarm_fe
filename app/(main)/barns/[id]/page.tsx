@@ -1,13 +1,19 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useRouter, useParams } from "next/navigation"
-import { useState, useEffect, useMemo } from "react"
-import { ArrowLeft, MoreVertical, Search, Loader2, AlertCircle } from "lucide-react"
+import * as React from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import {
+  ArrowLeft,
+  MoreVertical,
+  Search,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableHeader,
@@ -15,93 +21,92 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
-import TransferBarnModal from "@/app/barns/barns_transfer_modal"
-import { barnsApi } from "@/app/api/barns"
-import type { Pen, Pig } from "@/app/api/barns"
-import { se } from "date-fns/locale"
+import { barnsApi } from "@/app/api/barns";
+import type { Pen, Pig } from "@/app/api/barns";
+import { se } from "date-fns/locale";
+import TransferBarnModal from "../barns_transfer_modal";
 
 export default function BarnDetailPage() {
-  const router = useRouter()
-  const params = useParams()
-  const penId = params.id as string
+  const router = useRouter();
+  const params = useParams();
+  const penId = params.id as string;
 
   // ===== STATE =====
-  const [pen, setPen] = useState<Pen | null>(null)
-  const [pigs, setPigs] = useState<Pig[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [pen, setPen] = useState<Pen | null>(null);
+  const [pigs, setPigs] = useState<Pig[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [search, setSearch] = useState("")
-  const [selectedPigIds, setSelectedPigIds] = useState<string[]>([])
-  const [openTransfer, setOpenTransfer] = useState(false)
+  const [search, setSearch] = useState("");
+  const [selectedPigIds, setSelectedPigIds] = useState<string[]>([]);
+  const [openTransfer, setOpenTransfer] = useState(false);
 
   // ===== FETCH DATA =====
   useEffect(() => {
-    if (!penId) return
+    if (!penId) return;
 
     const fetchData = async () => {
       try {
-        setLoading(true)
+        setLoading(true);
 
         // 1. Fetch pen
-        const pens = await barnsApi.getPens()
-        const currentPen = pens.find(p => p.id === penId)
-        if (!currentPen) throw new Error("Không tìm thấy chuồng")
+        const pens = await barnsApi.getPens();
+        const currentPen = pens.find((p) => p.id === penId);
+        if (!currentPen) throw new Error("Không tìm thấy chuồng");
 
-        setPen(currentPen)
+        setPen(currentPen);
 
         // 2. Fetch pigs in pen
-        const pigsInPen = await barnsApi.getPigsByPenId(penId)
-        setPigs(pigsInPen)
-
+        const pigsInPen = await barnsApi.getPigsByPenId(penId);
+        setPigs(pigsInPen);
       } catch (err) {
-        console.error(err)
-        setError("Không thể tải dữ liệu chuồng")
+        console.error(err);
+        setError("Không thể tải dữ liệu chuồng");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchData()
-  }, [penId])
+    fetchData();
+  }, [penId]);
 
   // ===== SEARCH =====
   const filteredPigs = useMemo(() => {
-    if (!search.trim()) return pigs
-    const keyword = search.toLowerCase()
+    if (!search.trim()) return pigs;
+    const keyword = search.toLowerCase();
 
     return pigs.filter(
-      pig =>
+      (pig) =>
         pig.id.toLowerCase().includes(keyword) ||
         pig.earTagNumber?.toLowerCase().includes(keyword)
-    )
-  }, [search, pigs])
+    );
+  }, [search, pigs]);
 
   // ===== SELECT ALL =====
   const isAllSelected =
     filteredPigs.length > 0 &&
-    filteredPigs.every(pig => selectedPigIds.includes(pig.id))
+    filteredPigs.every((pig) => selectedPigIds.includes(pig.id));
 
   const toggleSelectAll = () => {
     if (isAllSelected) {
-      setSelectedPigIds(prev =>
-        prev.filter(id => !filteredPigs.some(p => p.id === id))
-      )
+      setSelectedPigIds((prev) =>
+        prev.filter((id) => !filteredPigs.some((p) => p.id === id))
+      );
     } else {
-      setSelectedPigIds(prev => {
-        const ids = filteredPigs.map(p => p.id)
-        return Array.from(new Set([...prev, ...ids]))
-      })
+      setSelectedPigIds((prev) => {
+        const ids = filteredPigs.map((p) => p.id);
+        return Array.from(new Set([...prev, ...ids]));
+      });
     }
-  }
+  };
 
   // ===== RENDER STATES =====
   if (loading) {
@@ -112,7 +117,7 @@ export default function BarnDetailPage() {
           Đang tải dữ liệu chuồng...
         </p>
       </div>
-    )
+    );
   }
 
   if (error || !pen) {
@@ -124,9 +129,8 @@ export default function BarnDetailPage() {
         </p>
         <Button onClick={() => router.back()}>Quay lại</Button>
       </div>
-    )
+    );
   }
-  
 
   // ===== MAIN RENDER =====
   return (
@@ -187,9 +191,7 @@ export default function BarnDetailPage() {
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
           <p className="text-sm text-muted-foreground">💧 Độ ẩm</p>
-          <p className="text-2xl font-bold text-blue-600">
-            {pen.humidity}%
-          </p>
+          <p className="text-2xl font-bold text-blue-600">{pen.humidity}%</p>
         </div>
       </div>
 
@@ -202,7 +204,7 @@ export default function BarnDetailPage() {
               placeholder="Tìm theo ID hoặc mã tai..."
               className="pl-9"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
 
@@ -224,9 +226,7 @@ export default function BarnDetailPage() {
                 <TableHead>STT</TableHead>
                 <TableHead>Mã số (ID)</TableHead>
                 <TableHead>Mã tai</TableHead>
-                <TableHead className="text-right">
-                  Trọng lượng (kg)
-                </TableHead>
+                <TableHead className="text-right">Trọng lượng (kg)</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -246,12 +246,12 @@ export default function BarnDetailPage() {
                     <TableCell>
                       <Checkbox
                         checked={selectedPigIds.includes(pig.id)}
-                        onCheckedChange={checked => {
-                          setSelectedPigIds(prev =>
+                        onCheckedChange={(checked) => {
+                          setSelectedPigIds((prev) =>
                             checked
                               ? [...prev, pig.id]
-                              : prev.filter(id => id !== pig.id)
-                          )
+                              : prev.filter((id) => id !== pig.id)
+                          );
                         }}
                       />
                     </TableCell>
@@ -262,9 +262,7 @@ export default function BarnDetailPage() {
                       {pig.id}
                     </TableCell>
 
-                    <TableCell>
-                      {pig.earTagNumber || "---"}
-                    </TableCell>
+                    <TableCell>{pig.earTagNumber || "---"}</TableCell>
 
                     <TableCell className="text-right font-medium">
                       {pig.weight ?? 0}
@@ -287,7 +285,7 @@ export default function BarnDetailPage() {
           Chuyển chuồng ({selectedPigIds.length})
         </Button>
 
-        <Button onClick={() => router.push("/barns_in")}>
+        <Button onClick={() => router.push("/barns/barns_in")}>
           Tiếp nhận heo mới
         </Button>
       </div>
@@ -296,17 +294,16 @@ export default function BarnDetailPage() {
       <TransferBarnModal
         isOpen={openTransfer}
         onClose={() => {
-          setOpenTransfer(false)
+          setOpenTransfer(false);
         }}
         selectedPigIds={selectedPigIds}
         currentBarnId={pen.id}
         onTransferred={() => {
-          setOpenTransfer(false)
-          setSelectedPigIds([])
-          router.refresh()
+          setOpenTransfer(false);
+          setSelectedPigIds([]);
+          router.refresh();
         }}
       />
-
     </div>
-  )
+  );
 }

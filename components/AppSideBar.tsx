@@ -133,28 +133,26 @@ const data = {
       url: "/barns",
       icon: SquarePen,
       isActive: true,
-      items: [
-        { title: "Nhập heo", url: "/barns/barns_in" },
-      ],
-      key: "HEO_CHUONG"
+      items: [{ title: "Nhập heo", url: "/barns/barns_in" }],
+      key: "HEO_CHUONG",
     },
     {
       title: "Vắc-xin",
       url: "/vaccines",
       icon: Syringe,
-      key: "VAC_XIN"
+      key: "VAC_XIN",
     },
     {
       title: "Heo bệnh",
       url: "/health",
       icon: Pill,
-      key: "HEO_BENH"
+      key: "HEO_BENH",
     },
     {
       title: "Xuất chuồng",
       url: "/export",
       icon: ArrowRightFromLine,
-      key: "XUAT_CHUONG"
+      key: "XUAT_CHUONG",
     },
     {
       title: "Kho",
@@ -169,15 +167,15 @@ const data = {
         { title: "Nhà cung cấp", url: "/inventory/suppliers" },
         { title: "Lịch sử", url: "/inventory/history" },
       ],
-      key: "KHO"
+      key: "KHO",
     },
     {
       title: "Khẩu phần",
       url: "/feeding",
       icon: Utensils,
-      key: "KHAU_PHAN"
+      key: "KHAU_PHAN",
     },
-    
+
     {
       title: "Chi phí",
       url: "/finance",
@@ -190,7 +188,7 @@ const data = {
         // { title: 'Hóa đơn tháng', url: '/finance/monthly-bills' },
         // { title: 'Báo cáo', url: '/finance/reports' },
       ],
-      key: "CHI_PHI"
+      key: "CHI_PHI",
     },
     {
       title: "Phân công",
@@ -200,7 +198,7 @@ const data = {
         { title: "Danh sách công việc", url: "/tasks" },
         { title: "Lịch của tôi", url: "/tasks/my-schedule" },
       ],
-      key: "PHAN_CONG"
+      key: "PHAN_CONG",
     },
     {
       title: "Báo cáo",
@@ -214,13 +212,13 @@ const data = {
         { title: "Báo cáo doanh thu", url: "/reports/revenue" },
         { title: "Báo cáo chi phí", url: "/reports/expenses" },
       ],
-      key: "BAO_CAO"
+      key: "BAO_CAO",
     },
     {
       title: "Hệ thống và phân quyền",
       url: "/settings",
       icon: Settings,
-      key: "SETTINGS"
+      key: "SETTINGS",
     },
     // {
     //   title: "Đăng xuất",
@@ -248,12 +246,10 @@ const data = {
   // ],
 };
 
-
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
   const userPermissions = authStore.userPermissions;
-  const filteredItems = data.navMain.filter(item => 
+  const filteredItems = data.navMain.filter((item) =>
     userPermissions.includes(item.key)
   );
 
@@ -262,23 +258,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={filteredItems} />
         <SidebarGroup>
-
-           <SidebarMenuItem key={"Đăng xuất"}>
-          <SidebarMenuButton
+          <SidebarMenuItem key={"Đăng xuất"}>
+            <SidebarMenuButton
               asChild
               tooltip={"Đăng xuất"}
               onClick={() => authStore.logout()}
             >
-             <div>
-                <LogOutIcon/>
+              <div>
+                <LogOutIcon />
                 <span>{"Đăng xuất"}</span>
-           
-             </div>
-              
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarGroup>
-       
       </SidebarContent>
     </Sidebar>
   );

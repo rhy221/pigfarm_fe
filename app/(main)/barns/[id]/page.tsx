@@ -82,12 +82,12 @@ export default function BarnDetailPage() {
     try {
       setLoading(true);
 
-      // ✅ 3. Gọi API lấy danh sách bệnh cùng lúc với các dữ liệu khác
-      // (Đảm bảo bạn đã thêm hàm getDiseases vào file barns.ts như hướng dẫn trước)
-      const [pensData, pigsData, regPens, isoPens, diseaseList] = await Promise.all([
+      const [pensData, pigsData, transferPens, isoPens, diseaseList] = await Promise.all([
         barnsApi.getPens(),
         barnsApi.getPigsByPenId(penId),
-        barnsApi.getRegularPens(),
+        
+        barnsApi.getPensForTransfer(), 
+        
         barnsApi.getIsolationPens(),
         barnsApi.getDiseases(), 
       ]);
@@ -98,15 +98,23 @@ export default function BarnDetailPage() {
       setPen(currentPen);
       setPigs(pigsData);
       
-      // Lọc bỏ chuồng hiện tại khỏi danh sách chuyển đến
-      setRegularPens(regPens.filter((p: any) => p.id !== penId));
+      const sourceBatchId = pigsData.length > 0 ? (pigsData[0] as any).batchId : null;
+
+      const validMeatPens = transferPens.filter((p: any) => {
+          if (p.id === penId) return false;
+          
+          if (p.current_quantity === 0) return true;
+          
+          if (sourceBatchId && p.currentBatchId === sourceBatchId) return true;
+          
+          return false;
+      });
+
+      setRegularPens(validMeatPens);
       setIsolationPens(isoPens.filter((p: any) => p.id !== penId));
-
-      // ✅ 4. Set dữ liệu bệnh vào State
-      // (QUAN TRỌNG: Đã xóa dòng setDiseases([]) gây lỗi mất dữ liệu ở code cũ)
       setDiseases(diseaseList);
-
       setEdits({});
+
     } catch (err: any) {
       console.error(err);
       setError("Không thể tải dữ liệu chuồng");

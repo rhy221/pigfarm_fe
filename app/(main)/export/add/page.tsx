@@ -7,35 +7,23 @@ import { useRouter } from "next/navigation";
 import { ExportDetailItem } from "../type";
 import AddExportModal, { SelectedItem } from "./AddExportModal";
 import CageDetailModal from "./CageDetailModal";
-import { api } from "@/lib/api-client";
-import { Spinner } from "@/components/ui/spinner";
-import { useCashAccounts } from "@/hooks/use-finance";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-// Type cho response từ POST /sales
-interface SaleReceipt {
-  id: string;
-  receipt_code: string | null;
-  export_date: string | null;
-  customer_name: string | null;
-  total_amount: number | null;
-}
+const locationData = {
+  "Tp. Hà Nội": ["Hàng Bài", "Hàng Trống", "Láng Thượng", "Ô Chợ Dừa", "Dịch Vọng", "Mai Dịch", "Kim Liên", "Ngọc Khánh", "Thụy Khuê", "Phú Thượng"],
+  "Tp. Hồ Chí Minh": ["Gò Vấp", "Thủ Đức", "Linh Xuân", "Bình Tiên", "Bình Phú", "Hóc Môn", "Bình Chánh", "Bến Cát", "Vĩnh Tân", "Vũng Tàu"],
+  "Tỉnh Đồng Tháp": ["Cao Lãnh", "Sa Đéc", "Hồng Ngự", "Long Khánh", "Thường Phước", "Tân Hồng", "Lai Vung", "Lấp Vò", "Mỹ Tho", "Cai Lậy"],
+  "Tp. Đà Nẵng": ["Hải Châu", "Hòa Cường", "Thanh Khê", "An Khê", "An Hải", "Sơn Trà", "Ngũ Hành Sơn", "Hòa Khánh", "Hải Vân", "Liên Chiểu"],
+  "TP. Cần Thơ": ["Ninh Kiều", "An Bình", "An Khánh", "Tân An", "Thới Bình", "Bình Thủy", "Long Hòa", "Long Tuyền", "Trà An", "Trà Nóc"],
+  "Tỉnh An Giang": ["Long Xuyên", "Châu Đốc", "Tân Châu", "An Phú", "Châu Phú", "Châu Thành", "Thoại Sơn", "Tri Tôn", "Tịnh Biên", "Phú Tân"],
+  "Tỉnh Vĩnh Long": ["Trà Vinh", "Bình Minh", "Long Hồ", "Mang Thít", "Vũng Liêm", "Tam Bình", "Trà Ôn", "Bình Tân", "Tân Quới", "Thuận An"],
+  "Tỉnh Cà Mau": ["Bạc Liêu", "U Minh", "Thới Bình", "Trần Văn Thời", "Cái Nước", "Đầm Dơi", "Năm Căn", "Phú Tân", "Ngọc Hiển", "Khánh Bình"],
+   "Tỉnh Đắk Lắk": ["Buôn Ma Thuột", "Tân Lập", "Ea Kao", "Hòa Phú", "Krông Ana", "Krông Năng", "Ea H’leo", "Cư Kuin", "Buôn Hồ", "Ea Kar"],
+  "Tỉnh Khánh Hòa": ["Nha Trang", "Bắc Nha Trang", "Tây Nha Trang", "Nam Nha Trang", "Cam Ranh", "Ba Ngòi", "Cam Đức", "Ninh Hòa", "Vạn Giã", "Diên Khánh"],
+  "Tp. Huế": ["Phong Điền", "Phong Thái", "Phong Dinh", "Phong Phú", "Kim Long", "Hương Long", "Hương An", "Dương Nỗ", "Thuận Hóa", "Phú Xuân"],
+  "Tp. Hải Phòng": ["Hồng Bàng", "Ngô Quyền", "Lê Chân", "Hải An", "Kiến An", "Dương Kinh", "Đồ Sơn", "An Dương", "Thủy Nguyên", "Cát Hải"],
+  "Tỉnh Hà Tĩnh": ["Thạch Lạc", "Hồng Lĩnh", "Kỳ Anh", "Cẩm Xuyên", "Thạch Hà", "Can Lộc", "Nghi Xuân", "Đức Thọ", "Hương Sơn", "Hương Khê"],
+  "Tỉnh Lâm Đồng": ["Đà Lạt", "Bảo Lộc", "Đức Trọng", "Di Linh", "Lâm Hà", "Đơn Dương", "Đạ Huoai", "Đạ Tẻh", "Cát Tiên", "Lạc Dương"]
+};
 
 const AddExportReceipt: React.FC = () => {
   const router = useRouter();
@@ -49,7 +37,7 @@ const AddExportReceipt: React.FC = () => {
     sdt: "",
     soNha: "",
     tinhThanh: "Tp. Hồ Chí Minh",
-    phuongXa: "Phường Thủ Đức",
+    phuongXa: "Gò Vấp",
   });
 
   useEffect(() => {
@@ -69,31 +57,19 @@ const AddExportReceipt: React.FC = () => {
     fetchNextCode();
   }, []);
 
+  useEffect(() => {
+    const wards = locationData[formData.tinhThanh as keyof typeof locationData];
+    if (wards && !wards.includes(formData.phuongXa)) {
+      setFormData(prev => ({ ...prev, phuongXa: wards[0] }));
+    }
+  }, [formData.tinhThanh]);
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [items, setItems] = useState<ExportDetailItem[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isCageDetailOpen, setIsCageDetailOpen] = useState(false);
   const [selectedCage, setSelectedCage] = useState<any>(null);
-
-  // State cho loading và dialog phiếu thu
-  const [isSaving, setIsSaving] = useState(false);
-  const [showCollectionDialog, setShowCollectionDialog] = useState(false);
-  const [savedSaleData, setSavedSaleData] = useState<{
-    id: string;
-    totalAmount: number;
-  } | null>(null);
-  const [collectionForm, setCollectionForm] = useState({
-    cashAccountId: "",
-    collectionDate: new Date().toISOString().split("T")[0],
-    amount: 0,
-    description: "",
-    notes: "",
-  });
-  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
-
-  // Fetch danh sách tài khoản tiền mặt
-  const { data: cashAccounts = [] } = useCashAccounts();
 
   const allChecked = items.length > 0 && items.every((item) => item.checked);
   const hasSelectedItems = items.some((item) => item.checked);
@@ -131,8 +107,6 @@ const AddExportReceipt: React.FC = () => {
     }
 
     try {
-      setIsSaving(true);
-
       const payload = {
         receipt_code: formData.dotXuat,
         export_date: new Date(formData.ngayXuat),
@@ -141,72 +115,27 @@ const AddExportReceipt: React.FC = () => {
         full_address: `${formData.soNha}, ${formData.phuongXa}, ${formData.tinhThanh}`,
         details: items.map(item => ({
           pen_id: (item as any).chuong_id,
-          total_weight: Number(item.tongTrongLuong),
+          total_weight: 0,
           unit_price: Number(item.donGia),
           pig_ids: (item as any).pig_ids || []
         }))
       };
 
-      const savedData = await api.post<SaleReceipt>("/sales", payload);
-
-      // Tính tổng tiền
-      // const totalAmount = items.reduce(
-      //   (sum, item) => sum + Number(item.tongTrongLuong) * Number(item.donGia),
-      //   0
-      // );
-
-      // // Lưu data và hiện dialog
-      // setSavedSaleData({ id: savedData.id, totalAmount });
-      // setCollectionForm(prev => ({
-      //   ...prev,
-      //   amount: totalAmount,
-      //   description: `Thu tiền phiếu xuất ${formData.dotXuat}`,
-      //   collectionDate: formData.ngayXuat,
-      // }));
-      // setShowCollectionDialog(true);
-      router.push("/export");
-    } catch (error: any) {
-      const message = error?.response?.data?.message;
-      alert(`Lỗi: ${Array.isArray(message) ? message.join(", ") : message || "Không thể kết nối"}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCreateCollection = async () => {
-    if (!collectionForm.cashAccountId) {
-      alert("Vui lòng chọn tài khoản thu");
-      return;
-    }
-
-    try {
-      setIsCreatingCollection(true);
-
-      await api.post("/api/finance/pig-sale-collections", {
-        customerName: formData.tenKhachHang,
-        pigShippingId: savedSaleData?.id,
-        cashAccountId: collectionForm.cashAccountId,
-        collectionDate: collectionForm.collectionDate,
-        amount: collectionForm.amount,
-        description: collectionForm.description,
-        notes: collectionForm.notes || undefined,
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
-      setShowCollectionDialog(false);
-      router.push("/export");
-    } catch (error: any) {
-      alert(
-        "Lỗi tạo phiếu thu: " +
-          (error?.response?.data?.message || "Không thể kết nối")
-      );
-    } finally {
-      setIsCreatingCollection(false);
+      if (response.ok) {
+        router.push("/export");
+      } else {
+        const errorData = await response.json();
+        alert(`Lỗi: ${Array.isArray(errorData.message) ? errorData.message.join(', ') : errorData.message}`);
+      }
+    } catch (error) {
+      alert("Không thể kết nối đến máy chủ");
     }
-  };
-
-  const handleSkipCollection = () => {
-    setShowCollectionDialog(false);
-    router.push("/export");
   };
 
   const handleAddCagesFromModal = (selectedItems: SelectedItem[]) => {
@@ -259,17 +188,8 @@ const AddExportReceipt: React.FC = () => {
       <div className="mb-10">
         <div className="flex items-center justify-between mb-6 border-b pb-1 border-gray-200">
           <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">Thông tin</h2>
-          <button
-            onClick={handleSave}
-            disabled={isTableEmpty || isSaving}
-            className={`px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 flex items-center gap-2 ${
-              isTableEmpty || isSaving
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                : "bg-emerald-600 text-white hover:bg-emerald-700"
-            }`}
-          >
-            {isSaving && <Spinner className="h-4 w-4" />}
-            {isSaving ? "Đang lưu..." : "Lưu"}
+          <button onClick={handleSave} disabled={isTableEmpty} className={`px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${isTableEmpty ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>
+            Lưu
           </button>
         </div>
 
@@ -277,7 +197,7 @@ const AddExportReceipt: React.FC = () => {
           <div className="space-y-5">
             <div className="flex items-center">
               <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)]">Đợt xuất</label>
-              <input type="text" disabled readOnly value={formData.dotXuat} onChange={(e) => setFormData({ ...formData, dotXuat: e.target.value })} className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+              <input type="text" disabled readOnly value={formData.dotXuat} className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
             </div>
             <div className="flex flex-col flex-1">
               <div className="flex items-center">
@@ -296,9 +216,29 @@ const AddExportReceipt: React.FC = () => {
             <div className="flex items-start">
               <label className="w-40 text-sm font-semibold text-[var(--color-secondary-foreground)] pt-2">Địa chỉ</label>
               <div className="flex-1 space-y-4">
-                <div className="flex flex-col"><div className="flex items-center gap-3"><span className="text-[11px] italic w-44 text-gray-500">Số nhà, đường...</span><input type="text" value={formData.soNha} onChange={(e) => { setFormData({ ...formData, soNha: e.target.value }); setErrors({ ...errors, soNha: "" }); }} className={`flex-1 border ${errors.soNha ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500`} /></div>{errors.soNha && <p className="text-red-500 text-[11px] ml-44 mt-1">{errors.soNha}</p>}</div>
-                <div className="flex items-center gap-3"><span className="text-[11px] italic w-44 text-gray-500">Tỉnh/Thành phố</span><select className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none bg-white" value={formData.tinhThanh} onChange={(e) => setFormData({ ...formData, tinhThanh: e.target.value })}><option>Tp. Hồ Chí Minh</option><option>Hà Nội</option></select></div>
-                <div className="flex items-center gap-3"><span className="text-[11px] italic w-44 text-gray-500">Xã/Phường</span><select className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none bg-white" value={formData.phuongXa} onChange={(e) => setFormData({ ...formData, phuongXa: e.target.value })}><option>Phường Thủ Đức</option></select></div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] italic w-44 text-gray-500">Số nhà, đường...</span>
+                    <input type="text" value={formData.soNha} onChange={(e) => { setFormData({ ...formData, soNha: e.target.value }); setErrors({ ...errors, soNha: "" }); }} className={`flex-1 border ${errors.soNha ? 'border-red-500' : 'border-gray-300'} rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500`} />
+                  </div>
+                  {errors.soNha && <p className="text-red-500 text-[11px] ml-44 mt-1">{errors.soNha}</p>}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] italic w-44 text-gray-500">Tỉnh/Thành phố</span>
+                  <select className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none bg-white cursor-pointer" value={formData.tinhThanh} onChange={(e) => setFormData({ ...formData, tinhThanh: e.target.value })}>
+                    {Object.keys(locationData).map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] italic w-44 text-gray-500">Xã/Phường/Đặc khu</span>
+                  <select className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm outline-none bg-white cursor-pointer" value={formData.phuongXa} onChange={(e) => setFormData({ ...formData, phuongXa: e.target.value })}>
+                    {locationData[formData.tinhThanh as keyof typeof locationData].map(ward => (
+                      <option key={ward} value={ward}>{ward}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -325,12 +265,10 @@ const AddExportReceipt: React.FC = () => {
                 <th className="w-[50px] px-6 py-4 text-center font-bold"><input type="checkbox" checked={allChecked} onChange={(e) => setItems(items.map((item) => ({ ...item, checked: e.target.checked })))} className="h-5 w-5 rounded border-gray-300 text-emerald-600" /></th>
                 <th className="px-6 py-3 text-center font-semibold">STT</th>
                 <th className="px-6 py-3 text-center font-semibold">Chuồng</th>
-                <th className="px-6 py-3 text-center font-semibold">Trọng lượng (kg)</th> 
                 <th className="px-6 py-3 text-center font-semibold">Đơn giá (VNĐ/kg)</th>
                 <th className="px-6 py-3 text-center font-semibold tracking-wider"></th>
               </tr>
             </thead>
-
             <tbody className="divide-y divide-gray-100">
               {items.map((item, index) => (
                 <tr key={item.stt} className="hover:bg-gray-50 transition group">
@@ -339,18 +277,6 @@ const AddExportReceipt: React.FC = () => {
                   </td>
                   <td className="px-6 py-3 text-center text-gray-500">{item.stt}</td>
                   <td className="px-6 py-3 text-center text-emerald-900 font-medium">{item.chuong}</td>
-                  <td className="px-6 py-3 text-center">
-                    <input
-                        type="number"
-                        value={item.tongTrongLuong}
-                        onChange={(e) => {
-                            const newItems = [...items];
-                            newItems[index].tongTrongLuong = Number(e.target.value);
-                            setItems(newItems);
-                        }}
-                        className="w-24 text-center border border-gray-300 rounded px-2 py-1 outline-none focus:border-emerald-500"
-                    />
-                  </td>
                   <td className="px-6 py-3 text-center">
                     {editingIndex === index ? (
                       <input type="number" value={item.donGia} autoFocus onChange={(e) => { const newItems = [...items]; newItems[index].donGia = Number(e.target.value); setItems(newItems); }} onBlur={() => setEditingIndex(null)} onKeyDown={(e) => { if (e.key === "Enter") setEditingIndex(null); }} className="w-32 text-center border border-emerald-500 rounded px-2 py-1 outline-none" />
@@ -367,7 +293,7 @@ const AddExportReceipt: React.FC = () => {
                 </tr>
               ))}
               {isTableEmpty && (
-                <tr><td colSpan={6} className="px-6 py-10 text-center text-gray-400 italic">Danh sách chi tiết đang trống. Vui lòng thêm chuồng để tiếp tục.</td></tr>
+                <tr><td colSpan={5} className="px-6 py-10 text-center text-gray-400 italic">Danh sách chi tiết đang trống. Vui lòng thêm chuồng để tiếp tục.</td></tr>
               )}
             </tbody>
           </table>
@@ -391,103 +317,6 @@ const AddExportReceipt: React.FC = () => {
 
       <AddExportModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleAddCagesFromModal} />
       <CageDetailModal isOpen={isCageDetailOpen} onClose={() => setIsCageDetailOpen(false)} cageData={selectedCage || {}} onConfirmSelection={handleConfirmPigSelection} />
-
-      {/* Dialog tạo phiếu thu */}
-      <Dialog open={showCollectionDialog} onOpenChange={setShowCollectionDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Tạo phiếu thu</DialogTitle>
-            <DialogDescription>
-              Phiếu xuất đã được lưu thành công. Bạn có muốn tạo phiếu thu ngay không?
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            {/* Tài khoản thu */}
-            <div className="space-y-2">
-              <Label>Tài khoản thu *</Label>
-              <Select
-                value={collectionForm.cashAccountId}
-                onValueChange={(value) =>
-                  setCollectionForm((prev) => ({ ...prev, cashAccountId: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn tài khoản" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cashAccounts.map((acc) => (
-                    <SelectItem key={acc.id} value={acc.id}>
-                      {acc.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Ngày thu */}
-            <div className="space-y-2">
-              <Label>Ngày thu *</Label>
-              <input
-                type="date"
-                value={collectionForm.collectionDate}
-                onChange={(e) =>
-                  setCollectionForm((prev) => ({ ...prev, collectionDate: e.target.value }))
-                }
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-              />
-            </div>
-
-            {/* Số tiền */}
-            <div className="space-y-2">
-              <Label>Số tiền *</Label>
-              <input
-                type="number"
-                value={collectionForm.amount}
-                onChange={(e) =>
-                  setCollectionForm((prev) => ({ ...prev, amount: Number(e.target.value) }))
-                }
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-                min="0"
-              />
-              <p className="text-xs text-gray-500">
-                Tổng tiền phiếu xuất: {formatter.format(savedSaleData?.totalAmount || 0)} VNĐ
-              </p>
-            </div>
-
-            {/* Diễn giải */}
-            <div className="space-y-2">
-              <Label>Diễn giải</Label>
-              <input
-                type="text"
-                value={collectionForm.description}
-                onChange={(e) =>
-                  setCollectionForm((prev) => ({ ...prev, description: e.target.value }))
-                }
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleSkipCollection}
-              disabled={isCreatingCollection}
-            >
-              Bỏ qua
-            </Button>
-            <Button
-              onClick={handleCreateCollection}
-              disabled={isCreatingCollection || !collectionForm.cashAccountId}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              {isCreatingCollection && <Spinner className="mr-2 h-4 w-4" />}
-              {isCreatingCollection ? "Đang tạo..." : "Tạo phiếu thu"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

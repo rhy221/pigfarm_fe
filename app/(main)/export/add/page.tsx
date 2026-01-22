@@ -4,6 +4,7 @@ import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/spinner";
 import { ExportDetailItem } from "../type";
 import AddExportModal, { SelectedItem } from "./AddExportModal";
 import CageDetailModal from "./CageDetailModal";
@@ -69,6 +70,7 @@ const AddExportReceipt: React.FC = () => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isCageDetailOpen, setIsCageDetailOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedCage, setSelectedCage] = useState<any>(null);
 
   const allChecked = items.length > 0 && items.every((item) => item.checked);
@@ -107,6 +109,7 @@ const AddExportReceipt: React.FC = () => {
     }
 
     try {
+      setIsSaving(true);
       const payload = {
         receipt_code: formData.dotXuat,
         export_date: new Date(formData.ngayXuat),
@@ -135,6 +138,8 @@ const AddExportReceipt: React.FC = () => {
       }
     } catch (error) {
       alert("Không thể kết nối đến máy chủ");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -188,8 +193,9 @@ const AddExportReceipt: React.FC = () => {
       <div className="mb-10">
         <div className="flex items-center justify-between mb-6 border-b pb-1 border-gray-200">
           <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">Thông tin</h2>
-          <button onClick={handleSave} disabled={isTableEmpty} className={`px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${isTableEmpty ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>
-            Lưu
+          <button onClick={handleSave} disabled={isTableEmpty || isSaving} className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${isTableEmpty || isSaving ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}>
+            {isSaving && <Spinner className="h-4 w-4" />}
+            {isSaving ? "Đang lưu..." : "Lưu"}
           </button>
         </div>
 

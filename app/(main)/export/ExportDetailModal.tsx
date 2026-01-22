@@ -3,6 +3,26 @@
 import React, { useState, useEffect } from "react";
 import { ExportReceipt, ExportDetailItem } from "./type";
 import { X } from "lucide-react";
+import { api } from "@/lib/api-client";
+import { Spinner } from "@/components/ui/spinner";
+import { useCashAccounts } from "@/hooks/use-finance";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ExportDetailModalProps {
   isOpen: boolean;
@@ -22,10 +42,36 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
   onSave,
 }) => {
   const [currentStatus, setCurrentStatus] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [showCollectionDialog, setShowCollectionDialog] = useState(false);
+  const [collectionForm, setCollectionForm] = useState({
+    cashAccountId: "",
+    collectionDate: new Date().toISOString().split("T")[0],
+    amount: 0,
+    description: "",
+  });
+  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
+
+  const { data: cashAccounts = [] } = useCashAccounts();
 
   useEffect(() => {
     if (receipt) setCurrentStatus(receipt.tinhTrangThanhToan);
   }, [receipt]);
+
+  useEffect(() => {
+    if(cashAccounts)
+    {
+      const defaultAccount = cashAccounts.find(a => a.isDefault);
+      setCollectionForm(
+      {
+        ...collectionForm,
+        cashAccountId: defaultAccount?.id || "" 
+      }
+    );
+    }
+    
+  }, [cashAccounts]);
+
 
   if (!isOpen) return null;
 
@@ -42,30 +88,68 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
     if (receipt) {
       const updatedStatus = "Đã thanh toán";
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${(receipt as any).id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            payment_status: updatedStatus,
-            details: detailItems.map(item => ({
-              id: (item as any).id,
-              total_weight: Number(item.tongTrongLuong)
-            }))
-          }),
+        setIsSaving(true);
+        await api.patch(`/sales/${(receipt as any).id}/status`, {
+          payment_status: updatedStatus,
+          details: detailItems.map(item => ({
+            id: (item as any).id,
+            total_weight: Number(item.tongTrongLuong)
+          }))
         });
 
-        if (response.ok) {
-          onSave(updatedStatus, totalAmount);
-        } else {
-          alert("Lỗi cập nhật trạng thái");
-        }
-      } catch (error) {
-        alert("Không thể kết nối đến máy chủ");
+        // Hiện dialog tạo phiếu thu
+        setCollectionForm(prev => ({
+          ...prev,
+          amount: Number(totalAmount),
+          description: `Thu tiền phiếu xuất ${receipt.dot}`,
+          collectionDate: new Date().toISOString().split("T")[0],
+        }));
+        setShowCollectionDialog(true);
+      } catch (error: any) {
+        const message = error?.response?.data?.message;
+        alert(`Lỗi: ${Array.isArray(message) ? message.join(", ") : message || "Không thể kết nối"}`);
+      } finally {
+        setIsSaving(false);
       }
     }
   };
 
+  const handleCreateCollection = async () => {
+    if (!collectionForm.cashAccountId) {
+      alert("Vui lòng chọn tài khoản thu");
+      return;
+    }
+
+    try {
+      setIsCreatingCollection(true);
+      await api.post("/api/finance/pig-sale-collections", {
+        customerName: receipt.khachHang,
+        pigShippingId: (receipt as any).id,
+        cashAccountId: collectionForm.cashAccountId,
+        collectionDate: collectionForm.collectionDate,
+        amount: collectionForm.amount,
+        description: collectionForm.description,
+      });
+
+      setShowCollectionDialog(false);
+      onSave("Đã thanh toán", totalAmount);
+    } catch (error: any) {
+      alert(
+        "Lỗi tạo phiếu thu: " +
+          (error?.response?.data?.message || "Không thể kết nối")
+      );
+    } finally {
+      setIsCreatingCollection(false);
+    }
+  };
+
+  const handleSkipCollection = () => {
+    setShowCollectionDialog(false);
+    onSave("Đã thanh toán", totalAmount);
+  };
+
   return (
+    <>
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in duration-200 border border-gray-100">
         <div className="px-6 py-3 flex justify-between items-center border-b border-gray-100 bg-white">
@@ -81,12 +165,15 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
               {currentStatus !== "Đã thanh toán" && (
                 <button
                   onClick={handleUpdate}
-                  disabled={isTableEmpty}
+                  disabled={isTableEmpty || isSaving}
                   className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${
-                    isTableEmpty ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"
+                    isTableEmpty || isSaving
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                      : "bg-emerald-600 text-white hover:bg-emerald-700"
                   }`}
                 >
-                  Xác nhận & Lưu
+                  {isSaving && <Spinner className="h-4 w-4" />}
+                  {isSaving ? "Đang lưu..." : "Xác nhận & Lưu"}
                 </button>
               )}
           </div>
@@ -172,6 +259,104 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
         </div>
       </div>
     </div>
+
+    {/* Dialog tạo phiếu thu */}
+    <Dialog open={showCollectionDialog} onOpenChange={setShowCollectionDialog}>
+        <DialogContent className="max-w-md z-[70]">
+          <DialogHeader>
+            <DialogTitle>Tạo phiếu thu</DialogTitle>
+            <DialogDescription>
+              Đã xác nhận thanh toán thành công. Bạn có muốn tạo phiếu thu ngay không?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Tài khoản thu */}
+            <div className="space-y-2">
+              <Label>Tài khoản thu *</Label>
+              <Select
+                value={collectionForm.cashAccountId}
+                onValueChange={(value) =>
+                  setCollectionForm((prev) => ({ ...prev, cashAccountId: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn tài khoản" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cashAccounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ngày thu */}
+            <div className="space-y-2">
+              <Label>Ngày thu *</Label>
+              <input
+                type="date"
+                value={collectionForm.collectionDate}
+                onChange={(e) =>
+                  setCollectionForm((prev) => ({ ...prev, collectionDate: e.target.value }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+
+            {/* Số tiền */}
+            <div className="space-y-2">
+              <Label>Số tiền *</Label>
+              <input
+                type="number"
+                value={collectionForm.amount}
+                onChange={(e) =>
+                  setCollectionForm((prev) => ({ ...prev, amount: Number(e.target.value) }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                min="0"
+              />
+              <p className="text-xs text-gray-500">
+                Tổng tiền phiếu xuất: {formatter.format(totalAmount)} VNĐ
+              </p>
+            </div>
+
+            {/* Diễn giải */}
+            <div className="space-y-2">
+              <Label>Diễn giải</Label>
+              <input
+                type="text"
+                value={collectionForm.description}
+                onChange={(e) =>
+                  setCollectionForm((prev) => ({ ...prev, description: e.target.value }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleSkipCollection}
+              disabled={isCreatingCollection}
+            >
+              Bỏ qua
+            </Button>
+            <Button
+              onClick={handleCreateCollection}
+              disabled={isCreatingCollection || !collectionForm.cashAccountId}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isCreatingCollection && <Spinner className="mr-2 h-4 w-4" />}
+              {isCreatingCollection ? "Đang tạo..." : "Tạo phiếu thu"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

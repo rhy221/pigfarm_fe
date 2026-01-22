@@ -1,137 +1,104 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useEffect, useState } from "react"
+import { X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 
-import { barnsApi } from "@/app/api/barns";
-import { fetchVaccines } from "@/app/api/vaccines";
+type Barn = {
+  id: string
+  name: string
+}
 
-/* ================= TYPES ================= */
-type Pen = {
-  id: string;
-  name: string;
-};
-
-type Vaccine = {
-  id: string;
-  name: string;
-};
+// 1. Định nghĩa kiểu dữ liệu cho bệnh
+type Disease = {
+  id: string
+  name: string
+}
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedPigIds: string[];
-  currentBarnId: string;
-  onTransferred: () => void;
-};
+  isOpen: boolean
+  onClose: () => void
+  selectedPigIds: string[]
+  regularPens: Barn[]
+  isolationPens: Barn[]
+  // 2. Thêm prop nhận danh sách bệnh
+  diseases: Disease[] 
+  onSubmit: (payload: any) => void
+}
 
-/* ================= COMPONENT ================= */
 export default function TransferBarnModal({
   isOpen,
   onClose,
   selectedPigIds,
-  currentBarnId,
-  onTransferred,
+  regularPens,
+  isolationPens,
+  diseases,
+  onSubmit,
 }: Props) {
-  const [type, setType] = useState<"normal" | "isolation">("normal");
-  const [loading, setLoading] = useState(false);
+  const [type, setType] = useState<"isolation" | "normal">("normal")
 
-  const [pens, setPens] = useState<Pen[]>([]);
-  const [vaccines, setVaccines] = useState<Vaccine[]>([]);
+  const [diseaseDate, setDiseaseDate] = useState("")
+  // diseaseType ở đây sẽ lưu UUID của bệnh được chọn
+  const [diseaseType, setDiseaseType] = useState("") 
+  const [symptom, setSymptom] = useState("")
 
-  const [targetPenId, setTargetPenId] = useState("");
-  const [diseaseDate, setDiseaseDate] = useState("");
-  const [vaccineId, setVaccineId] = useState("");
-  const [symptom, setSymptom] = useState("");
+  const [targetBarnId, setTargetBarnId] = useState("")
 
-  /* ================= FETCH PENS + VACCINES ================= */
   useEffect(() => {
-    if (!isOpen || !currentBarnId) return;
+    if (isOpen) document.body.style.overflow = "hidden"
+    return () => {
+      document.body.style.overflow = "unset"
+    }
+  }, [isOpen])
 
-    const fetchData = async () => {
-      try {
-        const pensPromise =
-          type === "normal" ? barnsApi.getPens() : barnsApi.getIsolationPens();
-
-        const [penData, vaccineData] = await Promise.all([
-          pensPromise,
-          fetchVaccines(),
-        ]);
-
-        setPens(penData);
-        setVaccines(vaccineData);
-      } catch (err) {
-        console.error("Fetch transfer data error:", err);
-      }
-    };
-
-    fetchData();
-  }, [isOpen, currentBarnId, type]);
-
-  /* ================= RESET WHEN TYPE CHANGE ================= */
   useEffect(() => {
-    setTargetPenId("");
-    setDiseaseDate("");
-    setVaccineId("");
-    setSymptom("");
-  }, [type]);
+    setTargetBarnId("")
+  }, [type])
 
-  /* ================= SUBMIT ================= */
-  const handleSubmit = async () => {
+  if (!isOpen) return null
+
+  const handleSubmit = () => {
     if (selectedPigIds.length === 0) {
-      alert("Chưa chọn heo");
-      return;
+      alert("Chưa chọn heo")
+      return
     }
 
-    if (!targetPenId) {
-      alert("Vui lòng chọn chuồng");
-      return;
+    if (!targetBarnId) {
+      alert("Vui lòng chọn chuồng đích")
+      return
     }
 
-    if (type === "isolation" && (!diseaseDate || !vaccineId)) {
-      alert("Vui lòng nhập đầy đủ thông tin cách ly");
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const payload: any = {
-        pigIds: selectedPigIds, // UUID[]
-        targetPenId, // UUID
-        isIsolation: type === "isolation", // boolean
-      };
-
-      if (type === "isolation") {
-        payload.diseaseDate = diseaseDate;
-        payload.diseaseId = vaccineId;
-        payload.symptoms = symptom;
+    if (type === "isolation") {
+      if (!diseaseDate || !diseaseType) {
+        alert("Vui lòng nhập đầy đủ thông tin bệnh")
+        return
       }
 
-      await barnsApi.transferPigs(payload);
-
-      onTransferred();
-
-      onClose();
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Chuyển chuồng thất bại");
-    } finally {
-      setLoading(false);
+      onSubmit({
+        type: "isolation",
+        pigIds: selectedPigIds,
+        targetBarnId,
+        diseaseDate,
+        diseaseType, // Đây giờ là UUID
+        symptom,
+      })
+    } else {
+      onSubmit({
+        type: "normal",
+        pigIds: selectedPigIds,
+        targetBarnId,
+      })
     }
-  };
 
-  if (!isOpen) return null;
+    onClose()
+  }
 
-  /* ================= UI ================= */
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/60" onClick={onClose} />
 
       <div className="relative bg-white w-full max-w-lg rounded-xl shadow-xl">
-        {/* HEADER */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="font-semibold">Chuyển chuồng</h2>
           <button onClick={onClose}>
@@ -139,102 +106,116 @@ export default function TransferBarnModal({
           </button>
         </div>
 
-        {/* BODY */}
         <div className="p-6 space-y-5">
-          {/* TYPE */}
-          <div className="space-y-2">
-            <label className="font-semibold text-sm">Hình thức chuyển</label>
-
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={type === "normal"}
-                onCheckedChange={(v) => v && setType("normal")}
-              />
-              Chuyển chuồng thường
-            </label>
-
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={type === "isolation"}
-                onCheckedChange={(v) => v && setType("isolation")}
-              />
-              Chuyển sang chuồng cách ly
-            </label>
-          </div>
-
-          {/* SELECT PEN */}
-          <div>
-            <label className="font-semibold text-sm">
-              {type === "normal" ? "Chuồng mới" : "Chuồng cách ly"}
-            </label>
-            <select
-              className="w-full border rounded p-2 text-sm mt-1"
-              value={targetPenId}
-              onChange={(e) => setTargetPenId(e.target.value)}
-            >
-              <option value="">-- Chọn chuồng --</option>
-              {pens.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* ISOLATION INFO */}
-          {type === "isolation" && (
-            <div className="space-y-3 bg-red-50 border rounded-lg p-4">
-              <div>
-                <label className="font-semibold text-sm">Ngày phát bệnh</label>
-                <input
-                  type="date"
-                  className="w-full border rounded p-2 text-sm"
-                  value={diseaseDate}
-                  onChange={(e) => setDiseaseDate(e.target.value)}
+          <div className="space-y-3">
+            <label className="text-sm font-semibold">Hình thức chuyển</label>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={type === "normal"}
+                  onCheckedChange={() => setType("normal")}
                 />
-              </div>
+                Chuyển chuồng thường
+              </label>
 
-              <div>
-                <label className="font-semibold text-sm">
-                  Vaccine liên quan
-                </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={type === "isolation"}
+                  onCheckedChange={() => setType("isolation")}
+                />
+                Chuyển heo bệnh sang chuồng cách ly
+              </label>
+            </div>
+          </div>
+
+          {/* TRƯỜNG HỢP 1: CHUYỂN THƯỜNG */}
+          {type === "normal" && (
+            <div className="space-y-2">
+              <label className="text-sm font-semibold">Chọn chuồng mới (Chuồng thịt)</label>
+              <select
+                className="w-full border rounded p-2 text-sm"
+                value={targetBarnId}
+                onChange={(e) => setTargetBarnId(e.target.value)}
+              >
+                <option value="">-- Chọn chuồng --</option>
+                {regularPens.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* TRƯỜNG HỢP 2: CÁCH LY */}
+          {type === "isolation" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold">Chọn chuồng cách ly</label>
                 <select
-                  className="w-full border rounded p-2 text-sm"
-                  value={vaccineId}
-                  onChange={(e) => setVaccineId(e.target.value)}
+                    className="w-full border rounded p-2 text-sm bg-red-50 border-red-200"
+                    value={targetBarnId}
+                    onChange={(e) => setTargetBarnId(e.target.value)}
                 >
-                  <option value="">-- Chọn vaccine --</option>
-                  {vaccines.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name}
+                    <option value="">-- Chọn chuồng cách ly --</option>
+                    {isolationPens.map((b) => (
+                    <option key={b.id} value={b.id}>
+                        {b.name}
                     </option>
-                  ))}
+                    ))}
                 </select>
               </div>
 
-              <div>
-                <label className="font-semibold text-sm">Triệu chứng</label>
-                <textarea
-                  className="w-full border rounded p-2 text-sm"
-                  rows={3}
-                  value={symptom}
-                  onChange={(e) => setSymptom(e.target.value)}
-                />
+              <div className="space-y-4 border rounded-lg p-4 bg-red-50">
+                <div>
+                  <label className="text-sm font-semibold">Ngày phát bệnh</label>
+                  <input
+                    type="date"
+                    className="w-full border rounded p-2 text-sm"
+                    value={diseaseDate}
+                    onChange={(e) => setDiseaseDate(e.target.value)}
+                  />
+                </div>
+
+                {/* 4. ĐỔI INPUT THÀNH SELECT ĐỂ CHỌN BỆNH */}
+                <div>
+                  <label className="text-sm font-semibold">Loại bệnh</label>
+                  <select
+                    className="w-full border rounded p-2 text-sm"
+                    value={diseaseType}
+                    onChange={(e) => setDiseaseType(e.target.value)}
+                  >
+                    <option value="">-- Chọn loại bệnh --</option>
+                    {diseases.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold">Triệu chứng ban đầu</label>
+                  <textarea
+                    className="w-full border rounded p-2 text-sm"
+                    rows={3}
+                    placeholder="Sốt, bỏ ăn, ho..."
+                    value={symptom}
+                    onChange={(e) => setSymptom(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* FOOTER */}
-        <div className="p-4 border-t flex justify-end gap-2">
+        <div className="p-4 flex justify-end gap-2 border-t">
           <Button variant="ghost" onClick={onClose}>
             Hủy
           </Button>
-          <Button disabled={loading} onClick={handleSubmit}>
-            {loading ? "Đang xử lý..." : "Xác nhận chuyển"}
-          </Button>
+          <Button onClick={handleSubmit}>Xác nhận chuyển</Button>
         </div>
       </div>
     </div>
-  );
+  )
 }

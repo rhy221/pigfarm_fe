@@ -25,7 +25,6 @@ import {
 
 import TransferBarnModal from "@/app/(main)/barns_detail/barns_transfer_modal"
 // Giả định bạn đã tạo file này ở bước trước
-import { dashboardApi } from "@/app/api/barns" 
 
 export default function BarnDetailPage() {
   const router = useRouter()
@@ -46,8 +45,8 @@ export default function BarnDetailPage() {
       try {
         setLoading(true)
         // Gọi API lấy chi tiết chuồng từ PensController
-        const data = await dashboardApi.getPenDetail(penId)
-        setPenData(data)
+        // const data = await dashboardApi.getPenDetail(penId)
+        // setPenData(data)
       } catch (err: any) {
         setError("Không thể tải thông tin chuồng heo.")
         console.error(err)

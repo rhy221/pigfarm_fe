@@ -182,13 +182,13 @@ export default function FinancePage() {
       selectedMonth === "all"
         ? `Năm ${selectedYear}`
         : `Tháng ${selectedMonth}/${selectedYear}`;
-    
+
     // Use data from cashBook or transactions for PDF
     const transactionData = cashBook?.transactions || [];
 
     exportToPDF({
       title: "Bao cao So quy",
-      subtitle: `Ky: ${periodText}${selectedAccount !== "all" ? ` | Tai khoan: ${accounts?.find(a => a.id === selectedAccount)?.name}` : ""}`,
+      subtitle: `Ky: ${periodText}${selectedAccount !== "all" ? ` | Tai khoan: ${accounts?.find((a) => a.id === selectedAccount)?.name}` : ""}`,
       columns: [
         { header: "Ngay", dataKey: "date", width: 25 },
         { header: "Mo ta", dataKey: "description", width: 70 },
@@ -197,10 +197,18 @@ export default function FinancePage() {
         { header: "So du", dataKey: "balance", width: 30 },
       ],
       data: transactionData.map((tx: any) => ({
-        date: tx.transactionDate ? new Date(tx.transactionDate).toLocaleDateString("vi-VN") : "",
+        date: tx.transactionDate
+          ? new Date(tx.transactionDate).toLocaleDateString("vi-VN")
+          : "",
         description: tx.description || tx.transactionCategories?.name || "",
-        income: tx.transactionType === "income" ? formatCurrencyForPDF(tx.amount) : "-",
-        expense: tx.transactionType === "expense" ? formatCurrencyForPDF(tx.amount) : "-",
+        income:
+          tx.transactionType === "income"
+            ? formatCurrencyForPDF(tx.amount)
+            : "-",
+        expense:
+          tx.transactionType === "expense"
+            ? formatCurrencyForPDF(tx.amount)
+            : "-",
         balance: formatCurrencyForPDF(tx.runningBalance || 0),
       })),
       summaryData: [
@@ -225,7 +233,7 @@ export default function FinancePage() {
       <PageBreadcrumb items={BREADCRUMB_CONFIGS.expensesReport} />
 
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      {/* <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Báo cáo Tài chính</h1>
           <p className="text-muted-foreground">
@@ -288,39 +296,37 @@ export default function FinancePage() {
             <div className="text-2xl font-bold text-slate-600">
               {formatCurrency(openingBalance)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Bắt đầu kỳ báo cáo
-            </p>
+            <p className="text-xs text-muted-foreground">Bắt đầu kỳ báo cáo</p>
           </CardContent>
         </Card>
 
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Tổng thu trong kỳ</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Tổng thu trong kỳ
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
               +{formatCurrency(monthlyIncome)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Phát sinh tăng
-            </p>
+            <p className="text-xs text-muted-foreground">Phát sinh tăng</p>
           </CardContent>
         </Card>
 
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Tổng chi trong kỳ</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Tổng chi trong kỳ
+            </CardTitle>
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
               -{formatCurrency(monthlyExpense)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Phát sinh giảm
-            </p>
+            <p className="text-xs text-muted-foreground">Phát sinh giảm</p>
           </CardContent>
         </Card>
 

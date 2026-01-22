@@ -40,12 +40,13 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
 
   const handleUpdate = async () => {
     if (receipt) {
+      const updatedStatus = "Đã thanh toán";
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/sales/${(receipt as any).id}/status`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            payment_status: currentStatus,
+            payment_status: updatedStatus,
             details: detailItems.map(item => ({
               id: (item as any).id,
               total_weight: Number(item.tongTrongLuong)
@@ -54,7 +55,7 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
         });
 
         if (response.ok) {
-          onSave(currentStatus, totalAmount);
+          onSave(updatedStatus, totalAmount);
         } else {
           alert("Lỗi cập nhật trạng thái");
         }
@@ -77,15 +78,17 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
         <div className="px-6 py-3">
           <div className="flex justify-between items-center mb-6 border-b pb-1 border-gray-200">
             <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500">Thông tin</h2>
-            <button
-              onClick={handleUpdate}
-              disabled={isTableEmpty}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${
-                isTableEmpty ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"
-              }`}
-            >
-              Lưu
-            </button>
+              {currentStatus !== "Đã thanh toán" && (
+                <button
+                  onClick={handleUpdate}
+                  disabled={isTableEmpty}
+                  className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium transition shadow-md mb-1 ${
+                    isTableEmpty ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none" : "bg-emerald-600 text-white hover:bg-emerald-700"
+                  }`}
+                >
+                  Xác nhận & Lưu
+                </button>
+              )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-8 bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
@@ -113,15 +116,9 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
             </div>
             <div className="flex items-center gap-4 md:col-span-2">
               <span className="text-sm font-bold text-[var(--color-secondary-foreground)] w-32 shrink-0">Tình trạng:</span>
-              <select
-                value={currentStatus}
-                onChange={(e) => setCurrentStatus(e.target.value)}
-                className="border border-gray-300 rounded-xl px-4 py-2 bg-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm text-gray-700 min-w-[240px]"
-              >
-                <option value="Chuẩn bị xuất chuồng">Chuẩn bị xuất chuồng</option>
-                <option value="Đã thanh toán">Đã thanh toán</option>
-                <option value="Chưa thanh toán">Chưa thanh toán</option>
-              </select>
+              <span className={`text-sm font-semibold ${currentStatus === "Đã thanh toán" ? "text-emerald-600" : "text-orange-600"}`}>
+                {currentStatus}
+              </span>
             </div>
           </div>
 
@@ -144,10 +141,15 @@ const ExportDetailModal: React.FC<ExportDetailModalProps> = ({
                     <td className="px-6 py-4 text-center">
                       <input
                         type="number"
+                        min="0"
+                        disabled={currentStatus === "Đã thanh toán"}
                         value={item.tongTrongLuong || ""}
                         placeholder="0"
-                        onChange={(e) => onWeightChange(index, Number(e.target.value))}
-                        className="w-28 border border-gray-200 rounded-lg px-3 py-1.5 text-center focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-emerald-700 shadow-inner"
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          onWeightChange(index, value < 0 ? 0 : value);
+                        }}
+                        className={`w-28 border border-gray-200 rounded-lg px-3 py-1.5 text-center outline-none font-bold shadow-inner ${currentStatus === "Đã thanh toán" ? "bg-gray-100 text-gray-400" : "focus:ring-2 focus:ring-emerald-500 text-emerald-700"}`}
                       />
                     </td>
                     <td className="px-6 py-4 text-center text-gray-800">{formatter.format(item.donGia)}</td>

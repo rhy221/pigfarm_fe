@@ -133,7 +133,7 @@ export default function SupplierDebtsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       
-      <PageBreadcrumb items={BREADCRUMB_CONFIGS.supplierDebts} />
+      {/* <PageBreadcrumb items={BREADCRUMB_CONFIGS.supplierDebts} /> */}
       
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

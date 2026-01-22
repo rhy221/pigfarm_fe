@@ -46,13 +46,16 @@ export type FeedingFormulaPayload2 = {
 
 type FeedingPlanResponse = {
   timeline: {
-    label: string        // "Tháng 1"
-    desc: string         // "0 - 29 ngày"
+    stageIndex: number   
+    label: string
+    desc: string
     startDay: number
     endDay: number
     isCurrent: boolean
     status: "current" | "future" | "past"
-  }[]
+  }[],
+  details: any[],
+  selectedStage: number
 }
 
 type FeedingDetail = {
@@ -95,11 +98,13 @@ export const feedingApi = {
   },
 
   /* ===== TÍNH LỊCH CHO ĂN THEO LỨA ===== */
-  getFeedingPlan(batchId: string) {
+  getFeedingPlan(batchId: string, stageIndex?: number) {
     return api
-      .get(`/feeding/plan/${batchId}`)
+      .get(`/feeding/plan/${batchId}`, {
+        params: { stage: stageIndex } 
+      })
       .then(res => res.data)
-  },  
+  }, 
 
   /**
    * Lấy danh sách nguyên liệu thức ăn (type = feed)

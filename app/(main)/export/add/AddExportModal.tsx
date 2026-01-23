@@ -26,9 +26,14 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/pig/regular-pens`)
         .then((res) => res.json())
         .then((data: any[]) => {
+          console.log(data)
           if (Array.isArray(data) && data.length > 0) {
-            const validPens = data.filter((cage: any) => 
-              !cage.pen_name.trim().toLowerCase().startsWith('c')
+            const validPens = data.filter((cage: any) => {
+                if(cage.name)
+                    return !cage.name.trim().toLowerCase().startsWith('c')
+                return false;
+
+            }
             );
             setAllPens(validPens);
             if (validPens.length > 0) {
@@ -52,7 +57,7 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
         ...tempList,
         {
           chuong_id: cageObj.id, 
-          chuong: cageObj.pen_name,
+          chuong: cageObj.name,
           donGia: price,
         },
       ]);
@@ -92,7 +97,7 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
               >
                 {allPens.map((cage) => (
                   <option key={cage.id} value={cage.id}>
-                    {cage.pen_name} ({cage.current_quantity} con)
+                    {cage.name} ({cage.current_quantity} con)
                   </option>
                 ))}
                 {allPens.length === 0 && <option value="">Không có chuồng khả dụng</option>}

@@ -159,7 +159,7 @@ const data = {
       url: "/inventory",
       icon: Warehouse,
       items: [
-        // { title: 'Tồn kho', url: '/inventory' },
+        { title: 'Tồn kho', url: '/inventory' },
         { title: "Kho hàng", url: "/inventory/warehouses" },
         { title: "Sản phẩm", url: "/inventory/products" },
         { title: "Phiếu nhập", url: "/inventory/receipts" },
@@ -178,7 +178,7 @@ const data = {
 
     {
       title: "Chi phí",
-      url: "/finance",
+      url: "/finance/transactions",
       icon: Banknote,
       items: [
         // { title: 'Tổng quan', url: '/finance' },

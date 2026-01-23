@@ -16,63 +16,36 @@ interface AddExportModalProps {
 }
 
 const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
-  const [breedData, setBreedData] = useState<Record<string, any[]>>({});
-  const [selectedBreed, setSelectedBreed] = useState("");
+  const [allPens, setAllPens] = useState<any[]>([]);
   const [currentCageId, setCurrentCageId] = useState("");
   const [price, setPrice] = useState<number>(60000); 
   const [tempList, setTempList] = useState<SelectedItem[]>([]);
 
   useEffect(() => {
     if (isOpen) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/facility/pens/grouped-by-breed`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/pig/regular-pens`)
         .then((res) => res.json())
-        .then((data) => {
-          if (data && Object.keys(data).length > 0) {
-            const filteredData: Record<string, any[]> = {};
-
-            Object.keys(data).forEach((breed) => {
-              const validCages = data[breed].filter((cage: any) => 
-                !cage.pen_name.trim().toLowerCase().startsWith('c')
-              );
-
-              if (validCages.length > 0) {
-                filteredData[breed] = validCages;
-              }
-            });
-
-            setBreedData(filteredData);
-            
-            const breeds = Object.keys(filteredData);
-            if (breeds.length > 0) {
-              const firstBreed = breeds[0];
-              setSelectedBreed(firstBreed);
-              if (filteredData[firstBreed] && filteredData[firstBreed].length > 0) {
-                setCurrentCageId(filteredData[firstBreed][0].id);
-              }
-            } else {
-              setSelectedBreed("");
-              setCurrentCageId("");
+        .then((data: any[]) => {
+          if (Array.isArray(data) && data.length > 0) {
+            const validPens = data.filter((cage: any) => 
+              !cage.pen_name.trim().toLowerCase().startsWith('c')
+            );
+            setAllPens(validPens);
+            if (validPens.length > 0) {
+              setCurrentCageId(validPens[0].id);
             }
           }
         })
-        .catch((err) => console.error("Lỗi fetch dữ liệu chuồng:", err));
+        .catch((err) => console.error("Lỗi fetch dữ liệu chuồng thịt:", err));
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    if (selectedBreed && breedData[selectedBreed] && breedData[selectedBreed].length > 0) {
-      setCurrentCageId(breedData[selectedBreed][0].id);
-    } else {
-      setCurrentCageId("");
-    }
-  }, [selectedBreed, breedData]);
 
   if (!isOpen) return null;
 
   const handleAdd = () => {
     if (!currentCageId) return;
 
-    const cageObj = breedData[selectedBreed]?.find((c) => c.id === currentCageId);
+    const cageObj = allPens.find((c) => c.id === currentCageId);
     
     if (cageObj && !tempList.some((item) => item.chuong_id === currentCageId)) {
       setTempList([
@@ -109,35 +82,20 @@ const AddExportModal = ({ isOpen, onClose, onSave }: AddExportModalProps) => {
         </div>
 
         <div className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 items-end">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700">Giống</label>
-              <select
-                value={selectedBreed}
-                onChange={(e) => setSelectedBreed(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500 bg-white shadow-sm text-sm"
-              >
-                {Object.keys(breedData).map((breed) => (
-                  <option key={breed} value={breed}>
-                    {breed}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-700">Chuồng</label>
+              <label className="text-sm font-semibold text-gray-700">Danh sách chuồng thịt</label>
               <select
                 value={currentCageId}
                 onChange={(e) => setCurrentCageId(e.target.value)}
                 className="w-full border border-gray-300 rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-emerald-500 bg-white shadow-sm text-sm"
               >
-                {Array.isArray(breedData[selectedBreed]) && 
-                  breedData[selectedBreed].map((cage: any) => (
-                    <option key={cage.id} value={cage.id}>
-                      {cage.pen_name}
-                    </option>
-                ))} 
+                {allPens.map((cage) => (
+                  <option key={cage.id} value={cage.id}>
+                    {cage.pen_name} ({cage.current_quantity} con)
+                  </option>
+                ))}
+                {allPens.length === 0 && <option value="">Không có chuồng khả dụng</option>}
               </select>
             </div>
 

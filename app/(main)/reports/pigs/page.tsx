@@ -471,7 +471,7 @@ export default function PigReportsPage() {
               </SelectContent>
             </Select>
 
-            <Select value={tempBatch} onValueChange={setTempBatch}>
+            {/* <Select value={tempBatch} onValueChange={setTempBatch}>
               <SelectTrigger className="w-full sm:w-[200px] cursor-pointer">
                 <SelectValue placeholder="Chọn lứa" />
               </SelectTrigger>
@@ -482,7 +482,7 @@ export default function PigReportsPage() {
                 <SelectItem value="L003">Lứa L003</SelectItem>
                 <SelectItem value="L004">Lứa L004</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
 
             <Button
               onClick={handleSubmit}
